@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GenSO Work Manager</string>
+    <string name="title_activity_main">GenSO Work Manager</string>
+    <string name="package_name">com.genso.workmanager</string>
+    <string name="custom_url_scheme">com.genso.workmanager</string>
+</resources>

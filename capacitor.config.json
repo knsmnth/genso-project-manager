@@ -1,0 +1,8 @@
+{
+  "appId": "com.genso.workmanager",
+  "appName": "GenSO Work Manager",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

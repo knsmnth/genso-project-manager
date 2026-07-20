@@ -1,0 +1,29 @@
+{
+  "short_name": "GenSO Manager",
+  "name": "GenSO Work Order Manager",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#F8F9FF",
+  "theme_color": "#006C49",
+  "display": "standalone",
+  "orientation": "portrait-primary"
+}
