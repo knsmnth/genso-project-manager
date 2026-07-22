@@ -2209,14 +2209,42 @@ body {
 }
 .modal-card {
   max-width: 520px;
-}
-.modal-body {
-  padding: 16px 20px;
-}
-.modal-footer {
-  padding: 16px 20px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 .modal-header {
   padding: 16px 20px;
+  flex-shrink: 0;
+}
+.modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+.modal-footer {
+  padding: 16px 20px;
+  flex-shrink: 0;
+}
+.dates-display {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+.date-item {
+  display: flex;
+  gap: 6px;
+  font-size: 13px;
+  align-items: center;
+}
+.date-label {
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.date-val {
+  color: var(--color-navy-header);
+  font-weight: 500;
 }
 

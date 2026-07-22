@@ -66,23 +66,51 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
   return (
     <div className="modal-backdrop open" id="details-modal" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-title-wrapper">
-            <span className="modal-subtitle" id="modal-code">
+        <div className="modal-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', position: 'relative', width: '100%' }}>
+          <div className="modal-title-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px', width: '90%' }}>
+            <span
+              className="modal-subtitle"
+              id="modal-code"
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: 'var(--color-primary)',
+                background: 'var(--color-primary-light)',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontFamily: 'monospace'
+              }}
+            >
               {order.code}
             </span>
-            <h2 className="modal-title" id="modal-scope">
-              {order.scope.toUpperCase()}
+            <h2
+              className="modal-title"
+              id="modal-scope"
+              style={{
+                fontSize: '15px',
+                fontWeight: 700,
+                color: 'var(--color-navy-header)',
+                lineHeight: 1.4,
+                margin: 0
+              }}
+            >
+              {order.scope}
             </h2>
           </div>
-          <button id="modal-close" className="modal-close-btn" onClick={onClose} aria-label="Close modal">
+          <button
+            id="modal-close"
+            className="modal-close-btn"
+            onClick={onClose}
+            aria-label="Close modal"
+            style={{ position: 'absolute', right: '16px', top: '16px', fontSize: '24px' }}
+          >
             &times;
           </button>
         </div>
 
         <div className="modal-body">
           {/* Main Info Row */}
-          <div className="modal-summary-row">
+          <div className="modal-summary-row" style={{ display: 'flex', gap: '12px', borderBottom: 'none', paddingBottom: 0 }}>
             <span className={`badge badge-status-pill ${getStatusClass(order.status)}`} id="modal-status">
               {order.status.toUpperCase()}
             </span>
@@ -91,31 +119,31 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
             </span>
           </div>
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)', margin: '16px 0' }} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)', margin: '12px 0' }} />
 
           {/* Grid Layout fields */}
           <div className="modal-attributes-grid">
-            <div className="modal-attr-group">
-              <span className="attr-label">ASSET / FACILITY</span>
-              <span className="attr-value" id="modal-asset" style={{ fontWeight: 700 }}>
+            <div className="modal-attr-box">
+              <span className="attr-lbl">ASSET / FACILITY</span>
+              <span className="attr-val font-bold" id="modal-asset">
                 {order.assetName}
               </span>
-              <span className="attr-sub" id="modal-asset-sub">
+              <span className="attr-subval" id="modal-asset-sub">
                 {order.space}
               </span>
             </div>
 
-            <div className="modal-attr-group">
-              <span className="attr-label">SCHEDULED DATES</span>
+            <div className="modal-attr-box">
+              <span className="attr-lbl">SCHEDULED DATES</span>
               <div className="dates-display">
                 <div className="date-item">
-                  <span className="date-label">Start Date</span>
+                  <span className="date-label">Start:</span>
                   <span className="date-val" id="modal-start-date">
-                    {formatDate(order.startDate)} - {order.startTime || '08:00 AM'}
+                    {formatDate(order.startDate)} - {order.startTime || '08:30 AM'}
                   </span>
                 </div>
                 <div className="date-item">
-                  <span className="date-label">Est. Completion</span>
+                  <span className="date-label">Est. End:</span>
                   <span className="date-val" id="modal-end-date">
                     {formatDate(order.endDate)} - {order.endTime || '05:00 PM'}
                   </span>
@@ -123,42 +151,42 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
               </div>
             </div>
 
-            <div className="modal-attr-group">
-              <span className="attr-label">ASSIGNED WORKGROUP</span>
-              <span className="attr-value" id="modal-team" style={{ color: 'var(--color-primary)' }}>
+            <div className="modal-attr-box">
+              <span className="attr-lbl">ASSIGNED WORKGROUP</span>
+              <span className="attr-val font-bold" id="modal-team" style={{ color: 'var(--color-primary)' }}>
                 {order.workgroup}
               </span>
             </div>
 
-            <div className="modal-attr-group">
-              <span className="attr-label">SUPERVISOR</span>
-              <div className="supervisor-display">
+            <div className="modal-attr-box">
+              <span className="attr-lbl">SUPERVISOR</span>
+              <div className="attr-avatar-text">
                 <div className={`initials-avatar ${getAvatarColorClass(order.foreman || 'UN')}`} id="modal-foreman-avatar">
                   {getInitials(order.foreman || 'UN')}
                 </div>
-                <span className="supervisor-name" id="modal-foreman">
+                <span id="modal-foreman" style={{ fontWeight: 600 }}>
                   {order.foreman || 'Unassigned'}
                 </span>
               </div>
             </div>
           </div>
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)', margin: '16px 0' }} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)', margin: '12px 0' }} />
 
           {/* Description */}
-          <div className="modal-description-section">
-            <span className="attr-label">DESCRIPTION</span>
-            <p className="description-text" id="modal-description">
+          <div className="modal-desc-box">
+            <span className="desc-lbl">DESCRIPTION</span>
+            <p className="desc-text" id="modal-description">
               {order.description || 'No description provided.'}
             </p>
           </div>
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)', margin: '16px 0' }} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)', margin: '12px 0' }} />
 
           {/* Assigned Personnel Checkboxes list */}
-          <div className="modal-assigned-section">
-            <span className="attr-label">ASSIGNED PERSONNEL</span>
-            <div className="assigned-members-grid" id="modal-assigned-people">
+          <div className="modal-assigned-box">
+            <span className="attr-lbl">ASSIGNED PERSONNEL</span>
+            <div className="assigned-badges" id="modal-assigned-people" style={{ marginTop: '8px' }}>
               {order.assigned && order.assigned.length > 0 ? (
                 order.assigned.map((name) => (
                   <div key={name} className="assigned-member-badge">
