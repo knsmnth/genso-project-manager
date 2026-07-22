@@ -168,6 +168,7 @@ export default function App() {
   const handleEditOrder = (code: string) => {
     setEditingOrderCode(code);
     setActiveView('create-order');
+    setIsDetailsModalOpen(false);
   };
 
   const handleDeleteOrder = (code: string) => {
