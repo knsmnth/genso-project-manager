@@ -94,9 +94,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} id="sidebar">
-        <div className="sidebar-brand">
-          <svg className="brand-icon" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#FFFFFF" stroke-width="2.5">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round" />
+        <div
+          className="sidebar-brand"
+          onClick={() => {
+            if (window.innerWidth <= 1024) {
+              onSidebarClose();
+            }
+          }}
+          style={{ cursor: 'pointer' }}
+        >
+          <svg className="brand-icon" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#FFFFFF" strokeWidth="2.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <div className="brand-info">
             <span className="brand-text">InfraAdmin</span>

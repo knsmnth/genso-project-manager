@@ -2248,3 +2248,32 @@ body {
   font-weight: 500;
 }
 
+/* Mobile Floating Action Button (FAB) for Create Work Order */
+.mobile-fab-create {
+  position: fixed;
+  bottom: 80px; /* Sits above the 64px bottom nav, with 16px clearance */
+  right: 16px;
+  width: 56px;
+  height: 56px;
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+  z-index: 98; /* Pinned above standard layers, below modals */
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform 0.15s ease;
+}
+
+.mobile-fab-create:active {
+  transform: scale(0.9);
+}
+
+@media (min-width: 1025px) {
+  .mobile-fab-create {
+    display: none;
+  }
+}
+
