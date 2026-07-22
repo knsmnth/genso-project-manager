@@ -112,6 +112,7 @@ export default function App() {
   const [personnel, setPersonnel] = useState<Person[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Details Modal States
   const [selectedOrderCode, setSelectedOrderCode] = useState<string | null>(null);
@@ -230,7 +231,7 @@ export default function App() {
   };
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       {/* Sidebar Navigation */}
       <Sidebar
         activeView={activeView}
@@ -248,64 +249,72 @@ export default function App() {
         <Header
           searchQuery={searchQuery}
           onSearchQueryChange={setSearchQuery}
-          onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+          onMenuToggle={() => {
+            if (window.innerWidth > 1024) {
+              setIsSidebarCollapsed(!isSidebarCollapsed);
+            } else {
+              setSidebarOpen(!sidebarOpen);
+            }
+          }}
           onCreateOrder={handleCreateOrder}
         />
 
-        {/* View Routing Switcher */}
-        {activeView === 'dashboard' && (
-          <DashboardView
-            workOrders={workOrders}
-            onSelectOrder={handleSelectOrder}
-            onViewAll={() => setActiveView('workorders')}
-            teamsCount={WORK_GROUPS.length}
-          />
-        )}
+        {/* View Routing Switcher wrapped in spacing margins */}
+        <div className="main-content-inner">
+          {activeView === 'dashboard' && (
+            <DashboardView
+              workOrders={workOrders}
+              onSelectOrder={handleSelectOrder}
+              onViewAll={() => setActiveView('workorders')}
+              teamsCount={WORK_GROUPS.length}
+            />
+          )}
 
-        {activeView === 'workorders' && (
-          <WorkOrdersView
-            workOrders={workOrders}
-            searchQuery={searchQuery}
-            onSelectOrder={handleSelectOrder}
-            onEditOrder={handleEditOrder}
-            onDeleteOrder={handleDeleteOrder}
-            onCreateOrder={handleCreateOrder}
-          />
-        )}
+          {activeView === 'workorders' && (
+            <WorkOrdersView
+              workOrders={workOrders}
+              searchQuery={searchQuery}
+              onSelectOrder={handleSelectOrder}
+              onEditOrder={handleEditOrder}
+              onDeleteOrder={handleDeleteOrder}
+              onCreateOrder={handleCreateOrder}
+            />
+          )}
 
-        {activeView === 'teams' && (
-          <TeamsView
-            teams={WORK_GROUPS}
-            personnel={personnel}
-            onNewGroup={() => alert('New Work Group creation is under development.')}
-          />
-        )}
+          {activeView === 'teams' && (
+            <TeamsView
+              teams={WORK_GROUPS}
+              personnel={personnel}
+              onNewGroup={() => alert('New Work Group creation is under development.')}
+            />
+          )}
 
-        {activeView === 'personnel' && (
-          <PersonnelView
-            personnel={personnel}
-            searchQuery={searchQuery}
-            onOpenAttendanceCheck={() => setIsAttendanceModalOpen(true)}
-            onOpenQuickOnboard={() => setActiveView('quick-onboard')}
-          />
-        )}
+          {activeView === 'personnel' && (
+            <PersonnelView
+              personnel={personnel}
+              searchQuery={searchQuery}
+              onOpenAttendanceCheck={() => setIsAttendanceModalOpen(true)}
+              onOpenQuickOnboard={() => setActiveView('quick-onboard')}
+            />
+          )}
 
-        {activeView === 'quick-onboard' && (
-          <QuickOnboardView
-            onComplete={handleCompleteOnboarding}
-            onCancel={() => setActiveView('personnel')}
-          />
-        )}
+          {activeView === 'quick-onboard' && (
+            <QuickOnboardView
+              onComplete={handleCompleteOnboarding}
+              onCancel={() => setActiveView('personnel')}
+            />
+          )}
 
-        {activeView === 'create-order' && (
-          <CreateOrderView
-            editingOrderCode={editingOrderCode}
-            workOrders={workOrders}
-            personnel={personnel}
-            onSaveOrder={handleSaveOrder}
-            onCancel={handleCancelForm}
-          />
-        )}
+          {activeView === 'create-order' && (
+            <CreateOrderView
+              editingOrderCode={editingOrderCode}
+              workOrders={workOrders}
+              personnel={personnel}
+              onSaveOrder={handleSaveOrder}
+              onCancel={handleCancelForm}
+            />
+          )}
+        </div>
       </main>
 
       {/* Details Modal Popup Overlay */}

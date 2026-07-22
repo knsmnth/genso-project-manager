@@ -99,8 +99,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           <div className="brand-info">
-            <span class="brand-text">InfraAdmin</span>
-            <span class="brand-subtext">Operational Hub</span>
+            <span className="brand-text">InfraAdmin</span>
+            <span className="brand-subtext">Operational Hub</span>
           </div>
         </div>
 
