@@ -2281,31 +2281,53 @@ body {
    Wireframe Layout Custom Styles for Create Order View
    ========================================================================== */
 
-/* Yellow Highlighted Manual Inputs */
-.wireframe-input-manual {
+/* Yellow Highlighted Manual Inputs - High Specificity */
+select.wireframe-input-manual,
+input.wireframe-input-manual,
+textarea.wireframe-input-manual,
+.select-wrapper select.wireframe-input-manual {
   background-color: #FEF9C3 !important;
-  border: 1px dashed #EAB308 !important;
+  border: 1.5px dashed #EAB308 !important;
   color: #1E293B !important;
   font-family: inherit;
   font-size: 13.5px;
   border-radius: 4px;
   padding: 8px 12px;
   width: 100%;
-  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  box-shadow: inset 0 1px 2px rgba(234, 179, 8, 0.1);
+  transition: all var(--transition-fast);
 }
 
-.wireframe-input-manual:focus {
+select.wireframe-input-manual:focus,
+input.wireframe-input-manual:focus,
+textarea.wireframe-input-manual:focus,
+.select-wrapper select.wireframe-input-manual:focus {
   background-color: #FEF08A !important;
   border-color: #CA8A04 !important;
   border-style: solid !important;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2);
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.25);
 }
 
-.wireframe-input-manual::placeholder {
-  color: #A16207;
-  font-style: italic;
+select.wireframe-input-manual::placeholder,
+input.wireframe-input-manual::placeholder,
+textarea.wireframe-input-manual::placeholder {
+  color: #A16207 !important;
+  font-style: italic !important;
   opacity: 0.85;
+}
+
+/* Custom Work Order Code Box */
+.work-order-code-box {
+  background-color: #F8FAFC !important;
+  border: 1.5px dashed #3B82F6 !important;
+  color: #1E3A8A !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  padding: 8px 12px;
+  width: 100%;
 }
 
 /* General Information 2-Column Grid with Vertical Divider */
@@ -2356,8 +2378,8 @@ body {
 }
 
 .lock-unlock-toggle input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   cursor: pointer;
   accent-color: var(--color-primary);
 }
@@ -2427,7 +2449,7 @@ body {
 
 .date-placeholder-box {
   background-color: #F1F5F9;
-  border: 1px dashed #CBD5E1;
+  border: 1px dashed #94A3B8;
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 11px;
@@ -2441,7 +2463,7 @@ body {
 .add-scope-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin-top: 16px;
   padding: 8px 14px;
   background-color: transparent;

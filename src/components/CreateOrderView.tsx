@@ -257,10 +257,9 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
                     </label>
                     <input
                       type="text"
-                      className="input-readonly"
+                      className="work-order-code-box"
                       value={code}
                       readOnly
-                      style={{ fontWeight: 600 }}
                     />
                   </div>
 
