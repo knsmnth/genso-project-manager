@@ -16,26 +16,27 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
   onSaveOrder,
   onCancel
 }) => {
-  // Generated or Editing Code
+  // General Information form states
   const [code, setCode] = useState('');
-
-  // Core Form states
+  const [dateReceived, setDateReceived] = useState('');
+  const [requesterName, setRequesterName] = useState('');
+  const [requestingOffice, setRequestingOffice] = useState('');
   const [assetName, setAssetName] = useState('');
-  const [status, setStatus] = useState('');
-  const [space, setSpace] = useState('');
+  const [roomNo, setRoomNo] = useState('');
+  const [workTitle, setWorkTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [workgroup, setWorkgroup] = useState('');
-  const [priority, setPriority] = useState('Medium');
-  const [foreman, setForeman] = useState('');
-  const [assigned, setAssigned] = useState<string[]>([]);
+  const [isLocked, setIsLocked] = useState(false);
 
-  // Scope of Work tasks state
+  // Scope of Works state
   const [tasks, setTasks] = useState<Task[]>([
-    { type: '', remarks: '', startDate: getTodayString(), endDate: getTodayString() }
+    {
+      type: '',
+      remarks: '',
+      degreeOfWork: '',
+      startDate: getTodayString(),
+      endDate: getTodayString()
+    }
   ]);
-
-  // Personnel filter state
-  const [personnelSearch, setPersonnelSearch] = useState('');
 
   // Form error validation visual state tracking
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -45,23 +46,23 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
       const order = workOrders.find((o) => o.code === editingOrderCode);
       if (order) {
         setCode(order.code);
-        setAssetName(order.assetName);
-        setStatus(order.status);
-        setSpace(order.space);
-        setDescription(order.description);
-        setWorkgroup(order.workgroup);
-        setPriority(order.priority);
-        setForeman(order.foreman || '');
-        setAssigned(order.assigned || []);
+        setDateReceived(order.dateReceived || getFormattedTodayDate());
+        setRequesterName(order.requesterName || '');
+        setRequestingOffice(order.requestingOffice || '');
+        setAssetName(order.assetName || '');
+        setRoomNo(order.roomNo || order.space || '');
+        setWorkTitle(order.workTitle || '');
+        setDescription(order.description || '');
+        setIsLocked(order.isLocked || false);
 
         if (order.tasks && order.tasks.length > 0) {
           setTasks(order.tasks);
         } else {
-          // Fallback from primary values
           setTasks([
             {
               type: order.worktype || '',
               remarks: order.scope || '',
+              degreeOfWork: 'Standard',
               startDate: order.startDate || getTodayString(),
               endDate: order.endDate || getTodayString()
             }
@@ -70,15 +71,23 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
       }
     } else {
       setCode(generateRequestCode());
+      setDateReceived(getFormattedTodayDate());
+      setRequesterName('');
+      setRequestingOffice('');
       setAssetName('');
-      setStatus('');
-      setSpace('');
+      setRoomNo('');
+      setWorkTitle('');
       setDescription('');
-      setWorkgroup('');
-      setPriority('Medium');
-      setForeman('');
-      setAssigned([]);
-      setTasks([{ type: '', remarks: '', startDate: getTodayString(), endDate: getTodayString() }]);
+      setIsLocked(false);
+      setTasks([
+        {
+          type: '',
+          remarks: '',
+          degreeOfWork: '',
+          startDate: getTodayString(),
+          endDate: getTodayString()
+        }
+      ]);
     }
     setErrors({});
   }, [editingOrderCode, workOrders]);
@@ -90,21 +99,34 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
     return `${d.getFullYear()}-${m}-${dd}`;
   }
 
+  function getFormattedTodayDate() {
+    const d = new Date();
+    const month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+    const day = String(d.getDate()).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${month} ${day}, ${year}`;
+  }
+
   function generateRequestCode() {
-    const year = new Date().getFullYear();
-    const randNum = Math.floor(1000 + Math.random() * 9000);
-    const letter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-    return `WO-${year}-${randNum}-${letter}`;
+    const randNum = Math.floor(100 + Math.random() * 900);
+    return `JR - BHM - 26 - ${randNum}`;
   }
 
   const handleAddTask = () => {
     setTasks([
       ...tasks,
-      { type: '', remarks: '', startDate: getTodayString(), endDate: getTodayString() }
+      {
+        type: '',
+        remarks: '',
+        degreeOfWork: '',
+        startDate: getTodayString(),
+        endDate: getTodayString()
+      }
     ]);
   };
 
   const handleDeleteTask = (index: number) => {
+    if (tasks.length <= 1) return;
     setTasks(tasks.filter((_, i) => i !== index));
   };
 
@@ -114,63 +136,26 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
     setTasks(newTasks);
   };
 
-  const handlePersonnelCheckToggle = (name: string) => {
-    if (assigned.includes(name)) {
-      setAssigned(assigned.filter((n) => n !== name));
-    } else {
-      setAssigned([...assigned, name]);
-    }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((w) => w[0])
-      .join('')
-      .substring(0, 2)
-      .toUpperCase();
-  };
-
-  const getAvatarColorClass = (name: string) => {
-    const parts = name.split(' ');
-    const code = (parts[0] || 'A')[0].toLowerCase();
-    if ('abcdef'.includes(code)) return 'rc';
-    if ('ghijklm'.includes(code)) return 'am';
-    if ('nopqrst'.includes(code)) return 'sk';
-    return 'jd';
-  };
-
   // Perform form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, boolean> = {};
     let isValid = true;
 
-    // Check core fields
-    if (!assetName.trim()) { newErrors.assetName = true; isValid = false; }
-    if (!status) { newErrors.status = true; isValid = false; }
-    if (!space) { newErrors.space = true; isValid = false; }
-    if (!workgroup) { newErrors.workgroup = true; isValid = false; }
-    if (!foreman) { newErrors.foreman = true; isValid = false; }
+    // Check core general info fields
+    if (!requesterName.trim()) { newErrors.requesterName = true; isValid = false; }
+    if (!requestingOffice) { newErrors.requestingOffice = true; isValid = false; }
+    if (!assetName) { newErrors.assetName = true; isValid = false; }
 
-    // Validate dynamic tasks
+    // Validate scope tasks
     tasks.forEach((t, i) => {
       if (!t.type) { newErrors[`taskType-${i}`] = true; isValid = false; }
       if (!t.remarks.trim()) { newErrors[`taskRemarks-${i}`] = true; isValid = false; }
-      if (!t.startDate) { newErrors[`taskStart-${i}`] = true; isValid = false; }
-      if (!t.endDate) { newErrors[`taskEnd-${i}`] = true; isValid = false; }
-
-      if (t.startDate && t.endDate && new Date(t.startDate) > new Date(t.endDate)) {
-        newErrors[`taskEnd-${i}`] = true;
-        isValid = false;
-        alert(`Task #${i + 1}: Estimated Completion Date cannot be before the Start Date.`);
-      }
     });
 
     setErrors(newErrors);
 
     if (!isValid) {
-      // Find first error block
       const errKeys = Object.keys(newErrors);
       if (errKeys.length > 0) {
         const el = document.getElementById(errKeys[0]) || document.querySelector('.has-error');
@@ -179,39 +164,39 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
       return;
     }
 
-    // Extrapolate primary scopes
     const primaryTask = tasks[0] || { type: 'General', remarks: 'General Maintenance', startDate: getTodayString(), endDate: getTodayString() };
 
     const payload: WorkOrder = {
       code,
-      assetName,
-      space,
+      assetName: assetName || 'Default Facility',
+      space: roomNo || 'Main Facility',
       scope: primaryTask.remarks,
-      workgroup,
-      status,
-      priority,
-      worktype: primaryTask.type,
+      workgroup: requestingOffice || 'General Maintenance',
+      status: 'Pending',
+      priority: 'Medium',
+      worktype: primaryTask.type || 'General',
       startDate: primaryTask.startDate,
       endDate: primaryTask.endDate,
       startTime: '08:00 AM',
       endTime: '05:00 PM',
-      foreman,
-      assigned,
+      foreman: requesterName || 'System Admin',
+      assigned: [],
       description,
-      tasks
+      tasks,
+      workTitle,
+      dateReceived,
+      requesterName,
+      requestingOffice,
+      roomNo,
+      isLocked
     };
 
     onSaveOrder(payload);
   };
 
-  const filteredPersonnel = personnel.filter((p) => {
-    const q = personnelSearch.toLowerCase();
-    return p.name.toLowerCase().includes(q) || p.role.toLowerCase().includes(q);
-  });
-
   return (
-    <section id="view-create-order" className="view-section active" style={{ display: 'flex' }}>
-      {/* Breadcrumbs */}
+    <section id="view-create-order" className="view-section active" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Breadcrumbs & Header */}
       <div className="breadcrumbs-container">
         <nav className="breadcrumbs" aria-label="Breadcrumbs">
           <span className="breadcrumb-link" onClick={onCancel} style={{ cursor: 'pointer' }}>
@@ -228,368 +213,302 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
         <div className="header-action-row">
           <h2 className="form-title">{editingOrderCode ? 'Edit Work Order' : 'Create Work Order'}</h2>
           <div className="form-action-buttons">
-            <button className="btn btn-outline" onClick={(e) => { e.preventDefault(); onCancel(); }}>
+            <button className="btn btn-outline" type="button" onClick={onCancel}>
               Cancel
             </button>
-            <button className="btn btn-primary" onClick={handleSubmit}>
+            <button className="btn btn-primary" type="button" onClick={handleSubmit}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#FFFFFF" strokeWidth="2.5">
                 <path d="M12 5v14M5 12h14" strokeLinecap="round" />
               </svg>
-              <span>{editingOrderCode ? 'Update Work Order' : 'Create Work Order'}</span>
+              <span>{editingOrderCode ? 'Update Order' : 'Save Work Order'}</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Columns */}
-      <form id="expanded-order-form" className="form-layout" onSubmit={handleSubmit}>
-        {/* Left Column */}
-        <div className="form-left-col">
-          {/* General Information Card */}
-          <div className="card card-general">
-            <div className="card-header">
-              <div className="card-title-wrapper">
-                <svg className="card-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-                <h3>General Information</h3>
-              </div>
-            </div>
+      {/* Main Form Layout */}
+      <form id="wireframe-order-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        
+        {/* CARD 1: Work Order General Information */}
+        <div className="card">
+          <div className="card-header space-between">
+            <h3 style={{ margin: 0 }}>Work Order General Information</h3>
+            <label className="lock-unlock-toggle">
+              <span>LOCK/UNLOCK</span>
+              <input
+                type="checkbox"
+                checked={isLocked}
+                onChange={(e) => setIsLocked(e.target.checked)}
+              />
+            </label>
+          </div>
 
-            <div className="card-body general-info-grid">
-              {/* Request Code */}
-              <div className="form-field-group code-group">
-                <label>Request Code</label>
-                <input type="text" className="input-readonly" value={code} readOnly />
-                <span className="field-hint">Unique system-generated identifier.</span>
-              </div>
+          <div className="card-body">
+            <div className="general-info-wireframe-grid">
+              
+              {/* LEFT SUB-COLUMN */}
+              <div className="wireframe-left-col">
+                
+                {/* Work Order Number & Date Received row */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div className="form-field-group">
+                    <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-navy-header)' }}>
+                      Work Order Number
+                    </label>
+                    <input
+                      type="text"
+                      className="input-readonly"
+                      value={code}
+                      readOnly
+                      style={{ fontWeight: 600 }}
+                    />
+                  </div>
 
-              {/* Asset Name */}
-              <div className={`form-field-group ${errors.assetName ? 'has-error' : ''}`}>
-                <label htmlFor="exp-asset-name">Asset/ Facility Name</label>
-                <input
-                  type="text"
-                  id="exp-asset-name"
-                  placeholder="Project Name..."
-                  value={assetName}
-                  onChange={(e) => setAssetName(e.target.value)}
-                />
-                <span className="error-msg">Asset/facility name is required.</span>
-              </div>
-
-              {/* Status */}
-              <div className={`form-field-group ${errors.status ? 'has-error' : ''}`}>
-                <label htmlFor="exp-work-status">Work Status</label>
-                <div className="select-wrapper">
-                  <select
-                    id="exp-work-status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                  >
-                    <option value="" disabled>Select Status...</option>
-                    <option value="Draft">Draft</option>
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                    <option value="On Hold">On Hold</option>
-                    <option value="Urgent">Urgent</option>
-                  </select>
+                  <div className="form-field-group">
+                    <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-navy-header)' }}>
+                      Date Received
+                    </label>
+                    <input
+                      type="text"
+                      className="wireframe-input-manual"
+                      placeholder="MMM DD, YYYY"
+                      value={dateReceived}
+                      onChange={(e) => setDateReceived(e.target.value)}
+                    />
+                  </div>
                 </div>
-                <span className="error-msg">Please select a work status.</span>
-              </div>
 
-              {/* Space */}
-              <div className={`form-field-group ${errors.space ? 'has-error' : ''}`}>
-                <label htmlFor="exp-room-space">Room / Space Name</label>
-                <div className="select-wrapper">
-                  <select
-                    id="exp-room-space"
-                    value={space}
-                    onChange={(e) => setSpace(e.target.value)}
-                  >
-                    <option value="" disabled>Select Space...</option>
-                    <option value="Room 21">Room 21</option>
-                    <option value="Roof Deck B-4">Roof Deck B-4</option>
-                    <option value="Lab 101">Lab 101</option>
-                    <option value="3F AB">3F AB</option>
-                    <option value="PNB Upper Campus">PNB Upper Campus</option>
-                  </select>
+                {/* Name of Requester */}
+                <div className={`form-field-group ${errors.requesterName ? 'has-error' : ''}`}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-navy-header)' }}>
+                    Name of Requester
+                  </label>
+                  <input
+                    type="text"
+                    id="requesterName"
+                    className="wireframe-input-manual"
+                    placeholder="Type in Name of Requester"
+                    value={requesterName}
+                    onChange={(e) => setRequesterName(e.target.value)}
+                  />
+                  <span className="error-msg">Requester name is required.</span>
                 </div>
-                <span className="error-msg">Please select a space.</span>
+
+                {/* Requesting Office */}
+                <div className={`form-field-group ${errors.requestingOffice ? 'has-error' : ''}`}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-navy-header)' }}>
+                    Requesting Office
+                  </label>
+                  <div className="select-wrapper">
+                    <select
+                      id="requestingOffice"
+                      className="wireframe-input-manual"
+                      value={requestingOffice}
+                      onChange={(e) => setRequestingOffice(e.target.value)}
+                    >
+                      <option value="" disabled>Type/Choose Requesting Office</option>
+                      <option value="Building Repair & Maintenance">Building Repair & Maintenance</option>
+                      <option value="Student Housing Repair & Maintenance">Student Housing Repair & Maintenance</option>
+                      <option value="Fabrication Workshop">Fabrication Workshop</option>
+                      <option value="Administrative Office">Administrative Office</option>
+                      <option value="IT Infrastructure Department">IT Infrastructure Department</option>
+                    </select>
+                  </div>
+                  <span className="error-msg">Please select a requesting office.</span>
+                </div>
+
+                {/* Facility / Asset */}
+                <div className={`form-field-group ${errors.assetName ? 'has-error' : ''}`}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-navy-header)' }}>
+                    Facility/Asset
+                  </label>
+                  <div className="select-wrapper">
+                    <select
+                      id="assetName"
+                      className="wireframe-input-manual"
+                      value={assetName}
+                      onChange={(e) => setAssetName(e.target.value)}
+                    >
+                      <option value="" disabled>Type/Choose Building Name</option>
+                      <option value="Coconut Dorm">Coconut Dorm</option>
+                      <option value="DMath Building">DMath Building</option>
+                      <option value="CoMed Laboratory">CoMed Laboratory</option>
+                      <option value="Engineering Hall">Engineering Hall</option>
+                      <option value="Central Administration">Central Administration</option>
+                    </select>
+                  </div>
+                  <span className="error-msg">Please select a facility/building.</span>
+                </div>
+
+                {/* Room No. / Name */}
+                <div className="form-field-group">
+                  <input
+                    type="text"
+                    className="wireframe-input-manual"
+                    placeholder="• Room No./Name"
+                    value={roomNo}
+                    onChange={(e) => setRoomNo(e.target.value)}
+                  />
+                </div>
+
               </div>
 
-              {/* Description */}
-              <div className="form-field-group desc-group">
-                <label htmlFor="exp-work-desc">Work Description</label>
-                <textarea
-                  id="exp-work-desc"
-                  placeholder="Detailed description of the issue or requirement..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
+              {/* RIGHT SUB-COLUMN */}
+              <div className="wireframe-right-col">
+                
+                {/* Work Title */}
+                <div className="form-field-group">
+                  <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-navy-header)' }}>
+                    Work Title
+                  </label>
+                  <input
+                    type="text"
+                    className="wireframe-input-manual"
+                    placeholder="Type in Work Title"
+                    value={workTitle}
+                    onChange={(e) => setWorkTitle(e.target.value)}
+                  />
+                </div>
+
+                {/* Work Details and Description */}
+                <div className="form-field-group" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-navy-header)' }}>
+                    Work Details and Description
+                  </label>
+                  <textarea
+                    className="wireframe-input-manual"
+                    placeholder="Type in Work order request details and information"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    style={{ flex: 1, minHeight: '140px', resize: 'vertical' }}
+                  />
+                </div>
+
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Scope of Work Card */}
-          <div className="card card-scope">
-            <div className="card-header space-between">
-              <div className="card-title-wrapper">
-                <svg className="card-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                </svg>
-                <h3>Scope of Work</h3>
-              </div>
-              <button type="button" className="btn-text" onClick={handleAddTask}>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-                </svg>
-                <span>Add Task</span>
-              </button>
-            </div>
+        {/* CARD 2: Scope of Works */}
+        <div className="card">
+          <div className="card-header">
+            <h3 style={{ margin: 0 }}>Scope of Works</h3>
+          </div>
 
-            <div className="card-body">
-              <div className="scope-tasks-list">
+          <div className="card-body" style={{ overflowX: 'auto' }}>
+            <table className="scope-wireframe-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '40px' }}></th>
+                  <th style={{ width: '180px' }}>Work Type</th>
+                  <th>Work Description</th>
+                  <th style={{ width: '60px', textAlign: 'center' }}>Remarks</th>
+                  <th style={{ width: '160px' }}>Degree of Work</th>
+                  <th style={{ width: '150px', textAlign: 'center' }}>Start and Completion Dates</th>
+                </tr>
+              </thead>
+              <tbody>
                 {tasks.map((task, index) => (
-                  <div key={index} className="task-item">
-                    {tasks.length > 1 && (
-                      <button
-                        type="button"
-                        className="task-item-delete"
-                        onClick={() => handleDeleteTask(index)}
-                        aria-label="Delete Task"
-                      >
-                        &times;
-                      </button>
-                    )}
-                    <div className="task-fields-grid">
-                      {/* Work Type */}
-                      <div className={`form-field-group ${errors[`taskType-${index}`] ? 'has-error' : ''}`}>
-                        <label>Work Type</label>
-                        <div className="select-wrapper">
-                          <select
-                            className="task-type"
-                            value={task.type}
-                            onChange={(e) => handleTaskFieldChange(index, 'type', e.target.value)}
-                          >
-                            <option value="" disabled>Select Type...</option>
-                            <option value="Electrical">Electrical</option>
-                            <option value="Plumbing">Plumbing</option>
-                            <option value="HVAC">HVAC</option>
-                            <option value="Mechanical">Mechanical</option>
-                            <option value="Carpentry">Carpentry</option>
-                            <option value="Masonry">Masonry</option>
-                            <option value="General">General</option>
-                          </select>
-                        </div>
+                  <tr key={index}>
+                    {/* Drag Handle Icon */}
+                    <td style={{ textAlign: 'center' }}>
+                      <div className="drag-handle" title="Reorder">
+                        =
                       </div>
+                    </td>
 
-                      {/* Remarks */}
-                      <div className={`form-field-group desc-group ${errors[`taskRemarks-${index}`] ? 'has-error' : ''}`}>
-                        <label>Remarks/Scope Description</label>
+                    {/* Work Type Select */}
+                    <td>
+                      <div className={`select-wrapper ${errors[`taskType-${index}`] ? 'has-error' : ''}`}>
+                        <select
+                          className="wireframe-input-manual"
+                          value={task.type}
+                          onChange={(e) => handleTaskFieldChange(index, 'type', e.target.value)}
+                        >
+                          <option value="" disabled>Select Type...</option>
+                          <option value="Electrical">Electrical</option>
+                          <option value="Plumbing">Plumbing</option>
+                          <option value="HVAC">HVAC</option>
+                          <option value="Mechanical">Mechanical</option>
+                          <option value="Carpentry">Carpentry</option>
+                          <option value="Masonry">Masonry</option>
+                          <option value="General Maintenance">General Maintenance</option>
+                        </select>
+                      </div>
+                    </td>
+
+                    {/* Work Description Input */}
+                    <td>
+                      <div className={errors[`taskRemarks-${index}`] ? 'has-error' : ''}>
                         <input
                           type="text"
-                          className="task-remarks"
-                          placeholder="Specify task details..."
+                          className="wireframe-input-manual"
+                          placeholder="Type in Scope of Work Description"
                           value={task.remarks}
                           onChange={(e) => handleTaskFieldChange(index, 'remarks', e.target.value)}
                         />
                       </div>
+                    </td>
 
-                      {/* Start Date */}
-                      <div className={`form-field-group date-group ${errors[`taskStart-${index}`] ? 'has-error' : ''}`}>
-                        <label>Start Date</label>
-                        <div className="date-input-wrapper">
-                          <input
-                            type="date"
-                            className="task-start"
-                            value={task.startDate}
-                            onChange={(e) => handleTaskFieldChange(index, 'startDate', e.target.value)}
-                          />
+                    {/* Remarks Comment Bubble Icon */}
+                    <td style={{ textAlign: 'center' }}>
+                      <button
+                        type="button"
+                        className="remarks-btn"
+                        title="Add Task Remarks"
+                        onClick={() => alert(`Remarks for task ${index + 1}: ${task.remarks || 'None'}`)}
+                      >
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                      </button>
+                    </td>
+
+                    {/* Degree of Work Select */}
+                    <td>
+                      <div className="select-wrapper">
+                        <select
+                          className="wireframe-input-manual"
+                          value={task.degreeOfWork || ''}
+                          onChange={(e) => handleTaskFieldChange(index, 'degreeOfWork', e.target.value)}
+                        >
+                          <option value="" disabled>Select Degree...</option>
+                          <option value="Minor">Minor</option>
+                          <option value="Standard">Standard</option>
+                          <option value="Major">Major</option>
+                          <option value="Urgent">Urgent</option>
+                        </select>
+                      </div>
+                    </td>
+
+                    {/* Start and Completion Dates (Non-Editable Placeholders) */}
+                    <td>
+                      <div className="read-only-date-stack">
+                        <div className="date-placeholder-box" title="Start date set after saving">
+                          MMM DD, YY
+                        </div>
+                        <div className="date-placeholder-box" title="Completion date set after saving">
+                          MMM DD, YY
                         </div>
                       </div>
-
-                      {/* Completion Date */}
-                      <div className={`form-field-group date-group ${errors[`taskEnd-${index}`] ? 'has-error' : ''}`}>
-                        <label>Estimated Completion</label>
-                        <div className="date-input-wrapper">
-                          <input
-                            type="date"
-                            className="task-end"
-                            value={task.endDate}
-                            onChange={(e) => handleTaskFieldChange(index, 'endDate', e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    </td>
+                  </tr>
                 ))}
-              </div>
+              </tbody>
+            </table>
 
-              {tasks.length === 0 && (
-                <div className="empty-tasks-placeholder" onClick={handleAddTask}>
-                  <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <path d="M12 8v8M8 12h8" />
-                  </svg>
-                  <span>No tasks added yet. Click "+ Add Task" or here to add scope items.</span>
-                </div>
-              )}
-            </div>
+            {/* Add More Scope Button */}
+            <button type="button" className="add-scope-btn" onClick={handleAddTask}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+              </svg>
+              <span>Add more Scope of Work</span>
+            </button>
           </div>
         </div>
 
-        {/* Right Column */}
-        <div className="form-right-col">
-          {/* Card 1: Assignment Card */}
-          <div className="card card-assign">
-            <div className="card-header">
-              <div className="card-title-wrapper">
-                <svg className="card-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="8.5" cy="7" r="4" />
-                  <line x1="20" y1="8" x2="20" y2="14" />
-                  <line x1="23" y1="11" x2="17" y2="11" />
-                </svg>
-                <h3>Assignment</h3>
-              </div>
-            </div>
-
-            <div className="card-body assignment-details">
-              <div className={`form-field-group ${errors.workgroup ? 'has-error' : ''}`}>
-                <label htmlFor="exp-assigned-workgroup">Assigned Workgroup</label>
-                <div className="select-wrapper">
-                  <select
-                    id="exp-assigned-workgroup"
-                    value={workgroup}
-                    onChange={(e) => setWorkgroup(e.target.value)}
-                  >
-                    <option value="" disabled>Select Workgroup...</option>
-                    <option value="Building Repair & Maintenance">Building Repair & Maintenance</option>
-                    <option value="Student Housing Repair & Maintenance">Student Housing Repair & Maintenance</option>
-                    <option value="Fabrication Workshop">Fabrication Workshop</option>
-                  </select>
-                </div>
-                <span className="error-msg">Please select an assigned workgroup.</span>
-              </div>
-
-              <div className="form-field-group">
-                <label>Priority Level</label>
-                <div className="priority-pills">
-                  {['Low', 'Medium', 'High'].map((prio) => (
-                    <button
-                      key={prio}
-                      type="button"
-                      id={`exp-priority-${prio.toLowerCase()}`}
-                      className={`priority-pill ${priority === prio ? 'active' : ''}`}
-                      onClick={() => setPriority(prio)}
-                    >
-                      {prio}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: Assign Foreman / Leadman Card */}
-          <div className="card card-foreman">
-            <div className="card-header">
-              <div className="card-title-wrapper">
-                <svg className="card-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-                <h3>Assign Foreman / Leadman</h3>
-              </div>
-            </div>
-
-            <div className="card-body">
-              <div className={`form-field-group ${errors.foreman ? 'has-error' : ''}`}>
-                <label htmlFor="exp-foreman-select">Lead Supervisor</label>
-                <div className="select-wrapper">
-                  <select
-                    id="exp-foreman-select"
-                    value={foreman}
-                    onChange={(e) => setForeman(e.target.value)}
-                  >
-                    <option value="" disabled>Select Lead...</option>
-                    <option value="Robert Chen">Robert Chen</option>
-                    <option value="Sarah Jenkins">Sarah Jenkins</option>
-                    <option value="Marcus Thorne">Marcus Thorne</option>
-                    <option value="Elena Rodriguez">Elena Rodriguez</option>
-                  </select>
-                </div>
-                <span className="error-msg">Please select a supervisor.</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: Assign Personnel checklist Card */}
-          <div className="card card-personnel">
-            <div className="card-header">
-              <div className="card-title-wrapper">
-                <svg className="card-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="16" />
-                  <line x1="8" y1="12" x2="16" y2="12" />
-                </svg>
-                <h3>Assign Personnel</h3>
-              </div>
-            </div>
-
-            <div className="card-body flex-col-gap">
-              <div className="personnel-search-box">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Filter personnel..."
-                  value={personnelSearch}
-                  onChange={(e) => setPersonnelSearch(e.target.value)}
-                />
-              </div>
-
-              <div className="personnel-checklist">
-                {filteredPersonnel.map((p) => {
-                  const isChecked = assigned.includes(p.name);
-                  return (
-                    <div
-                      key={p.name}
-                      className={`personnel-row ${isChecked ? 'checked' : ''}`}
-                      onClick={() => handlePersonnelCheckToggle(p.name)}
-                    >
-                      <div className="personnel-row-left">
-                        <div className={`initials-avatar ${getAvatarColorClass(p.name)}`}>
-                          {getInitials(p.name)}
-                        </div>
-                        <div className="personnel-meta">
-                          <span className="personnel-name">{p.name}</span>
-                          <span className="personnel-role">{p.role}</span>
-                        </div>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {}} // Controlled via row click
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
       </form>
     </section>
   );
 };
+

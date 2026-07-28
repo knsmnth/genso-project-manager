@@ -3,6 +3,8 @@ export interface Task {
   remarks: string;
   startDate: string;
   endDate: string;
+  degreeOfWork?: string;
+  description?: string;
 }
 
 export interface WorkOrder {
@@ -22,6 +24,12 @@ export interface WorkOrder {
   assigned: string[];
   description: string;
   tasks?: Task[];
+  workTitle?: string;
+  dateReceived?: string;
+  requesterName?: string;
+  requestingOffice?: string;
+  roomNo?: string;
+  isLocked?: boolean;
 }
 
 export interface Person {

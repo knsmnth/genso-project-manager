@@ -66,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         );
       case 'users':
         return (
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
             <circle cx="9" cy="7" r="4" />
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -75,14 +75,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         );
       case 'person':
         return (
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="7" r="4" />
             <path d="M5.5 21a8.5 8.5 0 0 1 13 0" />
           </svg>
         );
       default:
         return (
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
             <line x1="12" y1="9" x2="12" y2="13" />
             <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -132,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="sidebar-footer">
           {installPromptEvent && (
             <button id="install-btn" className="install-app-btn" onClick={handleInstallClick}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
               </svg>
               <span>Install Mobile App</span>
@@ -140,8 +140,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
 
           <button className="btn btn-sidebar-action" onClick={onCreateOrder}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
             </svg>
             <span>Create Work Order</span>
           </button>

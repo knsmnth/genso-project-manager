@@ -52,7 +52,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="view-header-row">
         <div>
           <h1 className="view-main-title">Operational Overview</h1>
-          <p class="view-main-subtitle">Real-time management of facility infrastructure and personnel.</p>
+          <p className="view-main-subtitle">Real-time management of facility infrastructure and personnel.</p>
         </div>
         <div className="view-header-actions">
           <div className="date-badge">
@@ -235,7 +235,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </svg>
                 </div>
                 <div className="team-status-info">
-                  <span class="team-status-name">Electrical Systems</span>
+                  <span className="team-status-name">Electrical Systems</span>
                   <span className="team-status-desc">4 Active Members</span>
                 </div>
                 <span className="badge-status-dot grey">OFF-DUTY</span>
