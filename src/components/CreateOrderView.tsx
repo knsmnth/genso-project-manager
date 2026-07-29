@@ -303,6 +303,7 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
     let isValid = true;
 
     // Check core general info fields
+    if (!code.trim()) { newErrors.code = true; isValid = false; }
     if (!requesterName.trim()) { newErrors.requesterName = true; isValid = false; }
     if (!requestingOffice) { newErrors.requestingOffice = true; isValid = false; }
     if (!assetName) { newErrors.assetName = true; isValid = false; }
@@ -418,14 +419,17 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
               
               {/* Row 1: Work Order Number & Date Received */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div className="modern-field-group">
+                <div className={`modern-field-group ${errors.code ? 'has-error' : ''}`}>
                   <label className="modern-field-label">WORK ORDER NUMBER</label>
                   <input
                     type="text"
+                    id="code"
                     className="modern-input-code"
+                    placeholder="e.g. JR - BHM - 26 - 101"
                     value={code}
-                    readOnly
+                    onChange={(e) => setCode(e.target.value)}
                   />
+                  {errors.code && <span className="error-msg">Work order number is required.</span>}
                 </div>
 
                 <div className="modern-field-group">
