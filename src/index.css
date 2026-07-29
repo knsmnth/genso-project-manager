@@ -2727,31 +2727,84 @@ body {
   width: 100%;
 }
 
-.btn-modern-add-scope {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  padding: 6px 12px;
-  gap: 8px;
+.modern-table-textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  background: #FFFFFF;
+  border: 1px solid #BBCABF;
   border-radius: 4px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  margin-top: 12px;
-  transition: background-color var(--transition-fast);
-}
-
-.btn-modern-add-scope:hover {
-  background: rgba(0, 108, 73, 0.06);
-}
-
-.btn-modern-add-scope-text {
+  padding: 6px 10px;
   font-family: 'Inter', sans-serif;
-  font-weight: 700;
   font-size: 12px;
   line-height: 16px;
-  letter-spacing: 0.36px;
+  color: #0B1C30;
+  outline: none;
+  resize: vertical;
+  white-space: pre-wrap;
+  word-break: break-word;
+  transition: border-color var(--transition-fast);
+}
+
+.modern-table-textarea:focus {
+  border-color: #006C49;
+  box-shadow: 0 0 0 2px rgba(0, 108, 73, 0.15);
+}
+
+.modern-table-textarea.has-error {
+  border-color: #EF4444 !important;
+  background-color: #FEF2F2 !important;
+}
+
+/* Disabled Date Fields for Initial Creation */
+.modern-date-field.disabled {
+  background: #F1F5F9;
+  border-color: #E2E8F0;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.modern-date-field.disabled .modern-date-label {
+  color: #94A3B8;
+}
+
+.modern-date-input:disabled {
+  color: #94A3B8;
+  cursor: not-allowed;
+}
+
+/* Drag and Drop Row Styles */
+.modern-scope-table tr.dragging {
+  opacity: 0.4;
+  background: #F1F5F9;
+}
+
+.modern-scope-table tr.drag-over {
+  border-top: 2px solid #006C49;
+  background: rgba(0, 108, 73, 0.04);
+}
+
+.drag-handle-btn {
+  background: transparent;
+  border: none;
+  color: rgba(187, 202, 191, 0.8);
+  cursor: grab;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.drag-handle-btn:hover {
+  background: #EFF4FF;
   color: #006C49;
 }
+
+.drag-handle-btn:active {
+  cursor: grabbing;
+}
+
 
 

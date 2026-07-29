@@ -9,6 +9,32 @@ interface CreateOrderViewProps {
   onCancel: () => void;
 }
 
+const DEFAULT_OFFICES = [
+  'Building Repair & Maintenance',
+  'Student Housing Repair & Maintenance',
+  'Fabrication Workshop',
+  'Administrative Office',
+  'IT Infrastructure Department'
+];
+
+const DEFAULT_ASSETS = [
+  'Coconut Dorm',
+  'DMath Building',
+  'CoMed Laboratory',
+  'Engineering Hall',
+  'Central Administration'
+];
+
+const DEFAULT_WORK_TYPES = [
+  'Electrical',
+  'Plumbing',
+  'HVAC',
+  'Mechanical',
+  'Carpentry',
+  'Masonry',
+  'General Maintenance'
+];
+
 export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
   editingOrderCode,
   workOrders,
@@ -16,6 +42,34 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
   onSaveOrder,
   onCancel
 }) => {
+  // Dynamic Dropdown Options state (with localStorage persistence)
+  const [officeOptions, setOfficeOptions] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('genso_custom_offices');
+      return saved ? JSON.parse(saved) : DEFAULT_OFFICES;
+    } catch {
+      return DEFAULT_OFFICES;
+    }
+  });
+
+  const [assetOptions, setAssetOptions] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('genso_custom_assets');
+      return saved ? JSON.parse(saved) : DEFAULT_ASSETS;
+    } catch {
+      return DEFAULT_ASSETS;
+    }
+  });
+
+  const [workTypeOptions, setWorkTypeOptions] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('genso_custom_worktypes');
+      return saved ? JSON.parse(saved) : DEFAULT_WORK_TYPES;
+    } catch {
+      return DEFAULT_WORK_TYPES;
+    }
+  });
+
   // General Information form states
   const [code, setCode] = useState('');
   const [dateReceived, setDateReceived] = useState('');
@@ -32,11 +86,15 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
     {
       type: '',
       remarks: '',
-      degreeOfWork: '',
+      degreeOfWork: 'Minor',
       startDate: getTodayString(),
       endDate: getTodayString()
     }
   ]);
+
+  // Drag-and-drop tracking state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Form error validation visual state tracking
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -55,14 +113,32 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
         setDescription(order.description || '');
         setIsLocked(order.isLocked || false);
 
+        // Ensure loaded custom dropdown values are included in options list
+        if (order.requestingOffice && !officeOptions.includes(order.requestingOffice)) {
+          setOfficeOptions((prev) => [...prev, order.requestingOffice]);
+        }
+        if (order.assetName && !assetOptions.includes(order.assetName)) {
+          setAssetOptions((prev) => [...prev, order.assetName]);
+        }
+
         if (order.tasks && order.tasks.length > 0) {
-          setTasks(order.tasks);
+          setTasks(order.tasks.map((t) => ({
+            ...t,
+            degreeOfWork: t.degreeOfWork === 'Major' ? 'Major' : 'Minor'
+          })));
+
+          // Check for any task types not in workTypeOptions
+          order.tasks.forEach((t) => {
+            if (t.type && !workTypeOptions.includes(t.type)) {
+              setWorkTypeOptions((prev) => [...prev, t.type]);
+            }
+          });
         } else {
           setTasks([
             {
               type: order.worktype || '',
               remarks: order.scope || '',
-              degreeOfWork: 'Standard',
+              degreeOfWork: 'Minor',
               startDate: order.startDate || getTodayString(),
               endDate: order.endDate || getTodayString()
             }
@@ -83,7 +159,7 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
         {
           type: '',
           remarks: '',
-          degreeOfWork: '',
+          degreeOfWork: 'Minor',
           startDate: getTodayString(),
           endDate: getTodayString()
         }
@@ -112,13 +188,65 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
     return `JR - BHM - 26 - ${randNum}`;
   }
 
+  // Handle Dynamic "+ Add New..." Option Selection
+  const handleOfficeChange = (val: string) => {
+    if (val === '__ADD_NEW__') {
+      const newName = window.prompt('Enter new Requesting Office name:');
+      if (newName && newName.trim()) {
+        const trimmed = newName.trim();
+        if (!officeOptions.includes(trimmed)) {
+          const updated = [...officeOptions, trimmed];
+          setOfficeOptions(updated);
+          try { localStorage.setItem('genso_custom_offices', JSON.stringify(updated)); } catch {}
+        }
+        setRequestingOffice(trimmed);
+      }
+    } else {
+      setRequestingOffice(val);
+    }
+  };
+
+  const handleAssetChange = (val: string) => {
+    if (val === '__ADD_NEW__') {
+      const newName = window.prompt('Enter new Facility / Building name:');
+      if (newName && newName.trim()) {
+        const trimmed = newName.trim();
+        if (!assetOptions.includes(trimmed)) {
+          const updated = [...assetOptions, trimmed];
+          setAssetOptions(updated);
+          try { localStorage.setItem('genso_custom_assets', JSON.stringify(updated)); } catch {}
+        }
+        setAssetName(trimmed);
+      }
+    } else {
+      setAssetName(val);
+    }
+  };
+
+  const handleWorkTypeChange = (index: number, val: string) => {
+    if (val === '__ADD_NEW__') {
+      const newName = window.prompt('Enter new Work Type:');
+      if (newName && newName.trim()) {
+        const trimmed = newName.trim();
+        if (!workTypeOptions.includes(trimmed)) {
+          const updated = [...workTypeOptions, trimmed];
+          setWorkTypeOptions(updated);
+          try { localStorage.setItem('genso_custom_worktypes', JSON.stringify(updated)); } catch {}
+        }
+        handleTaskFieldChange(index, 'type', trimmed);
+      }
+    } else {
+      handleTaskFieldChange(index, 'type', val);
+    }
+  };
+
   const handleAddTask = () => {
     setTasks([
       ...tasks,
       {
         type: '',
         remarks: '',
-        degreeOfWork: '',
+        degreeOfWork: 'Minor',
         startDate: getTodayString(),
         endDate: getTodayString()
       }
@@ -134,6 +262,38 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
     const newTasks = [...tasks];
     newTasks[index] = { ...newTasks[index], [field]: value };
     setTasks(newTasks);
+  };
+
+  // Drag and Drop Event Handlers
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== dropIndex) {
+      const updated = [...tasks];
+      const [movedTask] = updated.splice(draggedIndex, 1);
+      updated.splice(dropIndex, 0, movedTask);
+      setTasks(updated);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   // Perform form submission
@@ -193,6 +353,8 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
 
     onSaveOrder(payload);
   };
+
+  const isEditing = Boolean(editingOrderCode);
 
   return (
     <section id="view-create-order" className="view-section active create-order-container">
@@ -292,40 +454,38 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
                 {errors.requesterName && <span className="error-msg">Requester name is required.</span>}
               </div>
 
-              {/* Row 3: Requesting Office */}
+              {/* Row 3: Requesting Office (Dynamic Dropdown) */}
               <div className={`modern-field-group ${errors.requestingOffice ? 'has-error' : ''}`}>
                 <label className="modern-field-label">REQUESTING OFFICE</label>
                 <select
                   id="requestingOffice"
                   className="modern-select"
                   value={requestingOffice}
-                  onChange={(e) => setRequestingOffice(e.target.value)}
+                  onChange={(e) => handleOfficeChange(e.target.value)}
                 >
                   <option value="" disabled>Type/Choose Requesting Office</option>
-                  <option value="Building Repair & Maintenance">Building Repair & Maintenance</option>
-                  <option value="Student Housing Repair & Maintenance">Student Housing Repair & Maintenance</option>
-                  <option value="Fabrication Workshop">Fabrication Workshop</option>
-                  <option value="Administrative Office">Administrative Office</option>
-                  <option value="IT Infrastructure Department">IT Infrastructure Department</option>
+                  {officeOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                  <option value="__ADD_NEW__" style={{ fontWeight: 600, color: '#006C49' }}>+ Add New...</option>
                 </select>
                 {errors.requestingOffice && <span className="error-msg">Please select a requesting office.</span>}
               </div>
 
-              {/* Row 4: Facility/Asset */}
+              {/* Row 4: Facility/Asset (Dynamic Dropdown) */}
               <div className={`modern-field-group ${errors.assetName ? 'has-error' : ''}`}>
                 <label className="modern-field-label">FACILITY/ASSET</label>
                 <select
                   id="assetName"
                   className="modern-select"
                   value={assetName}
-                  onChange={(e) => setAssetName(e.target.value)}
+                  onChange={(e) => handleAssetChange(e.target.value)}
                 >
                   <option value="" disabled>Type/Choose Building Name</option>
-                  <option value="Coconut Dorm">Coconut Dorm</option>
-                  <option value="DMath Building">DMath Building</option>
-                  <option value="CoMed Laboratory">CoMed Laboratory</option>
-                  <option value="Engineering Hall">Engineering Hall</option>
-                  <option value="Central Administration">Central Administration</option>
+                  {assetOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                  <option value="__ADD_NEW__" style={{ fontWeight: 600, color: '#006C49' }}>+ Add New...</option>
                 </select>
                 {errors.assetName && <span className="error-msg">Please select a facility/building.</span>}
               </div>
@@ -399,11 +559,22 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
               </thead>
               <tbody>
                 {tasks.map((task, index) => (
-                  <tr key={index}>
+                  <tr
+                    key={index}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`${draggedIndex === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
+                  >
                     {/* Drag Handle Icon */}
                     <td style={{ textAlign: 'center' }}>
-                      <div className="drag-handle" title="Reorder row" style={{ background: 'transparent', color: 'rgba(187, 202, 191, 0.6)', cursor: 'grab' }}>
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                      <div
+                        className="drag-handle-btn"
+                        title="Click & drag to reorder scope"
+                      >
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                           <circle cx="8" cy="6" r="2" />
                           <circle cx="16" cy="6" r="2" />
                           <circle cx="8" cy="12" r="2" />
@@ -414,32 +585,29 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
                       </div>
                     </td>
 
-                    {/* Work Type Select */}
+                    {/* Work Type Select (Dynamic Dropdown) */}
                     <td>
                       <select
                         className={`modern-table-select ${errors[`taskType-${index}`] ? 'has-error' : ''}`}
                         value={task.type}
-                        onChange={(e) => handleTaskFieldChange(index, 'type', e.target.value)}
+                        onChange={(e) => handleWorkTypeChange(index, e.target.value)}
                       >
                         <option value="" disabled>Select Type...</option>
-                        <option value="Electrical">Electrical</option>
-                        <option value="Plumbing">Plumbing</option>
-                        <option value="HVAC">HVAC</option>
-                        <option value="Mechanical">Mechanical</option>
-                        <option value="Carpentry">Carpentry</option>
-                        <option value="Masonry">Masonry</option>
-                        <option value="General Maintenance">General Maintenance</option>
+                        {workTypeOptions.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                        <option value="__ADD_NEW__" style={{ fontWeight: 600, color: '#006C49' }}>+ Add New...</option>
                       </select>
                     </td>
 
-                    {/* Work Description Input */}
+                    {/* Work Description Textarea (Multiline Wrapping) */}
                     <td>
-                      <input
-                        type="text"
-                        className={`modern-table-input ${errors[`taskRemarks-${index}`] ? 'has-error' : ''}`}
-                        placeholder="Scope details..."
+                      <textarea
+                        className={`modern-table-textarea ${errors[`taskRemarks-${index}`] ? 'has-error' : ''}`}
+                        placeholder="Type in Scope of Work Description..."
                         value={task.remarks}
                         onChange={(e) => handleTaskFieldChange(index, 'remarks', e.target.value)}
+                        rows={2}
                       />
                     </td>
 
@@ -470,39 +638,44 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
                       </button>
                     </td>
 
-                    {/* Degree of Work Select */}
+                    {/* Degree of Work Select (Restricted to Minor and Major) */}
                     <td>
                       <select
                         className="modern-table-select"
-                        value={task.degreeOfWork || ''}
+                        value={task.degreeOfWork === 'Major' ? 'Major' : 'Minor'}
                         onChange={(e) => handleTaskFieldChange(index, 'degreeOfWork', e.target.value)}
                       >
-                        <option value="" disabled>Select Degree...</option>
                         <option value="Minor">Minor</option>
-                        <option value="Standard">Standard</option>
                         <option value="Major">Major</option>
-                        <option value="Urgent">Urgent</option>
                       </select>
                     </td>
 
-                    {/* Start and Completion Dates Inputs */}
+                    {/* Start and Completion Dates Inputs (Locked/Disabled during initial Creation) */}
                     <td>
                       <div className="modern-date-input-group">
-                        <div className="modern-date-field">
+                        <div
+                          className={`modern-date-field ${!isEditing ? 'disabled' : ''}`}
+                          title={!isEditing ? "Date started is locked during initial order creation." : "Start date"}
+                        >
                           <span className="modern-date-label">START DATE</span>
                           <input
                             type="date"
                             className="modern-date-input"
                             value={task.startDate || ''}
+                            disabled={!isEditing}
                             onChange={(e) => handleTaskFieldChange(index, 'startDate', e.target.value)}
                           />
                         </div>
-                        <div className="modern-date-field">
+                        <div
+                          className={`modern-date-field ${!isEditing ? 'disabled' : ''}`}
+                          title={!isEditing ? "Date completed is locked during initial order creation." : "Completion date"}
+                        >
                           <span className="modern-date-label">END DATE</span>
                           <input
                             type="date"
                             className="modern-date-input"
                             value={task.endDate || ''}
+                            disabled={!isEditing}
                             onChange={(e) => handleTaskFieldChange(index, 'endDate', e.target.value)}
                           />
                         </div>
@@ -557,5 +730,3 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
     </section>
   );
 };
-
-
