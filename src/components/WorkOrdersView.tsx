@@ -8,6 +8,7 @@ interface WorkOrdersViewProps {
   onEditOrder: (code: string) => void;
   onDeleteOrder: (code: string) => void;
   onCreateOrder: () => void;
+  onNavigateDailyLog?: () => void;
 }
 
 export const WorkOrdersView: React.FC<WorkOrdersViewProps> = ({
@@ -16,7 +17,8 @@ export const WorkOrdersView: React.FC<WorkOrdersViewProps> = ({
   onSelectOrder,
   onEditOrder,
   onDeleteOrder,
-  onCreateOrder
+  onCreateOrder,
+  onNavigateDailyLog
 }) => {
   // Filter and Toggle States
   const [showFilters, setShowFilters] = useState(false);
@@ -128,6 +130,22 @@ export const WorkOrdersView: React.FC<WorkOrdersViewProps> = ({
             </svg>
             <span>Export CSV</span>
           </button>
+          
+          {onNavigateDailyLog && (
+            <button
+              className="btn btn-outline-sm"
+              style={{ backgroundColor: '#EFF4FF', borderColor: '#BBCABF', color: '#006C49', fontWeight: 600 }}
+              onClick={onNavigateDailyLog}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#006C49" strokeWidth="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                <line x1="9" y1="12" x2="15" y2="12" />
+              </svg>
+              <span>Daily Work Log</span>
+            </button>
+          )}
+
           
           <button
             className={`btn btn-outline-sm ${showFilters ? 'active' : ''}`}

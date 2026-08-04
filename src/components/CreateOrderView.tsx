@@ -114,8 +114,9 @@ export const CreateOrderView: React.FC<CreateOrderViewProps> = ({
         setIsLocked(order.isLocked || false);
 
         // Ensure loaded custom dropdown values are included in options list
-        if (order.requestingOffice && !officeOptions.includes(order.requestingOffice)) {
-          setOfficeOptions((prev) => [...prev, order.requestingOffice]);
+        const requestingOffice = order.requestingOffice;
+        if (requestingOffice && !officeOptions.includes(requestingOffice)) {
+          setOfficeOptions((prev) => [...prev, requestingOffice]);
         }
         if (order.assetName && !assetOptions.includes(order.assetName)) {
           setAssetOptions((prev) => [...prev, order.assetName]);

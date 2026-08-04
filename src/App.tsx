@@ -9,6 +9,7 @@ import { DetailsModal } from './components/DetailsModal';
 import { PersonnelView } from './components/PersonnelView';
 import { AttendanceModal } from './components/AttendanceModal';
 import { QuickOnboardView } from './components/QuickOnboardView';
+import { DailyWorkLogView } from './components/DailyWorkLogView';
 import { WorkOrder, Person, Team } from './types';
 
 // Seeding Default mock database items
@@ -279,6 +280,15 @@ export default function App() {
               onEditOrder={handleEditOrder}
               onDeleteOrder={handleDeleteOrder}
               onCreateOrder={handleCreateOrder}
+              onNavigateDailyLog={() => setActiveView('dailyworklog')}
+            />
+          )}
+
+          {activeView === 'dailyworklog' && (
+            <DailyWorkLogView
+              personnel={personnel}
+              workOrders={workOrders}
+              onSelectOrder={handleSelectOrder}
             />
           )}
 
