@@ -10,7 +10,10 @@ import { PersonnelView } from './components/PersonnelView';
 import { AttendanceModal } from './components/AttendanceModal';
 import { QuickOnboardView } from './components/QuickOnboardView';
 import { DailyWorkLogView } from './components/DailyWorkLogView';
-import { WorkOrder, Person, Team } from './types';
+import { getWorkOrders, saveWorkOrderToDb, deleteWorkOrderFromDb } from './services/workOrderService';
+import { getPersonnel, savePersonToDb } from './services/personnelService';
+import { ToastContainer, ToastMessage } from './components/Toast';
+import { CreateTeamModal } from './components/CreateTeamModal';
 
 // Seeding Default mock database items
 const DEFAULT_WORK_ORDERS: WorkOrder[] = [
@@ -80,7 +83,7 @@ const DEFAULT_PERSONNEL: Person[] = [
   { name: 'David Kim', role: 'Masonry Artisan', code: 'MP-6821-M', status: 'Available', id: 'MP-6821-M', attendanceStatus: 'Absent', activeOrder: '—' }
 ];
 
-const WORK_GROUPS: Team[] = [
+const DEFAULT_WORK_GROUPS: Team[] = [
   {
     name: 'Building Repair & Maintenance',
     lead: 'Robert Chen',
@@ -106,11 +109,13 @@ const WORK_GROUPS: Team[] = [
 
 const STORAGE_KEY = 'infra_work_orders';
 const PERSONNEL_STORAGE_KEY = 'infra_personnel';
+const TEAMS_STORAGE_KEY = 'infra_teams';
 
 export default function App() {
   const [activeView, setActiveView] = useState('dashboard');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [personnel, setPersonnel] = useState<Person[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -122,38 +127,57 @@ export default function App() {
   // Attendance Check Modal State
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
 
+  // Create Team Modal State
+  const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
+
   // Edit / Form States
   const [editingOrderCode, setEditingOrderCode] = useState<string | null>(null);
 
-  // Load from local storage
-  useEffect(() => {
-    // Work orders loader
-    const rawOrders = localStorage.getItem(STORAGE_KEY);
-    if (rawOrders) {
-      try {
-        setWorkOrders(JSON.parse(rawOrders));
-      } catch (e) {
-        console.error('Failed to parse cached work orders', e);
-        setWorkOrders(DEFAULT_WORK_ORDERS);
-      }
-    } else {
-      setWorkOrders(DEFAULT_WORK_ORDERS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_WORK_ORDERS));
-    }
+  // Toast notification state
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-    // Personnel loader
-    const rawPersonnel = localStorage.getItem(PERSONNEL_STORAGE_KEY);
-    if (rawPersonnel) {
-      try {
-        setPersonnel(JSON.parse(rawPersonnel));
-      } catch (e) {
-        console.error('Failed to parse cached personnel', e);
-        setPersonnel(DEFAULT_PERSONNEL);
+  const addToast = (message: string, type: 'success' | 'info' | 'warning' | 'error' = 'success') => {
+    const id = Date.now().toString();
+    setToasts((prev) => [...prev, { id, message, type }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // Async loader using Supabase services with local cache fallback
+  useEffect(() => {
+    const initData = async () => {
+      const orders = await getWorkOrders();
+      if (orders.length === 0) {
+        setWorkOrders(DEFAULT_WORK_ORDERS);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_WORK_ORDERS));
+      } else {
+        setWorkOrders(orders);
       }
-    } else {
-      setPersonnel(DEFAULT_PERSONNEL);
-      localStorage.setItem(PERSONNEL_STORAGE_KEY, JSON.stringify(DEFAULT_PERSONNEL));
-    }
+
+      const staff = await getPersonnel();
+      if (staff.length === 0) {
+        setPersonnel(DEFAULT_PERSONNEL);
+        localStorage.setItem(PERSONNEL_STORAGE_KEY, JSON.stringify(DEFAULT_PERSONNEL));
+      } else {
+        setPersonnel(staff);
+      }
+
+      const rawTeams = localStorage.getItem(TEAMS_STORAGE_KEY);
+      if (rawTeams) {
+        try {
+          setTeams(JSON.parse(rawTeams));
+        } catch (e) {
+          setTeams(DEFAULT_WORK_GROUPS);
+        }
+      } else {
+        setTeams(DEFAULT_WORK_GROUPS);
+        localStorage.setItem(TEAMS_STORAGE_KEY, JSON.stringify(DEFAULT_WORK_GROUPS));
+      }
+    };
+
+    initData();
   }, []);
 
   const saveToStorage = (updatedOrders: WorkOrder[]) => {
@@ -172,23 +196,28 @@ export default function App() {
     setIsDetailsModalOpen(false);
   };
 
-  const handleDeleteOrder = (code: string) => {
+  const handleDeleteOrder = async (code: string) => {
     const updated = workOrders.filter((o) => o.code !== code);
     saveToStorage(updated);
+    await deleteWorkOrderFromDb(code);
+    addToast(`Work order ${code} deleted`, 'warning');
     if (selectedOrderCode === code) {
       setIsDetailsModalOpen(false);
       setSelectedOrderCode(null);
     }
   };
 
-  const handleSaveOrder = (data: WorkOrder) => {
+  const handleSaveOrder = async (data: WorkOrder) => {
     let updated: WorkOrder[] = [];
     if (editingOrderCode) {
       updated = workOrders.map((o) => (o.code === editingOrderCode ? data : o));
+      addToast(`Work order ${data.code} updated successfully`);
     } else {
       updated = [data, ...workOrders];
+      addToast(`Work order ${data.code} created successfully`);
     }
     saveToStorage(updated);
+    await saveWorkOrderToDb(data);
     setEditingOrderCode(null);
     setActiveView('workorders');
   };
@@ -201,6 +230,13 @@ export default function App() {
   const handleCancelForm = () => {
     setEditingOrderCode(null);
     setActiveView('workorders');
+  };
+
+  const handleCreateTeam = (newTeam: Team) => {
+    const updatedTeams = [...teams, newTeam];
+    setTeams(updatedTeams);
+    localStorage.setItem(TEAMS_STORAGE_KEY, JSON.stringify(updatedTeams));
+    addToast(`Work Group "${newTeam.name}" created!`);
   };
 
   // Attendance check submissions
@@ -221,14 +257,18 @@ export default function App() {
     });
     setPersonnel(updated);
     localStorage.setItem(PERSONNEL_STORAGE_KEY, JSON.stringify(updated));
+    updated.forEach((person) => savePersonToDb(person));
+    addToast('Attendance roster updated!');
     setIsAttendanceModalOpen(false);
   };
 
   // Onboard registrations
-  const handleCompleteOnboarding = (newPerson: Person) => {
+  const handleCompleteOnboarding = async (newPerson: Person) => {
     const updated = [...personnel, newPerson];
     setPersonnel(updated);
     localStorage.setItem(PERSONNEL_STORAGE_KEY, JSON.stringify(updated));
+    await savePersonToDb(newPerson);
+    addToast(`Personnel ${newPerson.name} onboarded successfully!`);
     setActiveView('personnel');
   };
 
@@ -268,7 +308,7 @@ export default function App() {
               workOrders={workOrders}
               onSelectOrder={handleSelectOrder}
               onViewAll={() => setActiveView('workorders')}
-              teamsCount={WORK_GROUPS.length}
+              teamsCount={teams.length}
             />
           )}
 
@@ -294,9 +334,9 @@ export default function App() {
 
           {activeView === 'teams' && (
             <TeamsView
-              teams={WORK_GROUPS}
+              teams={teams}
               personnel={personnel}
-              onNewGroup={() => alert('New Work Group creation is under development.')}
+              onNewGroup={() => setIsCreateTeamModalOpen(true)}
             />
           )}
 
@@ -327,6 +367,17 @@ export default function App() {
           )}
         </div>
       </main>
+
+      {/* Create Team Modal Overlay */}
+      <CreateTeamModal
+        isOpen={isCreateTeamModalOpen}
+        personnel={personnel}
+        onClose={() => setIsCreateTeamModalOpen(false)}
+        onSaveTeam={handleCreateTeam}
+      />
+
+      {/* Global Toast Container */}
+      <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
       {/* Details Modal Popup Overlay */}
       <DetailsModal

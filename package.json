@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@capacitor/core": "^5.0.0",
+    "@supabase/supabase-js": "^2.112.1",
     "lucide-react": "^1.27.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
