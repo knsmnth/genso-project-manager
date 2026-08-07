@@ -321,18 +321,6 @@
       </div>
     </div>
 
-    <!-- Floating Action Button (FAB) -->
-    <button
-      class="dwl-spec-fab"
-      title="Add New Daily Work Log Task"
-      @click="showAddModal = true"
-    >
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#FFFFFF" stroke-width="3">
-        <line x1="12" y1="5" x2="12" y2="19" />
-        <line x1="5" y1="12" x2="19" y2="12" />
-      </svg>
-    </button>
-
     <!-- SIDE DRAWER 1: REMARKS AND NOTES -->
     <aside v-if="activeDrawer === 'remarks' && selectedRow" class="dwl-drawer dwl-remarks-drawer">
       <div class="dwl-drawer-header">
@@ -414,15 +402,15 @@
             <h4>{{ selectedRow.category || 'General Maintenance' }}</h4>
           </div>
           <div class="dwl-sg-list">
-            <template v-for="name in ['John Doe', 'Jane Smith', 'Robert Wilson', 'Sarah Jenkins']" :key="name">
+            <template v-for="p in personnel" :key="p.name">
               <div
-                v-if="!personnelSearch || name.toLowerCase().includes(personnelSearch.toLowerCase())"
-                :class="['dwl-staff-row', { checked: (selectedRow.assignedPersonnel || []).includes(name) }]"
-                @click="handleTogglePersonnelStaff(name)"
+                v-if="!personnelSearch || p.name.toLowerCase().includes(personnelSearch.toLowerCase())"
+                :class="['dwl-staff-row', { checked: (selectedRow.assignedPersonnel || []).includes(p.name) }]"
+                @click="handleTogglePersonnelStaff(p.name)"
               >
-                <span class="dwl-staff-name">{{ name }}</span>
-                <div :class="['dwl-checkbox', { active: (selectedRow.assignedPersonnel || []).includes(name) }]">
-                  <span v-if="(selectedRow.assignedPersonnel || []).includes(name)">✓</span>
+                <span class="dwl-staff-name">{{ p.name }} ({{ p.role }})</span>
+                <div :class="['dwl-checkbox', { active: (selectedRow.assignedPersonnel || []).includes(p.name) }]">
+                  <span v-if="(selectedRow.assignedPersonnel || []).includes(p.name)">✓</span>
                 </div>
               </div>
             </template>
@@ -431,7 +419,7 @@
 
         <div class="dwl-staff-group" style="margin-top: 20px">
           <div class="dwl-sg-header">
-            <h4>Other Personnels</h4>
+            <h4>Other Roster Personnel</h4>
           </div>
           <div class="dwl-sg-list">
             <template v-for="name in OTHER_EMPLOYEES_DEFAULT" :key="name">
@@ -509,128 +497,11 @@
         </button>
       </div>
     </aside>
-
-    <!-- Add New Entry Modal -->
-    <div v-if="showAddModal" class="modal-overlay">
-      <div class="modal-content" style="max-width: 520px">
-        <div class="modal-header">
-          <h3 class="modal-title">Add Daily Work Log Entry</h3>
-          <button class="modal-close" @click="showAddModal = false">&times;</button>
-        </div>
-        <form @submit.prevent="handleAddLogSubmit">
-          <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px">
-            <div class="form-group">
-              <label class="form-label">Facility / Office Group Title</label>
-              <input
-                type="text"
-                class="form-control"
-                placeholder="e.g. PHYSICAL PLANT OFFICE"
-                v-model="newGroupTitle"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Group Subtitle</label>
-              <input
-                type="text"
-                class="form-control"
-                placeholder="e.g. Air Conditioning & Ventilation Maintenance"
-                v-model="newGroupSubTitle"
-              />
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
-              <div class="form-group">
-                <label class="form-label">Work Order Number</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="newWONumber"
-                />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Category</label>
-                <select class="form-control" v-model="newCategory">
-                  <option value="General Maintenance">General Maintenance</option>
-                  <option value="Civil Engineering">Civil Engineering</option>
-                  <option value="Electrical">Electrical</option>
-                  <option value="Plumbing">Plumbing</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
-              <div class="form-group">
-                <label class="form-label">Work Type</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  placeholder="e.g. HVAC, Electric, Pipework"
-                  v-model="newWorkType"
-                />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Assigned Lead</label>
-                <select class="form-control" v-model="newLead">
-                  <option value="Leadman J. Carter">Leadman J. Carter</option>
-                  <option value="Foreman R. Lee">Foreman R. Lee</option>
-                  <option value="Foreman M. Garcia">Foreman M. Garcia</option>
-                  <option value="Robert Chen">Robert Chen</option>
-                  <option value="Sarah Jenkins">Sarah Jenkins</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Task Description</label>
-              <textarea
-                class="form-control"
-                rows="2"
-                placeholder="Type task details..."
-                v-model="newDesc"
-                required
-              />
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px">
-              <div class="form-group">
-                <label class="form-label">Start Date</label>
-                <input type="date" class="form-control" v-model="newStartDate" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Completion</label>
-                <input type="date" class="form-control" v-model="newCompDate" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Personnel</label>
-                <input type="number" class="form-control" v-model.number="newPersonnelCount" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Inspections</label>
-                <input type="number" class="form-control" v-model.number="newInspectionsCount" />
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px">
-            <button type="button" class="btn btn-outline" @click="showAddModal = false">
-              Cancel
-            </button>
-            <button type="submit" class="btn btn-primary">
-              Save Task Log
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { DailyWorkLogEntry, Person, WorkOrder, RemarkNote, EquipmentItem } from '../types';
 
 const props = withDefaults(
@@ -646,7 +517,6 @@ const props = withDefaults(
 
 defineEmits<{
   (e: 'selectOrder', code: string): void;
-  (e: 'createTask'): void;
 }>();
 
 const DEFAULT_IMAGE_SPEC_LOGS: DailyWorkLogEntry[] = [
@@ -654,28 +524,23 @@ const DEFAULT_IMAGE_SPEC_LOGS: DailyWorkLogEntry[] = [
     id: 'log-spec-1',
     groupTitle: 'PHYSICAL PLANT OFFICE',
     groupSubTitle: 'Air Conditioning & Ventilation Maintenance',
-    workOrderNumber: 'WO-2023-0492',
+    workOrderNumber: 'WO-8492',
     category: 'General Maintenance',
     workType: 'HVAC',
     description: 'Check and replace air filters in Building A. Calibrate thermostats.',
-    startDate: '2023-10-24',
-    completionDate: '2023-10-25',
-    assignedLead: 'Leadman J. Carter',
-    personnelCount: 5,
-    assignedPersonnel: ['John Doe', 'Jane Smith', 'Robert Wilson', 'Sarah Jenkins', 'Elena Rodriguez'],
+    startDate: '2024-08-24',
+    completionDate: '2024-08-26',
+    assignedLead: 'Robert Chen',
+    personnelCount: 4,
+    assignedPersonnel: ['Robert Chen', 'Sarah Jenkins', 'Marcus Thorne', 'Elena Rodriguez'],
     inspectionsCount: 2,
     hasComments: true,
     isOnHold: false,
     remarksList: [
       {
         id: 'rem-1',
-        timestamp: 'Oct 24, 2023 • 09:15 AM',
-        text: 'Building A air filters were heavily clogged. Recommended increasing inspection frequency to bi-monthly during pollen season.'
-      },
-      {
-        id: 'rem-2',
-        timestamp: 'Oct 24, 2023 • 11:30 AM',
-        text: "Condenser fan motor in AC-04 is showing signs of bearing wear. Part ordered for next week's maintenance cycle."
+        timestamp: 'Aug 24, 2024 • 09:15 AM',
+        text: 'Building A air filters were heavily clogged. Recommended increasing inspection frequency during pollen season.'
       }
     ],
     equipmentList: [
@@ -683,74 +548,34 @@ const DEFAULT_IMAGE_SPEC_LOGS: DailyWorkLogEntry[] = [
         id: 'eq-1',
         name: 'Industrial Air Filter Kit',
         quantity: '12 Units',
-        borrower: 'Leadman J. Carter',
+        borrower: 'Robert Chen',
         checked: true
-      },
-      {
-        id: 'eq-2',
-        name: 'Digital Manometer',
-        quantity: '1 Unit',
-        borrower: 'Leadman J. Carter',
-        checked: false
       }
     ]
   },
   {
     id: 'log-spec-2',
-    groupTitle: 'PHYSICAL PLANT OFFICE',
-    groupSubTitle: 'Air Conditioning & Ventilation Maintenance',
-    workOrderNumber: 'WO-2023-0492',
-    category: 'General Maintenance',
-    workType: 'Electric',
-    description: 'Testing condenser fan motors and replacing worn wiring in unit AC-04.',
-    startDate: '2023-10-24',
-    completionDate: '2023-10-24',
-    assignedLead: 'Foreman R. Lee',
+    groupTitle: 'STUDENT HOUSING DORM',
+    groupSubTitle: 'Plumbing & Waterproofing Repair',
+    workOrderNumber: 'WO-9104',
+    category: 'Plumbing & Repairs',
+    workType: 'Plumbing',
+    description: 'Waterproofing repair on cracks, replace sealing membranes, check drainage pipes.',
+    startDate: '2024-08-25',
+    completionDate: '2024-08-28',
+    assignedLead: 'Sarah Jenkins',
     personnelCount: 3,
-    assignedPersonnel: ['Robert Wilson', 'Sarah Jenkins', 'David Kim'],
-    inspectionsCount: 2,
+    assignedPersonnel: ['Sarah Jenkins', 'John Doe', 'Alice Williams'],
+    inspectionsCount: 1,
     hasComments: false,
     isOnHold: false,
     remarksList: [],
     equipmentList: [
       {
-        id: 'eq-3',
-        name: 'Multimeter & Wire Crimper',
-        quantity: '2 Sets',
-        borrower: 'Foreman R. Lee',
-        checked: true
-      }
-    ]
-  },
-  {
-    id: 'log-spec-3',
-    groupTitle: 'RESIDENCE HALL B',
-    groupSubTitle: 'Plumbing Infrastructure Overhaul',
-    workOrderNumber: 'WO-2023-0511',
-    category: 'Civil Engineering',
-    workType: 'Pipework',
-    description: 'Repairing main leak in floor 3 riser. Pressure testing valves.',
-    startDate: '2023-10-24',
-    completionDate: '2023-10-26',
-    assignedLead: 'Foreman M. Garcia',
-    personnelCount: 4,
-    assignedPersonnel: ['Michael Chen', 'Emily Davis', 'David Miller', 'James Wilson'],
-    inspectionsCount: 1,
-    hasComments: true,
-    isOnHold: false,
-    remarksList: [
-      {
-        id: 'rem-3',
-        timestamp: 'Oct 24, 2023 • 02:45 PM',
-        text: 'Main riser leak in Residence Hall B was more extensive than initially reported. Required additional copper fittings from central stock.'
-      }
-    ],
-    equipmentList: [
-      {
-        id: 'eq-4',
-        name: 'Hydraulic Pipe Cutter & Welder',
-        quantity: '1 Set',
-        borrower: 'Foreman M. Garcia',
+        id: 'eq-2',
+        name: 'Hydraulic Pipe Sealer',
+        quantity: '1 Unit',
+        borrower: 'Sarah Jenkins',
         checked: true
       }
     ]
@@ -773,40 +598,101 @@ const LOGS_STORAGE_KEY_V3 = 'infra_daily_work_logs_v3';
 
 const logs = ref<DailyWorkLogEntry[]>([]);
 const searchQuery = ref('');
-const selectedDate = ref('2023-10-24');
+const selectedDate = ref('2024-08-24');
 const collapsedGroups = ref<Record<string, boolean>>({});
 const saveStatusText = ref('Last auto-saved: 14:32:05 PM');
-const showAddModal = ref(false);
 
 const activeDrawer = ref<'remarks' | 'personnel' | 'equipment' | null>(null);
 const selectedRowId = ref<string | null>(null);
 const personnelSearch = ref('');
 
-const newGroupTitle = ref('PHYSICAL PLANT OFFICE');
-const newGroupSubTitle = ref('General Facility Maintenance');
-const newWONumber = ref('WO-2023-0899');
-const newCategory = ref('General Maintenance');
-const newWorkType = ref('HVAC');
-const newDesc = ref('');
-const newStartDate = ref('2023-10-24');
-const newCompDate = ref('2023-10-25');
-const newLead = ref('Leadman J. Carter');
-const newPersonnelCount = ref(3);
-const newInspectionsCount = ref(1);
-
-onMounted(() => {
-  const cached = localStorage.getItem(LOGS_STORAGE_KEY_V3);
-  if (cached) {
-    try {
-      logs.value = JSON.parse(cached);
-    } catch {
-      logs.value = DEFAULT_IMAGE_SPEC_LOGS;
+const computeLogsFromWorkOrders = (orders: WorkOrder[]): DailyWorkLogEntry[] => {
+  const savedOverrides: Record<string, Partial<DailyWorkLogEntry>> = {};
+  try {
+    const cached = localStorage.getItem(LOGS_STORAGE_KEY_V3);
+    if (cached) {
+      const parsed: DailyWorkLogEntry[] = JSON.parse(cached);
+      parsed.forEach((item) => {
+        savedOverrides[item.id] = {
+          remarksList: item.remarksList,
+          equipmentList: item.equipmentList,
+          assignedPersonnel: item.assignedPersonnel,
+          personnelCount: item.personnelCount,
+          assignedLead: item.assignedLead,
+          inspectionsCount: item.inspectionsCount,
+          isOnHold: item.isOnHold,
+          hasComments: item.hasComments,
+          startDate: item.startDate,
+          completionDate: item.completionDate,
+          workType: item.workType,
+          description: item.description,
+        };
+      });
     }
-  } else {
-    logs.value = DEFAULT_IMAGE_SPEC_LOGS;
-    localStorage.setItem(LOGS_STORAGE_KEY_V3, JSON.stringify(DEFAULT_IMAGE_SPEC_LOGS));
+  } catch {}
+
+  if (!orders || orders.length === 0) {
+    return DEFAULT_IMAGE_SPEC_LOGS;
   }
-});
+
+  const result: DailyWorkLogEntry[] = [];
+
+  orders.forEach((order) => {
+    const taskList =
+      order.tasks && order.tasks.length > 0
+        ? order.tasks
+        : [
+            {
+              type: order.worktype || 'General',
+              remarks: order.scope || order.description || 'General Maintenance Scope',
+              startDate: order.startDate || '2024-08-24',
+              endDate: order.endDate || '2024-08-26'
+            }
+          ];
+
+    taskList.forEach((task, idx) => {
+      const logId = `log-${order.code}-${idx}`;
+      const override = savedOverrides[logId] || {};
+
+      const assignedStaff =
+        override.assignedPersonnel ||
+        (order.assigned && order.assigned.length > 0 ? order.assigned : [order.foreman || 'Robert Chen']);
+
+      result.push({
+        id: logId,
+        groupTitle: (order.assetName || 'FACILITY OFFICE').toUpperCase(),
+        groupSubTitle: order.requestingOffice || order.workTitle || 'Facility Maintenance & Repair',
+        workOrderNumber: order.code,
+        category: order.workgroup || 'General Maintenance',
+        workType: override.workType || task.type || order.worktype || 'HVAC',
+        description: override.description || task.remarks || order.scope || order.description || 'Facility Scope Task',
+        startDate: override.startDate || task.startDate || order.startDate || '2024-08-24',
+        completionDate: override.completionDate || task.endDate || order.endDate || '2024-08-26',
+        assignedLead: override.assignedLead || order.foreman || 'Robert Chen',
+        personnelCount: assignedStaff.length,
+        assignedPersonnel: assignedStaff,
+        inspectionsCount: override.inspectionsCount !== undefined ? override.inspectionsCount : 1,
+        hasComments:
+          override.hasComments !== undefined
+            ? override.hasComments
+            : Boolean(override.remarksList && override.remarksList.length > 0),
+        isOnHold: override.isOnHold || false,
+        remarksList: override.remarksList || [],
+        equipmentList: override.equipmentList || []
+      });
+    });
+  });
+
+  return result;
+};
+
+watch(
+  () => props.workOrders,
+  (newOrders) => {
+    logs.value = computeLogsFromWorkOrders(newOrders || []);
+  },
+  { immediate: true, deep: true }
+);
 
 const saveLogs = (updated: DailyWorkLogEntry[]) => {
   logs.value = updated;
@@ -968,7 +854,9 @@ const handleExportPDF = () => {
       <h1>DAILY WORK LOG REPORT</h1>
       <p><strong>Date:</strong> ${selectedDate.value} | <strong>Exported:</strong> ${new Date().toLocaleString()}</p>
       <hr />
-      ${logs.value.map(log => `
+      ${logs.value
+        .map(
+          (log) => `
         <div class="section">
           <div class="header">${log.groupTitle} - ${log.workOrderNumber} (${log.category})</div>
           <div class="row">
@@ -981,26 +869,36 @@ const handleExportPDF = () => {
               <strong>Assigned Staff:</strong> ${(log.assignedPersonnel || []).join(', ') || 'None'}
             </div>
 
-            ${(log.equipmentList || []).length > 0 ? `
+            ${
+              (log.equipmentList || []).length > 0
+                ? `
               <div class="box">
                 <strong>Equipment Used:</strong>
                 <ul>
-                  ${log.equipmentList?.map(e => `<li>${e.name} (${e.quantity}) - Borrower: ${e.borrower} ${e.checked ? '[Checked]' : ''}</li>`).join('')}
+                  ${log.equipmentList?.map((e) => `<li>${e.name} (${e.quantity}) - Borrower: ${e.borrower} ${e.checked ? '[Checked]' : ''}</li>`).join('')}
                 </ul>
               </div>
-            ` : ''}
+            `
+                : ''
+            }
 
-            ${(log.remarksList || []).length > 0 ? `
+            ${
+              (log.remarksList || []).length > 0
+                ? `
               <div class="box">
                 <strong>Remarks & Notes History:</strong>
                 <ul>
-                  ${log.remarksList?.map(r => `<li><em>${r.timestamp}:</em> ${r.text}</li>`).join('')}
+                  ${log.remarksList?.map((r) => `<li><em>${r.timestamp}:</em> ${r.text}</li>`).join('')}
                 </ul>
               </div>
-            ` : ''}
+            `
+                : ''
+            }
           </div>
         </div>
-      `).join('')}
+      `
+        )
+        .join('')}
       <button onclick="window.print()" style="padding:10px 20px; background:#006C49; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Print / Save as PDF</button>
     </body>
     </html>
@@ -1008,34 +906,6 @@ const handleExportPDF = () => {
 
   printWindow.document.write(htmlContent);
   printWindow.document.close();
-};
-
-const handleAddLogSubmit = () => {
-  if (!newDesc.value.trim()) return;
-
-  const newEntry: DailyWorkLogEntry = {
-    id: `log-spec-${Date.now()}`,
-    groupTitle: newGroupTitle.value.toUpperCase(),
-    groupSubTitle: newGroupSubTitle.value,
-    workOrderNumber: newWONumber.value,
-    category: newCategory.value,
-    workType: newWorkType.value,
-    description: newDesc.value,
-    startDate: newStartDate.value,
-    completionDate: newCompDate.value,
-    assignedLead: newLead.value,
-    personnelCount: Number(newPersonnelCount.value) || 1,
-    assignedPersonnel: [newLead.value],
-    inspectionsCount: Number(newInspectionsCount.value) || 1,
-    hasComments: false,
-    isOnHold: false,
-    remarksList: [],
-    equipmentList: []
-  };
-
-  saveLogs([...logs.value, newEntry]);
-  showAddModal.value = false;
-  newDesc.value = '';
 };
 
 const filteredLogs = computed(() => {
@@ -1054,7 +924,7 @@ const filteredLogs = computed(() => {
 
 const groupsMap = computed(() => {
   return filteredLogs.value.reduce((acc, log) => {
-    const gTitle = log.groupTitle || 'PHYSICAL PLANT OFFICE';
+    const gTitle = log.groupTitle || 'FACILITY OFFICE';
     if (!acc[gTitle]) acc[gTitle] = [];
     acc[gTitle].push(log);
     return acc;
