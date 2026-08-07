@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
   base: './',
-  plugins: [react()],
+  plugins: [vue()],
   server: {
     host: true, // Exposes Vite dev server to the local network (useful for mobile testing)
     port: 3000
