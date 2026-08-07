@@ -71,28 +71,28 @@
     <div class="dwl-spec-content">
       <!-- Table Column Headers Bar -->
       <div class="dwl-spec-th-bar">
-        <div class="dwl-spec-th-cell" style="flex: 1; min-width: 470px; padding-left: 40px">
+        <div class="dwl-spec-th-cell" style="flex: 1; min-width: 560px; padding-left: 36px">
           WORK REQUEST INFORMATION
         </div>
-        <div class="dwl-spec-th-cell" style="width: 130px; justify-content: center">
+        <div class="dwl-spec-th-cell" style="width: 120px; justify-content: center">
           REMARKS / ON HOLD
         </div>
-        <div class="dwl-spec-th-cell" style="width: 120px; justify-content: center">
+        <div class="dwl-spec-th-cell" style="width: 135px; justify-content: center">
           START DATE
         </div>
-        <div class="dwl-spec-th-cell" style="width: 120px; justify-content: center">
+        <div class="dwl-spec-th-cell" style="width: 135px; justify-content: center">
           COMPLETION DATE
         </div>
         <div class="dwl-spec-th-cell" style="width: 190px">
           WORK ASSIGNMENT
         </div>
-        <div class="dwl-spec-th-cell" style="width: 90px; justify-content: center">
+        <div class="dwl-spec-th-cell" style="width: 100px; justify-content: center">
           PERSONNEL
         </div>
-        <div class="dwl-spec-th-cell" style="width: 70px; justify-content: center">
+        <div class="dwl-spec-th-cell" style="width: 80px; justify-content: center">
           TOOLS
         </div>
-        <div class="dwl-spec-th-cell" style="width: 90px; justify-content: center">
+        <div class="dwl-spec-th-cell" style="width: 100px; justify-content: center">
           INSPECTIONS
         </div>
       </div>

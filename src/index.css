@@ -3371,8 +3371,7 @@ body {
   background: linear-gradient(0deg, #F8F9FF, #F8F9FF), #FFFFFF;
   min-height: 100vh;
   width: 100%;
-  max-width: 1440px;
-  margin: 0 auto;
+  margin: 0;
   position: relative;
   padding-bottom: 80px;
 }
@@ -3382,9 +3381,9 @@ body {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 24px;
+  padding: 14px 28px;
   width: 100%;
-  height: 64px;
+  min-height: 64px;
   background: #FFFFFF;
   border-bottom: 1px solid #BBCABF;
   box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
@@ -3420,11 +3419,11 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 6px 12px;
+  padding: 6px 14px;
   gap: 8px;
   background: #EFF4FF;
-  border-radius: 6px;
-  height: 34px;
+  border-radius: 8px;
+  height: 38px;
 }
 
 .dwl-spec-date-input {
@@ -3434,7 +3433,7 @@ body {
   font-weight: 600;
   font-size: 14px;
   color: #0B1C30;
-  width: 105px;
+  width: 110px;
   outline: none;
 }
 
@@ -3450,9 +3449,9 @@ body {
   flex-direction: row;
   align-items: center;
   padding: 6px 14px;
-  gap: 8px;
-  width: 240px;
-  height: 34px;
+  gap: 10px;
+  width: 280px;
+  height: 38px;
   background: #EFF4FF;
   border: 1px solid #BBCABF;
   border-radius: 14px;
@@ -3473,8 +3472,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 12px;
   border: 1px solid rgba(187, 202, 191, 0.4);
   background: #FFFFFF;
@@ -3508,8 +3507,8 @@ body {
 }
 
 .dwl-spec-avatar {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   background: #EFF4FF;
   border: 1px solid #BBCABF;
   border-radius: 10px;
@@ -3529,9 +3528,10 @@ body {
 .dwl-spec-content {
   display: flex;
   flex-direction: column;
-  padding: 24px;
-  gap: 20px;
+  padding: 24px 32px;
+  gap: 24px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 /* Table Header Row */
@@ -3539,10 +3539,11 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 0 16px 12px;
-  gap: 16px;
+  padding: 0 20px 14px;
+  gap: 20px;
   width: 100%;
   border-bottom: 1px solid #BBCABF;
+  box-sizing: border-box;
 }
 
 .dwl-spec-th-cell {
@@ -3564,10 +3565,10 @@ body {
   width: 100%;
   background: #FFFFFF;
   border: 1px solid #BBCABF;
-  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .dwl-spec-gh {
@@ -3575,8 +3576,8 @@ body {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  gap: 16px;
+  padding: 18px 24px;
+  gap: 20px;
   background: #EFF4FF;
   border-bottom: 1px solid rgba(187, 202, 191, 0.4);
 }
@@ -3636,7 +3637,7 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
 }
 
 .dwl-spec-wo-info {
@@ -3668,10 +3669,10 @@ body {
   padding: 6px 14px;
   gap: 10px;
   min-width: 175px;
-  height: 34px;
+  height: 36px;
   background: #FFFFFF;
   border: 1px solid #BBCABF;
-  border-radius: 4px;
+  border-radius: 6px;
   font-family: 'Inter', sans-serif;
   font-weight: 500;
   font-size: 12px;
@@ -3688,15 +3689,16 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 16px 20px;
-  gap: 16px;
+  padding: 20px 24px;
+  gap: 20px;
   width: 100%;
   border-top: 1px solid rgba(187, 202, 191, 0.4);
   transition: background-color var(--transition-fast);
+  box-sizing: border-box;
 }
 
 .dwl-spec-row:hover {
-  background: rgba(239, 244, 255, 0.25);
+  background: rgba(239, 244, 255, 0.35);
 }
 
 .dwl-spec-row-drag {
@@ -3712,13 +3714,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 150px;
-  min-width: 130px;
+  width: 160px;
+  min-width: 140px;
   height: 48px;
   background: #FFFFFF;
   border: 1px solid #BBCABF;
   border-radius: 8px;
-  padding: 0 12px;
+  padding: 0 14px;
   flex-shrink: 0;
 }
 
@@ -3736,7 +3738,7 @@ body {
 
 .dwl-spec-desc-box {
   flex: 1;
-  min-width: 320px;
+  min-width: 400px;
   display: flex;
   align-items: center;
 }
@@ -3768,19 +3770,20 @@ body {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  width: 130px;
+  gap: 12px;
+  width: 120px;
+  flex-shrink: 0;
 }
 
 .dwl-spec-icon-btn {
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: background-color var(--transition-fast);
 }
 
@@ -3789,18 +3792,19 @@ body {
 }
 
 .dwl-spec-date-cell {
-  width: 120px;
+  width: 135px;
   display: flex;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .dwl-spec-date-pill-input {
   width: 100%;
-  height: 38px;
-  padding: 6px 10px;
+  height: 42px;
+  padding: 6px 12px;
   background: #FFFFFF;
-  border: 1px solid rgba(187, 202, 191, 0.6);
-  border-radius: 4px;
+  border: 1px solid #BBCABF;
+  border-radius: 8px;
   font-family: 'Inter', sans-serif;
   font-weight: 500;
   font-size: 13px;
@@ -3811,15 +3815,16 @@ body {
 
 .dwl-spec-assignment-cell {
   width: 190px;
+  flex-shrink: 0;
 }
 
 .dwl-spec-lead-select {
   width: 100%;
-  height: 38px;
-  padding: 6px 10px;
+  height: 42px;
+  padding: 6px 12px;
   background: #FFFFFF;
-  border: 1px solid rgba(187, 202, 191, 0.6);
-  border-radius: 4px;
+  border: 1px solid #BBCABF;
+  border-radius: 8px;
   font-family: 'Inter', sans-serif;
   font-weight: 500;
   font-size: 13px;
@@ -3832,11 +3837,17 @@ body {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
+  height: 42px;
   font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: #0B1C30;
+  background: #FFFFFF;
+  border: 1px solid #BBCABF;
+  border-radius: 8px;
+  padding: 0 10px;
+  flex-shrink: 0;
 }
 
 .dwl-spec-num-input {
