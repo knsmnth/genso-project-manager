@@ -71,7 +71,7 @@
     <div class="dwl-spec-content">
       <!-- Table Column Headers Bar -->
       <div class="dwl-spec-th-bar">
-        <div class="dwl-spec-th-cell" style="width: 380px; padding-left: 40px">
+        <div class="dwl-spec-th-cell" style="flex: 1; min-width: 470px; padding-left: 40px">
           WORK REQUEST INFORMATION
         </div>
         <div class="dwl-spec-th-cell" style="width: 130px; justify-content: center">

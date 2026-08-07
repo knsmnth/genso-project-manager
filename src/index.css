@@ -3712,12 +3712,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 90px;
-  height: 44px;
+  width: 150px;
+  min-width: 130px;
+  height: 48px;
   background: #FFFFFF;
   border: 1px solid #BBCABF;
-  border-radius: 6px;
-  padding: 0 10px;
+  border-radius: 8px;
+  padding: 0 12px;
+  flex-shrink: 0;
 }
 
 .dwl-spec-worktype-input {
@@ -3734,24 +3736,31 @@ body {
 
 .dwl-spec-desc-box {
   flex: 1;
+  min-width: 320px;
   display: flex;
   align-items: center;
 }
 
 .dwl-spec-desc-textarea {
   width: 100%;
-  min-height: 44px;
-  padding: 8px 12px;
+  min-height: 52px;
+  padding: 10px 14px;
   background: #FFFFFF;
-  border: 1px dashed #BBCABF;
-  border-radius: 6px;
+  border: 1px solid #BBCABF;
+  border-radius: 8px;
   font-family: 'Inter', sans-serif;
   font-weight: 400;
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 13px;
+  line-height: 1.4;
   color: #0B1C30;
   outline: none;
   resize: vertical;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dwl-spec-desc-textarea:focus {
+  border-color: #006C49;
+  box-shadow: 0 0 0 3px rgba(0, 108, 73, 0.1);
 }
 
 .dwl-spec-icons-cell {
