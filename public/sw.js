@@ -41,6 +41,15 @@ self.addEventListener('activate', (e) => {
 
 // Fetch Event - Serve Cached Items if Offline
 self.addEventListener('fetch', (e) => {
+  // Only handle GET requests and same-origin requests
+  if (e.request.method !== 'GET') return;
+  
+  const url = new URL(e.request.url);
+  // Do not intercept backend API calls or cross-origin requests
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api')) {
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request)
       .then((cachedResponse) => {
@@ -50,10 +59,11 @@ self.addEventListener('fetch', (e) => {
         
         // Fetch from network as fallback
         return fetch(e.request).catch(() => {
-          // If offline and request is for page, return cached index
+          // If offline and request is for page navigation, return cached index
           if (e.request.mode === 'navigate') {
             return caches.match('/index.html');
           }
+          return new Response('Network error occurred', { status: 503, statusText: 'Service Unavailable' });
         });
       })
   );
