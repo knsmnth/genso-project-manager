@@ -29,3 +29,8 @@ captures/
 # OS Metadata
 .DS_Store
 Thumbs.db
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
