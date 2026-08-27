@@ -42,237 +42,11 @@
 
     <!-- Main Page Content Area -->
     <div class="dwl-spec-content">
-      <!-- Table Column Headers Bar -->
-      <div class="dwl-spec-th-bar">
-        <div class="dwl-spec-th-cell" style="flex: 1; min-width: 200px; padding-left: 28px">
-          WORK REQUEST INFORMATION
-        </div>
-        <div class="dwl-spec-th-cell" style="width: 70px; justify-content: center">
-          REMARKS
-        </div>
-        <div class="dwl-spec-th-cell" style="width: 110px; justify-content: center">
-          START DATE
-        </div>
-        <div class="dwl-spec-th-cell" style="width: 110px; justify-content: center">
-          COMPLETION DATE
-        </div>
-        <div class="dwl-spec-th-cell" style="width: 130px">
-          WORK ASSIGNMENT
-        </div>
-        <div class="dwl-spec-th-cell" style="width: 60px; justify-content: center">
-          PERSONNEL
-        </div>
-        <div class="dwl-spec-th-cell" style="width: 50px; justify-content: center">
-          TOOLS
-        </div>
-        <div class="dwl-spec-th-cell" style="width: 60px; justify-content: center">
-          INSPECTIONS
-        </div>
-      </div>
+      <!-- Top Save / Export Action Bar -->
+      <div class="dwl-spec-top-bar">
+        <span class="dwl-spec-timestamp">{{ saveStatusText }}</span>
 
-      <!-- Group Section Cards -->
-      <div v-if="Object.keys(groupsMap).length === 0" class="dwl-spec-empty">
-        <p>No matching daily work log entries found.</p>
-      </div>
-      <template v-else>
-        <div v-for="(items, groupTitle) in groupsMap" :key="groupTitle" class="dwl-spec-group-card">
-          <!-- Group Header -->
-          <div class="dwl-spec-gh">
-            <div class="dwl-spec-gh-left">
-              <span class="dwl-spec-drag-grid" title="Drag to reorder section">
-                :::
-              </span>
-              <button
-                class="dwl-spec-gh-toggle"
-                @click="handleToggleGroup(String(groupTitle))"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="14"
-                  height="14"
-                  fill="none"
-                  stroke="#6C7A71"
-                  stroke-width="2.5"
-                  :style="{
-                    transform: collapsedGroups[groupTitle] ? 'rotate(-90deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s'
-                  }"
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-
-              <div class="dwl-spec-gh-text">
-                <h3 class="dwl-spec-gh-title">{{ groupTitle }}</h3>
-                <span class="dwl-spec-gh-sub">{{ items[0]?.groupSubTitle || 'Maintenance Overview' }}</span>
-              </div>
-            </div>
-
-            <div class="dwl-spec-gh-right">
-              <div class="dwl-spec-wo-info">
-                <span class="dwl-spec-wo-label">Work Order Number</span>
-                <span class="dwl-spec-wo-val">{{ items[0]?.workOrderNumber || 'WO-2023-0000' }}</span>
-              </div>
-
-              <div class="dwl-spec-cat-dropdown">
-                <span>{{ items[0]?.category || 'General Maintenance' }}</span>
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#6C7A71" stroke-width="2.5">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <!-- Group Rows -->
-          <div v-if="!collapsedGroups[groupTitle]" class="dwl-spec-rows">
-            <div v-for="row in items" :key="row.id" class="dwl-spec-row">
-              <div class="dwl-spec-row-drag" title="Drag row">::</div>
-
-              <!-- Work Type Box -->
-              <div class="dwl-spec-worktype-box">
-                <input
-                  type="text"
-                  class="dwl-spec-worktype-input"
-                  :value="row.workType"
-                  @change="handleUpdateField(row.id, 'workType', ($event.target as HTMLInputElement).value)"
-                />
-              </div>
-
-              <!-- Task Description Textarea -->
-              <div class="dwl-spec-desc-box">
-                <textarea
-                  class="dwl-spec-desc-textarea"
-                  :value="row.description"
-                  @change="handleUpdateField(row.id, 'description', ($event.target as HTMLTextAreaElement).value)"
-                  rows="2"
-                />
-              </div>
-
-              <!-- Icons -->
-              <div class="dwl-spec-icons-cell">
-                <button
-                  :class="['dwl-spec-icon-btn', { 'has-data-green': (row.remarksList && row.remarksList.length > 0) || row.hasComments }]"
-                  @click="handleOpenDrawer('remarks', row.id)"
-                  title="Open Remarks & Notes Drawer"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="18"
-                    height="18"
-                    :fill="(row.remarksList && row.remarksList.length > 0) || row.hasComments ? '#10B981' : 'none'"
-                    :stroke="(row.remarksList && row.remarksList.length > 0) || row.hasComments ? '#006C49' : '#6C7A71'"
-                    stroke-width="1.8"
-                  >
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                </button>
-
-                <button
-                  :class="['dwl-spec-icon-btn', { 'is-on-hold': row.isOnHold }]"
-                  @click="handleToggleOnHold(row.id)"
-                  title="Toggle On Hold"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="18"
-                    height="18"
-                    :fill="row.isOnHold ? '#BA1A1A' : 'none'"
-                    :stroke="row.isOnHold ? '#BA1A1A' : '#6C7A71'"
-                    stroke-width="2"
-                  >
-                    <circle cx="12" cy="12" r="8" />
-                  </svg>
-                </button>
-              </div>
-
-              <!-- Dates -->
-              <div class="dwl-spec-date-cell">
-                <input
-                  type="date"
-                  class="dwl-spec-date-pill-input"
-                  :value="row.startDate.includes('-') ? row.startDate : '2023-10-24'"
-                  @change="handleUpdateField(row.id, 'startDate', ($event.target as HTMLInputElement).value)"
-                />
-              </div>
-
-              <div class="dwl-spec-date-cell">
-                <input
-                  type="date"
-                  class="dwl-spec-date-pill-input"
-                  :value="row.completionDate.includes('-') ? row.completionDate : '2023-10-25'"
-                  @change="handleUpdateField(row.id, 'completionDate', ($event.target as HTMLInputElement).value)"
-                />
-              </div>
-
-              <!-- Lead Select -->
-              <div class="dwl-spec-assignment-cell">
-                <select
-                  class="dwl-spec-lead-select"
-                  :value="row.assignedLead"
-                  @change="handleUpdateField(row.id, 'assignedLead', ($event.target as HTMLSelectElement).value)"
-                >
-                  <option value="Leadman J. Carter">Leadman J. Carter</option>
-                  <option value="Foreman R. Lee">Foreman R. Lee</option>
-                  <option value="Foreman M. Garcia">Foreman M. Garcia</option>
-                  <option value="Robert Chen">Robert Chen</option>
-                  <option value="Sarah Jenkins">Sarah Jenkins</option>
-                  <option value="Marcus Thorne">Marcus Thorne</option>
-                  <option value="Elena Rodriguez">Elena Rodriguez</option>
-                  <option v-for="p in personnel" :key="p.name" :value="p.name">{{ p.name }}</option>
-                </select>
-              </div>
-
-              <!-- Personnel Badge -->
-              <div
-                class="dwl-spec-badge-cell clickable-badge"
-                style="width: 90px"
-                @click="handleOpenDrawer('personnel', row.id)"
-                title="Click to Assign Personnel in Drawer"
-              >
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#006C49" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                <span class="dwl-spec-badge-num">👤 {{ row.personnelCount }}</span>
-              </div>
-
-              <!-- Tools Badge -->
-              <div
-                :class="['dwl-spec-badge-cell', 'clickable-badge', { 'has-data-green': row.equipmentList && row.equipmentList.length > 0 }]"
-                style="width: 70px"
-                @click="handleOpenDrawer('equipment', row.id)"
-                title="Click to View Equipment Used Drawer"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                  fill="none"
-                  :stroke="row.equipmentList && row.equipmentList.length > 0 ? '#006C49' : '#0B1C30'"
-                  stroke-width="2"
-                >
-                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                </svg>
-              </div>
-
-              <!-- Inspections Count -->
-              <div class="dwl-spec-badge-cell" style="width: 90px">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#0B1C30" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                </svg>
-                <span class="dwl-spec-badge-num">📄 {{ row.inspectionsCount }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <!-- Bottom Save / Export Action Bar -->
-      <div class="dwl-spec-bottom-bar">
-        <div class="dwl-spec-bottom-left">
+        <div class="dwl-spec-top-right">
           <button class="dwl-spec-btn-save" @click="handleSaveAllProgress">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFFFFF" stroke-width="2">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
@@ -289,9 +63,330 @@
             <span>Export PDF Log</span>
           </button>
         </div>
-
-        <span class="dwl-spec-timestamp">{{ saveStatusText }}</span>
       </div>
+
+      <!-- Group Section Cards -->
+      <div v-if="Object.keys(groupsMap).length === 0" class="dwl-spec-empty">
+        <p>No matching daily work log entries found.</p>
+      </div>
+      <template v-else>
+        <div
+          v-for="(items, groupTitle) in groupsMap"
+          :key="groupTitle"
+          class="dwl-spec-group-card"
+          :class="{
+            'group-dragging': draggedGroupKey === groupTitle,
+            'group-drag-over': dragOverGroupKey === groupTitle
+          }"
+          draggable="true"
+          @dragstart="handleGroupDragStart($event, String(groupTitle))"
+          @dragover="handleGroupDragOver($event, String(groupTitle))"
+          @drop="handleGroupDrop($event, String(groupTitle))"
+          @dragend="handleGroupDragEnd"
+        >
+          <!-- Group Header (Normal View or Inline Edit Mode) -->
+          <div class="dwl-spec-gh">
+            <!-- Normal Header State -->
+            <template v-if="editingGroupKey !== groupTitle">
+              <div class="dwl-spec-gh-left">
+                <span class="dwl-spec-drag-grid" title="Drag to reorder section">
+                  :::
+                </span>
+                <button
+                  class="dwl-spec-gh-toggle"
+                  @click="handleToggleGroup(String(groupTitle))"
+                  @dragstart.stop
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="#6C7A71"
+                    stroke-width="2.5"
+                    :style="{
+                      transform: collapsedGroups[groupTitle] ? 'rotate(-90deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s'
+                    }"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                <div class="dwl-spec-gh-text">
+                  <div class="dwl-gh-title-row">
+                    <h3 class="dwl-spec-gh-title">{{ groupTitle }}</h3>
+                    <!-- Edit Button: Hidden until header hover -->
+                    <button
+                      class="dwl-spec-gh-edit-btn"
+                      @click.stop="startEditGroup(String(groupTitle), items)"
+                      @dragstart.stop
+                      title="Edit General Information"
+                    >
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                      </svg>
+                      <span>Edit</span>
+                    </button>
+                  </div>
+                  <span class="dwl-spec-gh-sub">{{ items[0]?.groupSubTitle || 'Maintenance Overview' }}</span>
+                </div>
+              </div>
+
+              <div class="dwl-spec-gh-right" @dragstart.stop>
+                <div class="dwl-spec-wo-info">
+                  <span class="dwl-spec-wo-label">Work Order Number</span>
+                  <span class="dwl-spec-wo-val">{{ items[0]?.workOrderNumber || 'WO-2023-0000' }}</span>
+                </div>
+
+                <div class="dwl-spec-cat-badge">
+                  <span>{{ items[0]?.category || 'General Maintenance' }}</span>
+                </div>
+              </div>
+            </template>
+
+            <!-- Inline Editing Header State -->
+            <template v-else>
+              <div class="dwl-gh-inline-edit-form" @dragstart.stop>
+                <div class="dwl-gh-edit-row">
+                  <div class="dwl-gh-edit-field">
+                    <label>Facility / Asset Title</label>
+                    <input type="text" v-model="tempGroupTitle" class="dwl-gh-input bold" placeholder="Facility Title" />
+                  </div>
+                  <div class="dwl-gh-edit-field">
+                    <label>Scope Subtitle / Location</label>
+                    <input type="text" v-model="tempGroupSubTitle" class="dwl-gh-input" placeholder="Subtitle" />
+                  </div>
+                  <div class="dwl-gh-edit-field small">
+                    <label>Work Order #</label>
+                    <input type="text" v-model="tempWorkOrderNumber" class="dwl-gh-input mono" placeholder="WO-0000" />
+                  </div>
+                  <div class="dwl-gh-edit-field small">
+                    <label>Category</label>
+                    <select
+                      v-model="tempCategory"
+                      class="dwl-gh-input dwl-gh-select"
+                      @change="handleTempCategoryChange(($event.target as HTMLSelectElement).value)"
+                    >
+                      <option v-for="cat in categoryOptions" :key="cat" :value="cat">{{ cat }}</option>
+                      <option value="__ADD_NEW__" style="font-weight: 600; color: #006c49">+ Add New Category...</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="dwl-gh-edit-actions">
+                  <button class="btn-gh-save" @click="saveEditGroup(String(groupTitle))">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>Save</span>
+                  </button>
+                  <button class="btn-gh-cancel" @click="cancelEditGroup">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Internal Card Table Column Headers -->
+          <div v-if="!collapsedGroups[groupTitle]" class="dwl-card-column-headers">
+            <span class="col-hdr col-worktype">WORK TYPE</span>
+            <span class="col-hdr col-desc">WORK REQUEST / SCOPE OF WORK</span>
+            <span class="col-hdr col-actions">REMARKS</span>
+            <span class="col-hdr col-date">START DATE</span>
+            <span class="col-hdr col-date">COMPLETION</span>
+            <span class="col-hdr col-lead">ASSIGNED LEAD</span>
+            <span class="col-hdr col-badge">PERSONNEL</span>
+            <span class="col-hdr col-badge">TOOLS</span>
+            <span class="col-hdr col-badge">INSPECTIONS</span>
+          </div>
+
+          <!-- Group Rows (Bento Responsive Layout) -->
+          <div v-if="!collapsedGroups[groupTitle]" class="dwl-spec-rows">
+            <div
+              v-for="row in items"
+              :key="row.id"
+              class="dwl-spec-row"
+              :class="{
+                'row-dragging': draggedRowId === row.id,
+                'row-drag-over': dragOverRowId === row.id,
+                'is-row-on-hold': row.isOnHold
+              }"
+              :draggable="!row.isOnHold"
+              @dragstart="!row.isOnHold && handleRowDragStart($event, row.id)"
+              @dragover="!row.isOnHold && handleRowDragOver($event, row.id)"
+              @drop="!row.isOnHold && handleRowDrop($event, row.id)"
+              @dragend="handleRowDragEnd"
+            >
+              <div class="dwl-spec-row-drag" :title="row.isOnHold ? 'Reordering disabled while on hold' : 'Drag row'">::</div>
+
+              <!-- Work Type Box -->
+              <div class="dwl-spec-worktype-box" :class="{ 'disabled-field': row.isOnHold }" @dragstart.stop>
+                <span class="bento-field-label">WORK TYPE</span>
+                <input
+                  type="text"
+                  class="dwl-spec-worktype-input"
+                  :value="row.workType"
+                  :disabled="row.isOnHold"
+                  @change="handleUpdateField(row.id, 'workType', ($event.target as HTMLInputElement).value)"
+                />
+              </div>
+
+              <!-- Task Description Textarea (Auto-fit, no scroll/manual resize) -->
+              <div class="dwl-spec-desc-box" :class="{ 'disabled-field': row.isOnHold }" @dragstart.stop>
+                <span class="bento-field-label">SCOPE OF WORK</span>
+                <textarea
+                  class="dwl-spec-desc-textarea"
+                  :value="row.description"
+                  :disabled="row.isOnHold"
+                  @input="handleAutoResize($event); handleUpdateField(row.id, 'description', ($event.target as HTMLTextAreaElement).value)"
+                  rows="2"
+                  placeholder="Task description and scope..."
+                />
+              </div>
+
+              <!-- Remarks / On-Hold Action Buttons -->
+              <div class="dwl-spec-icons-cell" @dragstart.stop>
+                <span class="bento-field-label">ACTIONS</span>
+                <div class="dwl-actions-pill-group">
+                  <button
+                    :class="['dwl-spec-icon-btn', { 'has-data-green': (row.remarksList && row.remarksList.length > 0) || row.hasComments, 'is-btn-disabled': row.isOnHold }]"
+                    :disabled="row.isOnHold"
+                    @click="!row.isOnHold && handleOpenDrawer('remarks', row.id)"
+                    :title="row.isOnHold ? 'Remarks locked while on hold' : 'Open Remarks & Notes Drawer'"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      :fill="(row.remarksList && row.remarksList.length > 0) || row.hasComments ? '#10B981' : 'none'"
+                      :stroke="(row.remarksList && row.remarksList.length > 0) || row.hasComments ? '#006C49' : '#6C7A71'"
+                      stroke-width="1.8"
+                    >
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                  </button>
+
+                  <button
+                    :class="['dwl-spec-icon-btn', 'on-hold-toggle-btn', { 'is-on-hold': row.isOnHold }]"
+                    @click.stop="handleToggleOnHold(row.id)"
+                    :title="row.isOnHold ? 'Work is On Hold — Click to Resume' : 'Click to put Work On Hold'"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      :fill="row.isOnHold ? '#BA1A1A' : 'none'"
+                      :stroke="row.isOnHold ? '#BA1A1A' : '#6C7A71'"
+                      stroke-width="2"
+                    >
+                      <circle cx="12" cy="12" r="8" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Start Date (Empty by default unless inputted) -->
+              <div class="dwl-spec-date-cell" :class="{ 'disabled-field': row.isOnHold }">
+                <span class="bento-field-label">START DATE</span>
+                <input
+                  type="date"
+                  class="dwl-spec-date-pill-input"
+                  :value="row.startDate || ''"
+                  :disabled="row.isOnHold"
+                  @change="handleUpdateField(row.id, 'startDate', ($event.target as HTMLInputElement).value)"
+                />
+              </div>
+
+              <!-- Completion Date (Empty by default unless inputted) -->
+              <div class="dwl-spec-date-cell" :class="{ 'disabled-field': row.isOnHold }">
+                <span class="bento-field-label">COMPLETION</span>
+                <input
+                  type="date"
+                  class="dwl-spec-date-pill-input"
+                  :value="row.completionDate || ''"
+                  :disabled="row.isOnHold"
+                  @change="handleUpdateField(row.id, 'completionDate', ($event.target as HTMLInputElement).value)"
+                />
+              </div>
+
+              <!-- Assigned Lead Select -->
+              <div class="dwl-spec-assignment-cell" :class="{ 'disabled-field': row.isOnHold }">
+                <span class="bento-field-label">LEAD</span>
+                <select
+                  class="dwl-spec-lead-select"
+                  :value="row.assignedLead"
+                  :disabled="row.isOnHold"
+                  @change="handleUpdateField(row.id, 'assignedLead', ($event.target as HTMLSelectElement).value)"
+                >
+                  <option value="Leadman J. Carter">Leadman J. Carter</option>
+                  <option value="Foreman R. Lee">Foreman R. Lee</option>
+                  <option value="Foreman M. Garcia">Foreman M. Garcia</option>
+                  <option value="Robert Chen">Robert Chen</option>
+                  <option value="Sarah Jenkins">Sarah Jenkins</option>
+                  <option value="Marcus Thorne">Marcus Thorne</option>
+                  <option value="Elena Rodriguez">Elena Rodriguez</option>
+                  <option v-for="p in personnel" :key="p.name" :value="p.name">{{ p.name }}</option>
+                </select>
+              </div>
+
+              <!-- Personnel Badge (Shows exact live checked count & tooltip preview) -->
+              <div
+                class="dwl-spec-badge-cell"
+                :class="{ 'clickable-badge': !row.isOnHold, 'disabled-badge': row.isOnHold }"
+                @click="!row.isOnHold && handleOpenDrawer('personnel', row.id)"
+                :title="row.isOnHold ? 'Personnel locked while on hold' : (row.assignedPersonnel && row.assignedPersonnel.length > 0 ? `Assigned (${row.assignedPersonnel.length}): ${row.assignedPersonnel.join(', ')}` : 'Click to Assign Personnel in Drawer')"
+              >
+                <span class="bento-field-label">PERSONNEL</span>
+                <div class="dwl-badge-inner">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#006C49" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  <span class="dwl-spec-badge-num">👤 {{ row.personnelCount !== undefined ? row.personnelCount : (row.assignedPersonnel ? row.assignedPersonnel.length : 0) }}</span>
+                </div>
+              </div>
+
+              <!-- Tools / Equipment Badge -->
+              <div
+                :class="['dwl-spec-badge-cell', { 'clickable-badge': !row.isOnHold, 'disabled-badge': row.isOnHold, 'has-data-green': row.equipmentList && row.equipmentList.length > 0 }]"
+                @click="!row.isOnHold && handleOpenDrawer('equipment', row.id)"
+                :title="row.isOnHold ? 'Equipment locked while on hold' : (row.equipmentList && row.equipmentList.length > 0 ? `${row.equipmentList.length} equipment item(s) logged. Click to view.` : 'Click to log equipment used')"
+              >
+                <span class="bento-field-label">TOOLS</span>
+                <div class="dwl-badge-inner">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="15"
+                    height="15"
+                    fill="none"
+                    :stroke="row.equipmentList && row.equipmentList.length > 0 ? '#006C49' : '#0B1C30'"
+                    stroke-width="2"
+                  >
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                  </svg>
+                  <span class="dwl-spec-badge-num">{{ (row.equipmentList || []).length }}</span>
+                </div>
+              </div>
+
+              <!-- Inspections Count -->
+              <div class="dwl-spec-badge-cell" :class="{ 'disabled-badge': row.isOnHold }">
+                <span class="bento-field-label">INSPECTION</span>
+                <div class="dwl-badge-inner">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#0B1C30" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                  <span class="dwl-spec-badge-num">📄 {{ row.inspectionsCount }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- SIDE DRAWER 1: REMARKS AND NOTES -->
@@ -311,8 +406,17 @@
           <div class="dwl-nc-header">
             <span class="dwl-nc-time">{{ note.timestamp }}</span>
             <div class="dwl-nc-actions">
-              <button class="dwl-nc-btn" title="Edit Note">✏️</button>
-              <button class="dwl-nc-btn" @click="handleDeleteRemarkNote(note.id)" title="Delete Note">🗑️</button>
+              <button
+                class="dwl-nc-btn"
+                :class="{ active: editingNoteId === note.id }"
+                @click="editingNoteId = editingNoteId === note.id ? null : note.id"
+                title="Edit Note"
+              >
+                ✏️
+              </button>
+              <button class="dwl-nc-btn" @click="handleDeleteRemarkNote(note.id)" title="Delete Note">
+                🗑️
+              </button>
             </div>
           </div>
 
@@ -320,7 +424,8 @@
             <textarea
               class="dwl-nc-textarea"
               :value="note.text"
-              @input="handleUpdateRemarkNoteText(note.id, ($event.target as HTMLTextAreaElement).value)"
+              :readonly="editingNoteId !== null && editingNoteId !== note.id"
+              @input="handleAutoResize($event); handleUpdateRemarkNoteText(note.id, ($event.target as HTMLTextAreaElement).value)"
               maxlength="500"
               placeholder="Type in remarks and notes..."
             />
@@ -431,6 +536,52 @@
       </div>
 
       <div class="dwl-drawer-body">
+        <!-- In-Drawer Form for Adding Equipment with Name, Quantity, Borrower -->
+        <div class="dwl-drawer-form-card">
+          <h4 class="dwl-df-title">Log New Equipment</h4>
+          <div class="dwl-df-grid">
+            <div class="dwl-df-field full">
+              <label>Name of the Equipment used</label>
+              <input
+                type="text"
+                class="dwl-df-input"
+                v-model="newEquipmentName"
+                placeholder="e.g. Hydraulic Pipe Sealer, Industrial Ladder"
+              />
+            </div>
+            <div class="dwl-df-field half">
+              <label>Quantity</label>
+              <input
+                type="text"
+                class="dwl-df-input"
+                v-model="newEquipmentQuantity"
+                placeholder="e.g. 1 Unit, 2 Sets"
+              />
+            </div>
+            <div class="dwl-df-field half">
+              <label>Borrower</label>
+              <input
+                type="text"
+                class="dwl-df-input"
+                v-model="newEquipmentBorrower"
+                placeholder="e.g. Robert Chen"
+              />
+            </div>
+          </div>
+          <button
+            class="dwl-btn-add-more"
+            @click="handleConfirmAddEquipment"
+            :disabled="!newEquipmentName.trim()"
+            style="margin-top: 10px"
+          >
+            + Add Equipment
+          </button>
+        </div>
+
+        <div class="dwl-eq-list-header">
+          <span>Logged Equipment Items ({{ (selectedRow.equipmentList || []).length }})</span>
+        </div>
+
         <div
           v-for="item in (selectedRow.equipmentList || [])"
           :key="item.id"
@@ -458,10 +609,6 @@
             <span v-if="item.checked">✓</span>
           </div>
         </div>
-
-        <button class="dwl-btn-add-more" @click="handleAddEquipmentItem">
-          + Add more Equipment
-        </button>
       </div>
 
       <div class="dwl-drawer-footer">
@@ -569,6 +716,29 @@ const OTHER_EMPLOYEES_DEFAULT = [
 
 const LOGS_STORAGE_KEY_V3 = 'infra_daily_work_logs_v3';
 
+const DEFAULT_CATEGORIES = [
+  'General Maintenance',
+  'Building Repair & Maintenance',
+  'Student Housing Repair & Maintenance',
+  'Fabrication Workshop',
+  'Administrative Office',
+  'IT Infrastructure Department',
+  'Plumbing & Repairs',
+  'Electrical Systems',
+  'HVAC Maintenance'
+];
+
+const loadSavedCategories = () => {
+  try {
+    const saved = localStorage.getItem('genso_custom_categories');
+    return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
+  } catch {
+    return DEFAULT_CATEGORIES;
+  }
+};
+
+const categoryOptions = ref<string[]>(loadSavedCategories());
+
 const logs = ref<DailyWorkLogEntry[]>([]);
 const searchQuery = ref('');
 const selectedDate = ref('2024-08-24');
@@ -578,6 +748,98 @@ const saveStatusText = ref('Last auto-saved: 14:32:05 PM');
 const activeDrawer = ref<'remarks' | 'personnel' | 'equipment' | null>(null);
 const selectedRowId = ref<string | null>(null);
 const personnelSearch = ref('');
+
+// Group Header Inline Editing State
+const editingGroupKey = ref<string | null>(null);
+const tempGroupTitle = ref('');
+const tempGroupSubTitle = ref('');
+const tempWorkOrderNumber = ref('');
+const tempCategory = ref('');
+
+// Remarks & Notes Editing State
+const editingNoteId = ref<string | null>(null);
+
+// Equipment In-Drawer Form State
+const newEquipmentName = ref('');
+const newEquipmentQuantity = ref('1 Unit');
+const newEquipmentBorrower = ref('');
+
+const handleUpdateGroupCategory = (groupTitle: string, val: string) => {
+  if (val === '__ADD_NEW__') {
+    const newCat = window.prompt('Enter new Category name:');
+    if (newCat && newCat.trim()) {
+      const trimmed = newCat.trim();
+      if (!categoryOptions.value.includes(trimmed)) {
+        categoryOptions.value.push(trimmed);
+        try { localStorage.setItem('genso_custom_categories', JSON.stringify(categoryOptions.value)); } catch {}
+      }
+      applyCategoryToGroup(groupTitle, trimmed);
+    }
+  } else {
+    applyCategoryToGroup(groupTitle, val);
+  }
+};
+
+const applyCategoryToGroup = (groupTitle: string, catVal: string) => {
+  const updatedLogs = logs.value.map((log) => {
+    if (log.groupTitle === groupTitle) {
+      return { ...log, category: catVal };
+    }
+    return log;
+  });
+  saveLogs(updatedLogs);
+};
+
+const handleTempCategoryChange = (val: string) => {
+  if (val === '__ADD_NEW__') {
+    const newCat = window.prompt('Enter new Category name:');
+    if (newCat && newCat.trim()) {
+      const trimmed = newCat.trim();
+      if (!categoryOptions.value.includes(trimmed)) {
+        categoryOptions.value.push(trimmed);
+        try { localStorage.setItem('genso_custom_categories', JSON.stringify(categoryOptions.value)); } catch {}
+      }
+      tempCategory.value = trimmed;
+    }
+  }
+};
+
+const startEditGroup = (groupTitle: string, items: DailyWorkLogEntry[]) => {
+  editingGroupKey.value = groupTitle;
+  tempGroupTitle.value = groupTitle;
+  tempGroupSubTitle.value = items[0]?.groupSubTitle || '';
+  tempWorkOrderNumber.value = items[0]?.workOrderNumber || '';
+  tempCategory.value = items[0]?.category || 'General Maintenance';
+};
+
+const saveEditGroup = (originalTitle: string) => {
+  const updatedLogs = logs.value.map((log) => {
+    if (log.groupTitle === originalTitle) {
+      return {
+        ...log,
+        groupTitle: tempGroupTitle.value.trim().toUpperCase() || originalTitle,
+        groupSubTitle: tempGroupSubTitle.value.trim() || log.groupSubTitle,
+        workOrderNumber: tempWorkOrderNumber.value.trim() || log.workOrderNumber,
+        category: tempCategory.value.trim() || log.category
+      };
+    }
+    return log;
+  });
+
+  saveLogs(updatedLogs);
+  editingGroupKey.value = null;
+};
+
+const cancelEditGroup = () => {
+  editingGroupKey.value = null;
+};
+
+const handleAutoResize = (e: Event) => {
+  const target = e.target as HTMLTextAreaElement;
+  if (!target) return;
+  target.style.height = 'auto';
+  target.style.height = `${target.scrollHeight}px`;
+};
 
 const computeLogsFromWorkOrders = (orders: WorkOrder[]): DailyWorkLogEntry[] => {
   const savedOverrides: Record<string, Partial<DailyWorkLogEntry>> = {};
@@ -618,8 +880,8 @@ const computeLogsFromWorkOrders = (orders: WorkOrder[]): DailyWorkLogEntry[] => 
             {
               type: order.worktype || 'General',
               remarks: order.scope || order.description || 'General Maintenance Scope',
-              startDate: order.startDate || '2024-08-24',
-              endDate: order.endDate || '2024-08-26'
+              startDate: order.startDate || '',
+              endDate: order.endDate || ''
             }
           ];
 
@@ -639,8 +901,8 @@ const computeLogsFromWorkOrders = (orders: WorkOrder[]): DailyWorkLogEntry[] => 
         category: order.workgroup || 'General Maintenance',
         workType: override.workType || task.type || order.worktype || 'HVAC',
         description: override.description || task.remarks || order.scope || order.description || 'Facility Scope Task',
-        startDate: override.startDate || task.startDate || order.startDate || '2024-08-24',
-        completionDate: override.completionDate || task.endDate || order.endDate || '2024-08-26',
+        startDate: override.startDate !== undefined ? override.startDate : (task.startDate || order.startDate || ''),
+        completionDate: override.completionDate !== undefined ? override.completionDate : (task.endDate || order.endDate || ''),
         assignedLead: override.assignedLead || order.foreman || 'Robert Chen',
         personnelCount: assignedStaff.length,
         assignedPersonnel: assignedStaff,
@@ -674,6 +936,109 @@ const saveLogs = (updated: DailyWorkLogEntry[]) => {
   saveStatusText.value = `Last auto-saved: ${now}`;
 };
 
+const draggedGroupKey = ref<string | null>(null);
+const dragOverGroupKey = ref<string | null>(null);
+const draggedRowId = ref<string | null>(null);
+const dragOverRowId = ref<string | null>(null);
+
+// Group Drag and Drop
+const handleGroupDragStart = (e: DragEvent, groupTitle: string) => {
+  if (draggedRowId.value) return;
+  draggedGroupKey.value = groupTitle;
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', `group:${groupTitle}`);
+  }
+};
+
+const handleGroupDragOver = (e: DragEvent, groupTitle: string) => {
+  if (draggedGroupKey.value && draggedGroupKey.value !== groupTitle) {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    dragOverGroupKey.value = groupTitle;
+  }
+};
+
+const handleGroupDrop = (e: DragEvent, targetGroupTitle: string) => {
+  e.preventDefault();
+  if (draggedGroupKey.value && draggedGroupKey.value !== targetGroupTitle) {
+    const srcGroup = draggedGroupKey.value;
+    const groups: string[] = [];
+    logs.value.forEach((l) => {
+      if (!groups.includes(l.groupTitle)) groups.push(l.groupTitle);
+    });
+
+    const srcIdx = groups.indexOf(srcGroup);
+    const targetIdx = groups.indexOf(targetGroupTitle);
+    if (srcIdx !== -1 && targetIdx !== -1) {
+      groups.splice(srcIdx, 1);
+      groups.splice(targetIdx, 0, srcGroup);
+
+      const newLogs: DailyWorkLogEntry[] = [];
+      groups.forEach((g) => {
+        newLogs.push(...logs.value.filter((l) => l.groupTitle === g));
+      });
+      saveLogs(newLogs);
+    }
+  }
+  draggedGroupKey.value = null;
+  dragOverGroupKey.value = null;
+};
+
+const handleGroupDragEnd = () => {
+  draggedGroupKey.value = null;
+  dragOverGroupKey.value = null;
+};
+
+// Row Drag and Drop
+const handleRowDragStart = (e: DragEvent, rowId: string) => {
+  e.stopPropagation();
+  draggedRowId.value = rowId;
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', `row:${rowId}`);
+  }
+};
+
+const handleRowDragOver = (e: DragEvent, rowId: string) => {
+  if (draggedRowId.value && draggedRowId.value !== rowId) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    dragOverRowId.value = rowId;
+  }
+};
+
+const handleRowDrop = (e: DragEvent, targetRowId: string) => {
+  e.preventDefault();
+  e.stopPropagation();
+  if (draggedRowId.value && draggedRowId.value !== targetRowId) {
+    const srcIdx = logs.value.findIndex((l) => l.id === draggedRowId.value);
+    const targetIdx = logs.value.findIndex((l) => l.id === targetRowId);
+    if (srcIdx !== -1 && targetIdx !== -1) {
+      const movedItem = { ...logs.value[srcIdx] };
+      const targetItem = logs.value[targetIdx];
+
+      movedItem.groupTitle = targetItem.groupTitle;
+      movedItem.groupSubTitle = targetItem.groupSubTitle;
+      movedItem.workOrderNumber = targetItem.workOrderNumber;
+      movedItem.category = targetItem.category;
+
+      const newLogs = [...logs.value];
+      newLogs.splice(srcIdx, 1);
+      newLogs.splice(targetIdx, 0, movedItem);
+      saveLogs(newLogs);
+    }
+  }
+  draggedRowId.value = null;
+  dragOverRowId.value = null;
+};
+
+const handleRowDragEnd = () => {
+  draggedRowId.value = null;
+  dragOverRowId.value = null;
+};
+
 const handleToggleGroup = (title: string) => {
   collapsedGroups.value[title] = !collapsedGroups.value[title];
 };
@@ -692,11 +1057,17 @@ const handleToggleOnHold = (id: string) => {
 const handleOpenDrawer = (type: 'remarks' | 'personnel' | 'equipment', rowId: string) => {
   selectedRowId.value = rowId;
   activeDrawer.value = type;
+  if (type === 'equipment' && selectedRow.value) {
+    newEquipmentBorrower.value = selectedRow.value.assignedLead || 'Field Supervisor';
+    newEquipmentName.value = '';
+    newEquipmentQuantity.value = '1 Unit';
+  }
 };
 
 const handleCloseDrawer = () => {
   activeDrawer.value = null;
   selectedRowId.value = null;
+  editingNoteId.value = null;
 };
 
 const selectedRow = computed(() => logs.value.find((l) => l.id === selectedRowId.value));
@@ -717,6 +1088,7 @@ const handleAddRemarkNote = () => {
     l.id === selectedRowId.value ? { ...l, remarksList: updatedRemarks, hasComments: true } : l
   );
   saveLogs(updatedLogs);
+  editingNoteId.value = newNote.id;
 };
 
 const handleUpdateRemarkNoteText = (noteId: string, text: string) => {
@@ -741,6 +1113,9 @@ const handleDeleteRemarkNote = (noteId: string) => {
       : l
   );
   saveLogs(updatedLogs);
+  if (editingNoteId.value === noteId) {
+    editingNoteId.value = null;
+  }
 };
 
 const handleTogglePersonnelStaff = (staffName: string) => {
@@ -773,17 +1148,14 @@ const handleToggleEquipmentChecked = (eqId: string) => {
   saveLogs(updatedLogs);
 };
 
-const handleAddEquipmentItem = () => {
-  if (!selectedRowId.value || !selectedRow.value) return;
-  const name = window.prompt('Enter Equipment Name:');
-  if (!name) return;
-  const quantity = window.prompt('Enter Quantity (e.g. 2 Units):') || '1 Unit';
+const handleConfirmAddEquipment = () => {
+  if (!selectedRowId.value || !selectedRow.value || !newEquipmentName.value.trim()) return;
 
   const newItem: EquipmentItem = {
     id: `eq-${Date.now()}`,
-    name,
-    quantity,
-    borrower: selectedRow.value.assignedLead || 'Field Supervisor',
+    name: newEquipmentName.value.trim(),
+    quantity: newEquipmentQuantity.value.trim() || '1 Unit',
+    borrower: newEquipmentBorrower.value.trim() || selectedRow.value.assignedLead || 'Field Supervisor',
     checked: true
   };
 
@@ -792,6 +1164,10 @@ const handleAddEquipmentItem = () => {
     l.id === selectedRowId.value ? { ...l, equipmentList: updatedEq } : l
   );
   saveLogs(updatedLogs);
+
+  // Reset form inputs
+  newEquipmentName.value = '';
+  newEquipmentQuantity.value = '1 Unit';
 };
 
 const handleSaveAllProgress = () => {
@@ -835,7 +1211,7 @@ const handleExportPDF = () => {
           <div class="row">
             <div class="row-title">[${log.workType}] ${log.description}</div>
             <div class="meta">
-              Start: ${log.startDate} | Completion: ${log.completionDate} | Lead: ${log.assignedLead} | Staff Count: ${log.personnelCount}
+              Start: ${log.startDate || 'N/A'} | Completion: ${log.completionDate || 'N/A'} | Lead: ${log.assignedLead} | Staff Count: ${log.personnelCount}
             </div>
             
             <div class="box">

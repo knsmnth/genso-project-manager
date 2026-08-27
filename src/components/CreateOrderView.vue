@@ -239,26 +239,14 @@
                   />
                 </td>
 
-                <!-- Remarks Comment Bubble Button -->
+                <!-- Remarks Comment Bubble Button (Disabled) -->
                 <td style="text-align: center">
                   <button
                     type="button"
-                    class="remarks-btn"
-                    title="Add Task Remarks"
-                    @click="alert(`Remarks for task ${index + 1}: ${task.remarks || 'None'}`)"
-                    style="
-                      margin: 0 auto;
-                      width: 32px;
-                      height: 32px;
-                      border-radius: 8px;
-                      background: #ffffff;
-                      border: 1px solid #bbcabf;
-                      color: #6b7280;
-                      display: inline-flex;
-                      align-items: center;
-                      justify-content: center;
-                      cursor: pointer;
-                    "
+                    class="remarks-btn disabled"
+                    disabled
+                    title="Remarks are disabled during order creation"
+                    aria-label="Remarks disabled"
                   >
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -278,31 +266,31 @@
                   </select>
                 </td>
 
-                <!-- Start and Completion Dates Inputs -->
+                <!-- Start and Completion Dates Inputs (Disabled & Empty) -->
                 <td>
                   <div class="modern-date-input-group">
                     <div
-                      :class="['modern-date-field', { disabled: !isEditing }]"
-                      :title="!isEditing ? 'Date started is locked during initial order creation.' : 'Start date'"
+                      class="modern-date-field disabled"
+                      title="Start date is disabled"
                     >
                       <span class="modern-date-label">START DATE</span>
                       <input
                         type="date"
                         class="modern-date-input"
-                        v-model="task.startDate"
-                        :disabled="!isEditing"
+                        :value="task.startDate || ''"
+                        disabled
                       />
                     </div>
                     <div
-                      :class="['modern-date-field', { disabled: !isEditing }]"
-                      :title="!isEditing ? 'Date completed is locked during initial order creation.' : 'Completion date'"
+                      class="modern-date-field disabled"
+                      title="End date is disabled"
                     >
                       <span class="modern-date-label">END DATE</span>
                       <input
                         type="date"
                         class="modern-date-input"
-                        v-model="task.endDate"
-                        :disabled="!isEditing"
+                        :value="task.endDate || ''"
+                        disabled
                       />
                     </div>
                   </div>
@@ -313,22 +301,10 @@
                   <button
                     v-if="tasks.length > 1"
                     type="button"
-                    class="remarks-btn"
+                    class="btn-task-delete"
                     title="Remove Task"
                     @click="handleDeleteTask(index)"
-                    style="
-                      margin: 0 auto;
-                      width: 28px;
-                      height: 28px;
-                      border-radius: 6px;
-                      background: transparent;
-                      border: none;
-                      color: #ef4444;
-                      display: inline-flex;
-                      align-items: center;
-                      justify-content: center;
-                      cursor: pointer;
-                    "
+                    aria-label="Remove Task"
                   >
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="3 6 5 6 21 6" />
@@ -341,12 +317,16 @@
           </table>
 
           <!-- Add More Scope Button -->
-          <button type="button" class="btn-modern-add-scope" @click="handleAddTask">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#006C49" stroke-width="2.5">
-              <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <span class="btn-modern-add-scope-text">Add more Scope of Work</span>
-          </button>
+          <div class="modern-add-scope-wrapper">
+            <button type="button" class="btn-modern-add-scope" @click="handleAddTask">
+              <span class="btn-add-scope-icon">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+              <span>Add more Scope of Work</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -443,8 +423,8 @@ const tasks = ref<Task[]>([
     type: '',
     remarks: '',
     degreeOfWork: 'Minor',
-    startDate: getTodayString(),
-    endDate: getTodayString()
+    startDate: '',
+    endDate: ''
   }
 ]);
 
@@ -493,8 +473,8 @@ watch(
               type: order.worktype || '',
               remarks: order.scope || '',
               degreeOfWork: 'Minor',
-              startDate: order.startDate || getTodayString(),
-              endDate: order.endDate || getTodayString()
+              startDate: order.startDate || '',
+              endDate: order.endDate || ''
             }
           ];
         }
@@ -514,8 +494,8 @@ watch(
           type: '',
           remarks: '',
           degreeOfWork: 'Minor',
-          startDate: getTodayString(),
-          endDate: getTodayString()
+          startDate: '',
+          endDate: ''
         }
       ];
     }
@@ -577,8 +557,8 @@ const handleAddTask = () => {
     type: '',
     remarks: '',
     degreeOfWork: 'Minor',
-    startDate: getTodayString(),
-    endDate: getTodayString()
+    startDate: '',
+    endDate: ''
   });
 };
 

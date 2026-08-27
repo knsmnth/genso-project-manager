@@ -1,9 +1,18 @@
 <template>
-  <div :class="['app-container', { 'sidebar-collapsed': isSidebarCollapsed }]">
+  <div :class="['app-container', {
+    'sidebar-pinned-open': sidebarMode === 'pinned-open',
+    'sidebar-pinned-collapsed': sidebarMode === 'pinned-collapsed',
+    'auto-collapse-mode': sidebarMode === 'auto',
+    'sidebar-collapsed': sidebarMode !== 'pinned-open'
+  }]">
     <!-- Sidebar Navigation -->
     <Sidebar
       :active-view="activeView"
       :sidebar-open="sidebarOpen"
+      :is-collapsed="sidebarMode !== 'pinned-open'"
+      :is-pinned="sidebarMode === 'pinned-open'"
+      :sidebar-mode="sidebarMode"
+      @toggle-pin="handleTogglePin"
       @view-change="handleViewChange"
       @sidebar-close="sidebarOpen = false"
       @create-order="handleCreateOrder"
@@ -19,6 +28,13 @@
 
       <!-- View Routing Switcher -->
       <div class="main-content-inner">
+        <!-- Global Breadcrumb Navigation Bar -->
+        <Breadcrumbs
+          :active-view="activeView"
+          :editing-order-code="editingOrderCode"
+          @navigate="handleViewChange"
+        />
+
         <DashboardView
           v-if="activeView === 'dashboard'"
           :work-orders="workOrders"
@@ -180,6 +196,7 @@
 import { ref, onMounted } from 'vue';
 import Sidebar from './components/Sidebar.vue';
 import Header from './components/Header.vue';
+import Breadcrumbs from './components/Breadcrumbs.vue';
 import DashboardView from './components/DashboardView.vue';
 import WorkOrdersView from './components/WorkOrdersView.vue';
 import TeamsView from './components/TeamsView.vue';
@@ -293,13 +310,28 @@ const STORAGE_KEY = 'infra_work_orders';
 const PERSONNEL_STORAGE_KEY = 'infra_personnel';
 const TEAMS_STORAGE_KEY = 'infra_teams';
 
+type SidebarMode = 'pinned-open' | 'pinned-collapsed' | 'auto';
+
 const activeView = ref('dashboard');
 const workOrders = ref<WorkOrder[]>([]);
 const personnel = ref<Person[]>([]);
 const teams = ref<Team[]>([]);
 const searchQuery = ref('');
 const sidebarOpen = ref(false);
-const isSidebarCollapsed = ref(false);
+const sidebarMode = ref<SidebarMode>(
+  (localStorage.getItem('sidebar_mode') as SidebarMode) || 'pinned-open'
+);
+
+const handleTogglePin = () => {
+  if (sidebarMode.value === 'pinned-open') {
+    sidebarMode.value = 'auto'; // unpinned (hover to auto-expand)
+    addToast('Navigation unpinned: Auto-collapse on mouse leave enabled.', 'info');
+  } else {
+    sidebarMode.value = 'pinned-open'; // pinned open permanently
+    addToast('Navigation pinned: Staying open permanently.', 'info');
+  }
+  localStorage.setItem('sidebar_mode', sidebarMode.value);
+};
 
 const selectedOrderCode = ref<string | null>(null);
 const isDetailsModalOpen = ref(false);
@@ -308,9 +340,9 @@ const isCreateTeamModalOpen = ref(false);
 const editingOrderCode = ref<string | null>(null);
 const toasts = ref<ToastMessage[]>([]);
 
-const addToast = (message: string, type: 'success' | 'info' | 'warning' | 'error' = 'success') => {
-  const id = Date.now().toString();
-  toasts.value.push({ id, message, type });
+const addToast = (message: string, type: 'success' | 'info' | 'warning' | 'error' = 'success', duration?: number) => {
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  toasts.value.push({ id, message, type, duration });
 };
 
 const removeToast = (id: string) => {
@@ -359,7 +391,17 @@ const handleViewChange = (view: string) => {
 
 const handleMenuToggle = () => {
   if (window.innerWidth > 1024) {
-    isSidebarCollapsed.value = !isSidebarCollapsed.value;
+    if (sidebarMode.value === 'pinned-open') {
+      sidebarMode.value = 'pinned-collapsed';
+      addToast('Navigation pinned in collapsed mode.', 'info');
+    } else if (sidebarMode.value === 'pinned-collapsed') {
+      sidebarMode.value = 'pinned-open';
+      addToast('Navigation pinned open.', 'info');
+    } else {
+      sidebarMode.value = 'pinned-collapsed';
+      addToast('Navigation pinned in collapsed mode.', 'info');
+    }
+    localStorage.setItem('sidebar_mode', sidebarMode.value);
   } else {
     sidebarOpen.value = !sidebarOpen.value;
   }

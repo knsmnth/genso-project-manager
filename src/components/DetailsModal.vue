@@ -7,7 +7,7 @@
       >
         <div
           class="modal-title-wrapper"
-          style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 90%"
+          style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 90%"
         >
           <span
             class="modal-subtitle"
@@ -26,17 +26,37 @@
           </span>
           <h2
             class="modal-title"
-            id="modal-scope"
+            id="modal-asset-title"
             style="
-              font-size: 15px;
+              font-size: 17px;
               font-weight: 700;
               color: var(--color-navy-header);
-              line-height: 1.4;
+              line-height: 1.3;
               margin: 0;
             "
           >
-            {{ targetOrder.scope }}
+            {{ targetOrder.assetName }}
+            <span
+              v-if="targetOrder.space"
+              style="font-size: 14px; font-weight: 500; color: var(--color-text-muted);"
+            >
+              • {{ targetOrder.space }}
+            </span>
           </h2>
+          <p
+            v-if="targetOrder.scope"
+            class="modal-scope-subtitle"
+            id="modal-scope"
+            style="
+              font-size: 13px;
+              font-weight: 500;
+              color: var(--color-text-muted);
+              line-height: 1.4;
+              margin: 2px 0 0 0;
+            "
+          >
+            <span style="font-weight: 600; color: var(--color-text-dark);">Scope:</span> {{ targetOrder.scope }}
+          </p>
         </div>
         <button
           id="modal-close"
