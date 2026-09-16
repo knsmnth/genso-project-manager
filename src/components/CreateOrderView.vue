@@ -1,11 +1,11 @@
 <template>
-  <section id="view-create-order" class="view-section active create-order-container">
+  <section id="view-create-order" :class="['view-section active create-order-container', { 'has-open-drawer': activeRemarksTaskIndex !== null }]">
     <!-- Breadcrumbs & Header Row -->
     <div class="create-order-header-row">
       <div class="create-order-title-group">
         <nav class="create-order-nav" aria-label="Breadcrumbs">
           <span class="create-order-nav-link" @click="$emit('cancel')">
-            Work Orders
+            {{ returnView === 'dailyworklog' ? 'Daily Work Log' : 'Work Orders' }}
           </span>
           <span class="create-order-nav-sep">
             <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -20,22 +20,10 @@
           {{ editingOrderCode ? 'Edit Work Order' : 'Create Work Order' }}
         </h2>
       </div>
-
-      <div class="create-order-actions">
-        <button class="btn-modern-cancel" type="button" @click="$emit('cancel')">
-          Cancel
-        </button>
-        <button class="btn-modern-save" type="button" @click="handleSubmit">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFFFFF" stroke-width="2.5">
-            <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          <span>{{ editingOrderCode ? 'Update Order' : 'Save Work Order' }}</span>
-        </button>
-      </div>
     </div>
 
     <!-- Main Form Content Container -->
-    <form @submit.prevent="handleSubmit" style="display: flex; flex-direction: column; gap: 24px; width: 100%">
+    <form @submit.prevent="handleSubmit" style="display: flex; flex-direction: column; gap: 24px; width: 100%; max-width: 100%; box-sizing: border-box; align-items: stretch;">
       
       <!-- CARD 1: Work Order General Information -->
       <div class="modern-section-card">
@@ -44,8 +32,8 @@
             <span class="modern-heading-bar"></span>
             <h3 class="modern-heading-text">Work Order General Information</h3>
           </div>
-          <label class="modern-lock-badge">
-            <span class="modern-lock-text">LOCK/UNLOCK</span>
+          <label :class="['modern-lock-badge', { locked: isLocked }]">
+            <span class="modern-lock-text">{{ isLocked ? 'LOCKED' : 'LOCK/UNLOCK' }}</span>
             <input
               type="checkbox"
               v-model="isLocked"
@@ -58,32 +46,101 @@
           <div class="modern-left-col">
             
             <!-- Row 1: Work Order Number & Date Received -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
-              <div :class="['modern-field-group', { 'has-error': errors.code }]">
-                <label class="modern-field-label">WORK ORDER NUMBER</label>
-                <input
-                  type="text"
-                  id="code"
-                  class="modern-input-code"
-                  placeholder="e.g. JR - BHM - 26 - 101"
-                  v-model="code"
-                />
-                <span v-if="errors.code" class="error-msg">Work order number is required.</span>
+            <div class="modern-row-order-date">
+              <div :class="['modern-field-group', 'modern-code-field', { 'has-error': errors.code || isDuplicateCode }]">
+                <div class="modern-code-label-row">
+                  <label class="modern-field-label" for="codePrefix">WORK ORDER NUMBER</label>
+                </div>
+                <div class="modern-code-segmented-box" :class="{ 'is-disabled': isLocked }">
+                  <!-- Segment 1: Prefix Input (e.g. JR) -->
+                  <input
+                    type="text"
+                    id="codePrefix"
+                    class="code-segment-input code-prefix-input"
+                    placeholder="JR"
+                    v-model="codePrefix"
+                    :disabled="isLocked"
+                    maxlength="10"
+                    title="Prefix (e.g. JR)"
+                    @input="codePrefix = ($event.target as HTMLInputElement).value.toUpperCase()"
+                  />
+
+                  <span class="code-segment-divider">-</span>
+
+                  <!-- Segment 2: Dept & Year Input (Defaults to BHM-26, editable) -->
+                  <input
+                    type="text"
+                    id="codeDeptYear"
+                    class="code-segment-input code-dept-year-input"
+                    placeholder="BHM-26"
+                    v-model="codeDeptYear"
+                    :disabled="isLocked"
+                    maxlength="15"
+                    title="Department & Year (defaults to BHM-26, editable)"
+                    @input="codeDeptYear = ($event.target as HTMLInputElement).value.toUpperCase()"
+                  />
+
+                  <span class="code-segment-divider">-</span>
+
+                  <!-- Segment 3: Number Input (Inputted by user) -->
+                  <input
+                    type="text"
+                    id="codeNumber"
+                    class="code-segment-input code-number-input"
+                    placeholder="e.g. 001"
+                    v-model="codeNumber"
+                    :disabled="isLocked"
+                    maxlength="20"
+                    title="Work Order Number / Suffix"
+                  />
+                </div>
+                <span v-if="isDuplicateCode" class="error-msg">Work order number already exists. Please choose a different number.</span>
+                <span v-else-if="errors.code" class="error-msg">Work order number is required.</span>
               </div>
 
-              <div class="modern-field-group">
-                <label class="modern-field-label">DATE RECEIVED</label>
-                <input
-                  type="text"
-                  class="modern-input"
-                  placeholder="MMM DD, YYYY"
-                  v-model="dateReceived"
-                />
+              <div class="modern-field-group modern-received-date-col">
+                <label class="modern-field-label" for="dateReceived">DATE RECEIVED</label>
+                <div class="modern-date-input-wrapper">
+                  <input
+                    type="text"
+                    id="dateReceived"
+                    class="modern-input modern-date-text-input"
+                    placeholder="MMM DD, YYYY"
+                    v-model="dateReceived"
+                    :disabled="isLocked"
+                  />
+                  <button
+                    type="button"
+                    class="modern-date-picker-btn"
+                    :disabled="isLocked"
+                    @click="openDatePicker"
+                    title="Select Date"
+                    aria-label="Select Date"
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                  </button>
+                  <input
+                    ref="datePickerInput"
+                    type="date"
+                    class="modern-hidden-datepicker"
+                    :value="isoDateValue"
+                    :disabled="isLocked"
+                    @input="handleDatePickerChange"
+                    @change="handleDatePickerChange"
+                    tabindex="-1"
+                    aria-hidden="true"
+                  />
+                </div>
               </div>
             </div>
 
             <!-- Row 2: Name of Requester -->
-            <div :class="['modern-field-group', { 'has-error': errors.requesterName }]">
+            <div class="modern-field-group">
               <label class="modern-field-label">NAME OF REQUESTER</label>
               <input
                 type="text"
@@ -91,40 +148,38 @@
                 class="modern-input"
                 placeholder="Type in Name of Requester"
                 v-model="requesterName"
+                :disabled="isLocked"
               />
-              <span v-if="errors.requesterName" class="error-msg">Requester name is required.</span>
             </div>
 
-            <!-- Row 3: Requesting Office (Dynamic Dropdown) -->
-            <div :class="['modern-field-group', { 'has-error': errors.requestingOffice }]">
-              <label class="modern-field-label">REQUESTING OFFICE</label>
-              <select
+            <!-- Row 3: Requesting Office (Searchable Combobox) -->
+            <div class="modern-field-group">
+              <label class="modern-field-label" for="requestingOffice">REQUESTING OFFICE</label>
+              <SearchableCombobox
                 id="requestingOffice"
-                class="modern-select"
-                :value="requestingOffice"
-                @change="handleOfficeChange(($event.target as HTMLSelectElement).value)"
-              >
-                <option value="" disabled>Type/Choose Requesting Office</option>
-                <option v-for="opt in officeOptions" :key="opt" :value="opt">{{ opt }}</option>
-                <option value="__ADD_NEW__" style="font-weight: 600; color: #006c49">+ Add New...</option>
-              </select>
-              <span v-if="errors.requestingOffice" class="error-msg">Please select a requesting office.</span>
+                v-model="requestingOffice"
+                :items="officeCatalogItems"
+                placeholder="Choose Requesting Office"
+                :disabled="isLocked"
+                @change="handleOfficeChange"
+                @add-new="handleAddNewOffice"
+                @manage="$emit('manageCatalogs')"
+              />
             </div>
 
-            <!-- Row 4: Facility/Asset (Dynamic Dropdown) -->
-            <div :class="['modern-field-group', { 'has-error': errors.assetName }]">
-              <label class="modern-field-label">FACILITY/ASSET</label>
-              <select
+            <!-- Row 4: Facility/Asset (Searchable Combobox) -->
+            <div class="modern-field-group">
+              <label class="modern-field-label" for="assetName">FACILITY/ASSET</label>
+              <SearchableCombobox
                 id="assetName"
-                class="modern-select"
-                :value="assetName"
-                @change="handleAssetChange(($event.target as HTMLSelectElement).value)"
-              >
-                <option value="" disabled>Type/Choose Building Name</option>
-                <option v-for="opt in assetOptions" :key="opt" :value="opt">{{ opt }}</option>
-                <option value="__ADD_NEW__" style="font-weight: 600; color: #006c49">+ Add New...</option>
-              </select>
-              <span v-if="errors.assetName" class="error-msg">Please select a facility/building.</span>
+                v-model="assetName"
+                :items="assetCatalogItems"
+                placeholder="Choose Building Name"
+                :disabled="isLocked"
+                @change="handleAssetChange"
+                @add-new="handleAddNewAsset"
+                @manage="$emit('manageCatalogs')"
+              />
             </div>
 
             <!-- Row 5: Room No./Name -->
@@ -135,6 +190,7 @@
                 class="modern-input"
                 placeholder="Room No./Name"
                 v-model="roomNo"
+                :disabled="isLocked"
               />
             </div>
 
@@ -143,24 +199,165 @@
           <!-- Right Column -->
           <div class="modern-right-col">
             
-            <!-- Row 1: Work Title -->
+            <!-- Row 1: Work Title with Auto-generate Button Above Text Box -->
             <div class="modern-field-group">
-              <label class="modern-field-label">WORK TITLE</label>
+              <div class="modern-title-label-row">
+                <label class="modern-field-label" for="workTitle">WORK TITLE</label>
+                <button
+                  v-if="!isLocked"
+                  type="button"
+                  class="btn-reset-suggested-code"
+                  @click="handleRegenerateWorkTitle"
+                  title="Auto-compose work title from Office, Work Type, and Item Types"
+                >
+                  ↻ Auto-generate
+                </button>
+              </div>
               <input
                 type="text"
+                id="workTitle"
                 class="modern-input"
                 placeholder="Type in Work Title"
                 v-model="workTitle"
+                @input="handleWorkTitleManualInput"
+                :disabled="isLocked"
               />
             </div>
 
-            <!-- Row 2: Work Details and Description -->
+            <!-- Row 2: Work Type (Searchable Combobox) -->
+            <div class="modern-field-group">
+              <label class="modern-field-label" for="generalWorktype">WORK TYPE</label>
+              <SearchableCombobox
+                id="generalWorktype"
+                v-model="worktype"
+                :items="workTypeCatalogItems"
+                placeholder="Choose Work Type"
+                :disabled="isLocked"
+                @change="handleGeneralWorkTypeChange"
+                @add-new="handleAddNewWorkType"
+                @manage="$emit('manageCatalogs')"
+              />
+            </div>
+
+            <!-- Row 3: Item Types (Tags Multi-select below Work Type) -->
+            <div class="modern-field-group item-types-field-group" ref="tagBoxRef">
+              <div style="display: flex; justify-content: space-between; align-items: center">
+                <label class="modern-field-label" for="itemTypesInput">ITEM TYPES</label>
+                <span v-if="selectedItemTypes.length > 0" class="tag-count-indicator">
+                  {{ selectedItemTypes.length }} tag{{ selectedItemTypes.length > 1 ? 's' : '' }}
+                </span>
+              </div>
+
+              <div
+                class="modern-tag-input-box"
+                :class="{ 'is-focused': isTagInputFocused, 'is-locked': isLocked, 'has-tags': selectedItemTypes.length > 0 }"
+                @click="focusTagInput"
+              >
+                <!-- Selected Tag Pills with their own individual assigned colors -->
+                <span
+                  v-for="tag in selectedItemTypes"
+                  :key="tag"
+                  class="item-type-tag-pill"
+                  :style="{ backgroundColor: getTagColor(tag) }"
+                  :title="tag"
+                >
+                  <!-- Left Outline Tag Icon -->
+                  <svg class="tag-pill-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
+                    <circle cx="12" cy="14" r="1.8" />
+                  </svg>
+                  <span class="tag-pill-text">{{ tag }}</span>
+                  <!-- Right Remove Close 'X' Button -->
+                  <button
+                    type="button"
+                    class="tag-pill-remove"
+                    @click.stop="removeItemType(tag)"
+                    :disabled="isLocked"
+                    title="Remove tag"
+                    aria-label="Remove tag"
+                  >
+                    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </span>
+
+                <!-- Inline Search/Add Input -->
+                <input
+                  ref="tagInputRef"
+                  id="itemTypesInput"
+                  type="text"
+                  class="tag-inline-input"
+                  :placeholder="selectedItemTypes.length === 0 ? 'Choose Item Type' : '+ Add tag...'"
+                  v-model="tagSearchQuery"
+                  :disabled="isLocked"
+                  @focus="onTagInputFocus"
+                  @blur="onTagInputBlur"
+                  @keydown.enter.prevent="onTagInputEnter"
+                  @keydown.backspace="onTagInputBackspace"
+                  @keydown.down.prevent="highlightNextTag"
+                  @keydown.up.prevent="highlightPrevTag"
+                  @keydown.esc="onTagInputEsc"
+                  autocomplete="off"
+                />
+
+                <!-- Dropdown Toggle Chevron Button -->
+                <button
+                  type="button"
+                  class="tag-box-toggle-btn"
+                  @click.stop="toggleTagDropdown"
+                  :disabled="isLocked"
+                  tabindex="-1"
+                  aria-label="Toggle item types list"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Dropdown Menu for Item Types -->
+              <div v-if="isTagDropdownOpen && !isLocked" class="tag-dropdown-menu">
+                <div v-if="filteredItemTypeOptions.length === 0" class="tag-dropdown-empty">
+                  <span v-if="tagSearchQuery.trim()">Press <strong>Enter</strong> to add "<em>{{ tagSearchQuery.trim() }}</em>"</span>
+                  <span v-else>All item types selected</span>
+                </div>
+
+                <div
+                  v-for="(item, idx) in filteredItemTypeOptions"
+                  :key="item.name"
+                  :class="['tag-dropdown-item', { 'is-highlighted': highlightedTagIndex === idx, 'is-selected': selectedItemTypes.includes(item.name) }]"
+                  @mousedown.prevent="toggleSelectItemType(item.name)"
+                >
+                  <div class="tag-dropdown-item-left">
+                    <span class="tag-color-swatch-dot" :style="{ backgroundColor: item.color || getTagColor(item.name) }"></span>
+                    <span v-if="item.code" class="tag-dropdown-code">{{ item.code }}</span>
+                    <span class="tag-dropdown-name">{{ item.name }}</span>
+                    <span v-if="item.title" class="tag-dropdown-code" style="background: rgba(180, 83, 9, 0.1); color: #B45309; font-weight: 600">{{ item.title }}</span>
+                  </div>
+                  <span v-if="selectedItemTypes.includes(item.name)" class="tag-dropdown-check">✓</span>
+                </div>
+
+                <!-- Custom Tag Option if typing something not in the list -->
+                <div
+                  v-if="tagSearchQuery.trim() && !itemTypeCatalogItems.some(i => i.name.toLowerCase() === tagSearchQuery.trim().toLowerCase())"
+                  class="tag-dropdown-item custom-add"
+                  @mousedown.prevent="toggleSelectItemType(tagSearchQuery.trim())"
+                >
+                  <span>+ Add custom tag: "<strong>{{ tagSearchQuery.trim() }}</strong>"</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 3: Work Details and Description -->
             <div class="modern-field-group" style="flex: 1; display: flex; flex-direction: column">
               <label class="modern-field-label">WORK DETAILS AND DESCRIPTION</label>
               <textarea
                 class="modern-textarea"
                 placeholder="Type in Work order request details and information"
                 v-model="description"
+                :disabled="isLocked"
                 style="flex: 1"
               />
             </div>
@@ -179,146 +376,286 @@
         </div>
 
         <div class="modern-scope-table-container">
-          <table class="modern-scope-table">
-            <thead>
-              <tr>
-                <th style="width: 36px; text-align: center"></th>
-                <th style="width: 170px">WORK TYPE</th>
-                <th>WORK DESCRIPTION</th>
-                <th style="width: 70px; text-align: center">REMARKS</th>
-                <th style="width: 150px">DEGREE OF WORK</th>
-                <th style="width: 210px">START & COMPLETION DATES</th>
-                <th style="width: 40px; text-align: center"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(task, index) in tasks"
-                :key="index"
-                draggable="true"
-                @dragstart="handleDragStart($event, index)"
-                @dragover="handleDragOver($event, index)"
-                @drop="handleDrop($event, index)"
-                @dragend="handleDragEnd"
-                :class="[{ dragging: draggedIndex === index, 'drag-over': dragOverIndex === index }]"
-              >
-                <!-- Drag Handle Icon -->
-                <td style="text-align: center">
-                  <div className="drag-handle-btn" title="Click & drag to reorder scope">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                      <circle cx="8" cy="6" r="2" />
-                      <circle cx="16" cy="6" r="2" />
-                      <circle cx="8" cy="12" r="2" />
-                      <circle cx="16" cy="12" r="2" />
-                      <circle cx="8" cy="18" r="2" />
-                      <circle cx="16" cy="18" r="2" />
-                    </svg>
-                  </div>
-                </td>
-
-                <!-- Work Type Select -->
-                <td>
-                  <select
-                    :class="['modern-table-select', { 'has-error': errors[`taskType-${index}`] }]"
-                    :value="task.type"
-                    @change="handleWorkTypeChange(index, ($event.target as HTMLSelectElement).value)"
-                  >
-                    <option value="" disabled>Select Type...</option>
-                    <option v-for="opt in workTypeOptions" :key="opt" :value="opt">{{ opt }}</option>
-                    <option value="__ADD_NEW__" style="font-weight: 600; color: #006c49">+ Add New...</option>
-                  </select>
-                </td>
-
-                <!-- Work Description Textarea -->
-                <td>
-                  <textarea
-                    :class="['modern-table-textarea', { 'has-error': errors[`taskRemarks-${index}`] }]"
-                    placeholder="Type in Scope of Work Description..."
-                    v-model="task.remarks"
-                    rows="2"
-                  />
-                </td>
-
-                <!-- Remarks Comment Bubble Button (Disabled) -->
-                <td style="text-align: center">
-                  <button
-                    type="button"
-                    class="remarks-btn disabled"
-                    disabled
-                    title="Remarks are disabled during order creation"
-                    aria-label="Remarks disabled"
-                  >
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
-                  </button>
-                </td>
-
-                <!-- Degree of Work Select -->
-                <td>
-                  <select
-                    class="modern-table-select"
-                    :value="task.degreeOfWork === 'Major' ? 'Major' : 'Minor'"
-                    @change="task.degreeOfWork = ($event.target as HTMLSelectElement).value"
-                  >
-                    <option value="Minor">Minor</option>
-                    <option value="Major">Major</option>
-                  </select>
-                </td>
-
-                <!-- Start and Completion Dates Inputs (Disabled & Empty) -->
-                <td>
-                  <div class="modern-date-input-group">
+          <!-- Desktop Table View -->
+          <div class="scope-desktop-table">
+            <table class="modern-scope-table">
+              <thead>
+                <tr>
+                  <th style="width: 36px; text-align: center"></th>
+                  <th style="width: 200px">ACTIVITY TYPE</th>
+                  <th>ACTIVITY DESCRIPTION</th>
+                  <th style="width: 80px; text-align: center">REMARKS</th>
+                  <th style="width: 170px">DEGREE OF WORK</th>
+                  <th style="width: 40px; text-align: center"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(task, index) in tasks"
+                  :key="index"
+                  :draggable="!isLocked"
+                  @dragstart="!isLocked && handleDragStart($event, index)"
+                  @dragover="!isLocked && handleDragOver($event, index)"
+                  @drop="!isLocked && handleDrop($event, index)"
+                  @dragend="handleDragEnd"
+                  :class="[{ dragging: draggedIndex === index, 'drag-over': dragOverIndex === index, 'is-locked-row': isLocked }]"
+                >
+                  <!-- Drag Handle Icon -->
+                  <td style="text-align: center">
                     <div
-                      class="modern-date-field disabled"
-                      title="Start date is disabled"
+                      class="drag-handle-btn"
+                      :title="isLocked ? 'Reordering disabled while locked' : 'Click & drag to reorder scope'"
+                      :style="{ opacity: isLocked ? 0.3 : 1, cursor: isLocked ? 'not-allowed' : 'grab' }"
                     >
-                      <span class="modern-date-label">START DATE</span>
-                      <input
-                        type="date"
-                        class="modern-date-input"
-                        :value="task.startDate || ''"
-                        disabled
-                      />
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <circle cx="8" cy="6" r="2" />
+                        <circle cx="16" cy="6" r="2" />
+                        <circle cx="8" cy="12" r="2" />
+                        <circle cx="16" cy="12" r="2" />
+                        <circle cx="8" cy="18" r="2" />
+                        <circle cx="16" cy="18" r="2" />
+                      </svg>
                     </div>
-                    <div
-                      class="modern-date-field disabled"
-                      title="End date is disabled"
-                    >
-                      <span class="modern-date-label">END DATE</span>
-                      <input
-                        type="date"
-                        class="modern-date-input"
-                        :value="task.endDate || ''"
-                        disabled
-                      />
-                    </div>
-                  </div>
-                </td>
+                  </td>
 
-                <!-- Delete Task Row Button -->
-                <td style="text-align: center">
+                  <!-- Activity Type Select -->
+                  <td>
+                    <select
+                      :class="['modern-table-select', { 'is-placeholder-selected': !task.type }]"
+                      :value="task.type"
+                      :disabled="isLocked"
+                      @change="handleActivityTypeChange(index, ($event.target as HTMLSelectElement).value)"
+                    >
+                      <option value="">Select Activity Type...</option>
+                      <option v-for="opt in activityTypeOptions" :key="opt" :value="opt">{{ opt }}</option>
+                      <option value="__ADD_NEW__" style="font-weight: 600; color: #006c49">+ Add New...</option>
+                    </select>
+                  </td>
+
+                  <!-- Activity Description Textarea -->
+                  <td>
+                    <textarea
+                      class="modern-table-textarea"
+                      placeholder="Type in Activity Description..."
+                      v-model="task.remarks"
+                      :disabled="isLocked"
+                      rows="2"
+                    />
+                  </td>
+
+                  <!-- Remarks Comment Bubble Button (Enabled) -->
+                  <td style="text-align: center">
+                    <button
+                      type="button"
+                      :class="['remarks-btn', { 'has-data-green': (task.remarksList && task.remarksList.length > 0) || task.hasComments }]"
+                      @click="openRemarksDrawer(index)"
+                      :title="(task.remarksList && task.remarksList.length > 0) ? `${task.remarksList.length} Remarks/Notes logged` : 'Open Remarks & Notes'"
+                      aria-label="Open Remarks & Notes"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                        :fill="(task.remarksList && task.remarksList.length > 0) || task.hasComments ? '#10B981' : 'none'"
+                        :stroke="(task.remarksList && task.remarksList.length > 0) || task.hasComments ? '#006C49' : '#6C7A71'"
+                        stroke-width="2"
+                      >
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      </svg>
+                    </button>
+                  </td>
+
+                  <!-- Degree of Work Select -->
+                  <td>
+                    <select
+                      class="modern-table-select"
+                      :value="task.degreeOfWork === 'Major' ? 'Major' : 'Minor'"
+                      :disabled="isLocked"
+                      @change="task.degreeOfWork = ($event.target as HTMLSelectElement).value"
+                    >
+                      <option value="Minor">Minor</option>
+                      <option value="Major">Major</option>
+                    </select>
+                  </td>
+
+                  <!-- Delete Task Row Button -->
+                  <td style="text-align: center">
+                    <button
+                      v-if="tasks.length > 1"
+                      type="button"
+                      class="btn-task-delete"
+                      title="Remove Task"
+                      :disabled="isLocked"
+                      :style="{ opacity: isLocked ? 0.3 : 1, cursor: isLocked ? 'not-allowed' : 'pointer' }"
+                      @click="!isLocked && handleDeleteTask(index)"
+                      aria-label="Remove Task"
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Mobile Card List View -->
+          <div class="scope-mobile-cards">
+            <div
+              v-for="(task, index) in tasks"
+              :key="index"
+              class="scope-mob-card"
+              :class="{ 'is-locked-card': isLocked }"
+            >
+              <!-- Card Header -->
+              <div class="scope-mob-card-header">
+                <div class="scope-mob-badge">
+                  <span class="scope-mob-badge-num">#{{ index + 1 }}</span>
+                  <span class="scope-mob-badge-label">Scope Item</span>
+                </div>
+
+                <div class="scope-mob-card-actions">
+                  <!-- Reorder buttons -->
+                  <div v-if="!isLocked && tasks.length > 1" class="scope-mob-reorder-group">
+                    <button
+                      type="button"
+                      class="scope-mob-order-btn"
+                      :disabled="index === 0"
+                      @click="moveTaskUp(index)"
+                      title="Move item up"
+                      aria-label="Move item up"
+                    >
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="18 15 12 9 6 15" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="scope-mob-order-btn"
+                      :disabled="index === tasks.length - 1"
+                      @click="moveTaskDown(index)"
+                      title="Move item down"
+                      aria-label="Move item down"
+                    >
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Delete button -->
                   <button
                     v-if="tasks.length > 1"
                     type="button"
-                    class="btn-task-delete"
-                    title="Remove Task"
-                    @click="handleDeleteTask(index)"
-                    aria-label="Remove Task"
+                    class="scope-mob-delete-btn"
+                    :disabled="isLocked"
+                    @click="!isLocked && handleDeleteTask(index)"
+                    title="Remove Scope Item"
+                    aria-label="Remove Scope Item"
                   >
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="3 6 5 6 21 6" />
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                     </svg>
                   </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </div>
+              </div>
+
+              <!-- Card Body -->
+              <div class="scope-mob-card-body">
+                <!-- Activity Type Field -->
+                <div class="scope-mob-field">
+                  <label class="scope-mob-field-label">ACTIVITY TYPE</label>
+                  <select
+                    :class="['scope-mob-select', { 'is-placeholder-selected': !task.type }]"
+                    :value="task.type"
+                    :disabled="isLocked"
+                    @change="handleActivityTypeChange(index, ($event.target as HTMLSelectElement).value)"
+                  >
+                    <option value="">Select Activity Type...</option>
+                    <option v-for="opt in activityTypeOptions" :key="opt" :value="opt">{{ opt }}</option>
+                    <option value="__ADD_NEW__" style="font-weight: 600; color: #006c49">+ Add New...</option>
+                  </select>
+                </div>
+
+                <!-- Activity Description Field -->
+                <div class="scope-mob-field">
+                  <label class="scope-mob-field-label">ACTIVITY DESCRIPTION</label>
+                  <textarea
+                    class="scope-mob-textarea"
+                    placeholder="Type in Activity Description..."
+                    v-model="task.remarks"
+                    :disabled="isLocked"
+                    rows="2"
+                  />
+                </div>
+
+                <!-- Footer Row: Degree of Work & Remarks Button -->
+                <div class="scope-mob-footer-row">
+                  <!-- Degree of Work -->
+                  <div class="scope-mob-degree-section">
+                    <label class="scope-mob-field-label">DEGREE OF WORK</label>
+                    <div class="scope-mob-degree-pills">
+                      <button
+                        type="button"
+                        :class="['scope-mob-degree-pill', { active: task.degreeOfWork !== 'Major' }]"
+                        :disabled="isLocked"
+                        @click="!isLocked && (task.degreeOfWork = 'Minor')"
+                      >
+                        Minor
+                      </button>
+                      <button
+                        type="button"
+                        :class="['scope-mob-degree-pill', 'pill-major', { active: task.degreeOfWork === 'Major' }]"
+                        :disabled="isLocked"
+                        @click="!isLocked && (task.degreeOfWork = 'Major')"
+                      >
+                        Major
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Remarks Button -->
+                  <div class="scope-mob-remarks-section">
+                    <label class="scope-mob-field-label">REMARKS & NOTES</label>
+                    <button
+                      type="button"
+                      :class="['scope-mob-remarks-btn', { 'has-data': (task.remarksList && task.remarksList.length > 0) || task.hasComments }]"
+                      @click="openRemarksDrawer(index)"
+                      aria-label="Open Remarks & Notes"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="14"
+                        height="14"
+                        :fill="(task.remarksList && task.remarksList.length > 0) || task.hasComments ? '#10B981' : 'none'"
+                        :stroke="(task.remarksList && task.remarksList.length > 0) || task.hasComments ? '#006C49' : 'currentColor'"
+                        stroke-width="2"
+                      >
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      </svg>
+                      <span v-if="task.remarksList && task.remarksList.length > 0">
+                        {{ task.remarksList.length }} {{ task.remarksList.length === 1 ? 'Note' : 'Notes' }}
+                      </span>
+                      <span v-else>Add Notes</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- Add More Scope Button -->
           <div class="modern-add-scope-wrapper">
-            <button type="button" class="btn-modern-add-scope" @click="handleAddTask">
+            <button
+              type="button"
+              class="btn-modern-add-scope"
+              :disabled="isLocked"
+              :style="{ opacity: isLocked ? 0.5 : 1, cursor: isLocked ? 'not-allowed' : 'pointer' }"
+              @click="!isLocked && handleAddTask()"
+            >
               <span class="btn-add-scope-icon">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
                   <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round" />
@@ -330,31 +667,116 @@
         </div>
       </div>
 
+      <!-- Bottom Right Corner Actions -->
+      <div class="create-order-footer-actions">
+        <button class="btn-modern-cancel" type="button" @click="$emit('cancel')">
+          Cancel
+        </button>
+        <button class="btn-modern-save" type="button" @click="handleSubmit" :disabled="isSaving">
+          <svg v-if="!isSaving" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFFFFF" stroke-width="2.5">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <svg v-else class="spin-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFFFFF" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" fill="none" />
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+          </svg>
+          <span>{{ isSaving ? 'Saving...' : (editingOrderCode ? 'Update Order' : 'Create Order') }}</span>
+        </button>
+      </div>
+
     </form>
+
+    <!-- SIDE DRAWER: REMARKS AND NOTES -->
+    <aside v-if="activeRemarksTaskIndex !== null && tasks[activeRemarksTaskIndex]" class="dwl-drawer dwl-remarks-drawer open">
+      <div class="dwl-drawer-header">
+        <div class="dwl-dh-title">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#006C49" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <h3>Remarks and Notes</h3>
+        </div>
+        <button class="dwl-drawer-close" type="button" @click="closeRemarksDrawer">&times;</button>
+      </div>
+
+      <div class="dwl-drawer-body">
+        <div v-if="!tasks[activeRemarksTaskIndex].remarksList || tasks[activeRemarksTaskIndex].remarksList!.length === 0" style="color: var(--color-text-muted); font-size: 13px; margin-bottom: 12px">
+          No remarks or notes added for this scope yet.
+        </div>
+
+        <div v-for="note in (tasks[activeRemarksTaskIndex].remarksList || [])" :key="note.id" class="dwl-note-card">
+          <div class="dwl-nc-header">
+            <span class="dwl-nc-time">{{ note.timestamp }}</span>
+            <div class="dwl-nc-actions" v-if="!isLocked">
+              <button
+                type="button"
+                class="dwl-nc-btn"
+                :class="{ active: editingNoteId === note.id }"
+                @click="editingNoteId = editingNoteId === note.id ? null : note.id"
+                title="Edit Note"
+              >
+                ✏️
+              </button>
+              <button type="button" class="dwl-nc-btn" @click="handleDeleteRemarkNote(note.id)" title="Delete Note">
+                🗑️
+              </button>
+            </div>
+          </div>
+
+          <div class="dwl-nc-textarea-wrapper">
+            <textarea
+              class="dwl-nc-textarea"
+              :value="note.text"
+              :readonly="isLocked || (editingNoteId !== null && editingNoteId !== note.id)"
+              @input="handleAutoResize($event); handleUpdateRemarkNoteText(note.id, ($event.target as HTMLTextAreaElement).value)"
+              maxlength="500"
+              placeholder="Type in remarks and notes..."
+            />
+            <span class="dwl-nc-counter">{{ (note.text || '').length }}/500</span>
+          </div>
+        </div>
+
+        <button v-if="!isLocked" type="button" class="dwl-btn-add-more" @click="handleAddRemarkNote">
+          + Add more Remarks and Notes
+        </button>
+      </div>
+
+      <div class="dwl-drawer-footer">
+        <button type="button" class="dwl-btn-drawer-confirm" @click="closeRemarksDrawer">
+          💾 Save Remarks and Notes
+        </button>
+      </div>
+    </aside>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { WorkOrder, Task, Person } from '../types';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { WorkOrder, Task, Person, RemarkNote, MasterCatalogsState, CatalogItem } from '../types';
+import { getItemTypeColor, ITEM_TYPE_COLOR_PALETTE } from '../utils/catalogsData';
+import SearchableCombobox from './SearchableCombobox.vue';
 
 const props = defineProps<{
   editingOrderCode: string | null;
+  returnView?: string;
   workOrders: WorkOrder[];
   personnel: Person[];
+  catalogs?: MasterCatalogsState;
 }>();
 
 const emit = defineEmits<{
   (e: 'saveOrder', data: WorkOrder): void;
   (e: 'cancel'): void;
+  (e: 'manageCatalogs'): void;
+  (e: 'addCatalogItem', item: CatalogItem): void;
 }>();
 
 const DEFAULT_OFFICES = [
-  'Building Repair & Maintenance',
-  'Student Housing Repair & Maintenance',
-  'Fabrication Workshop',
-  'Administrative Office',
-  'IT Infrastructure Department'
+  'Office of Student Housing',
+  'College of Mathematics Office',
+  'Medical Sciences Division',
+  'Office of the University Registrar',
+  "College of Engineering Dean's Office",
+  'Physical Plant & Facilities Maintenance'
 ];
 
 const DEFAULT_ASSETS = [
@@ -362,14 +784,14 @@ const DEFAULT_ASSETS = [
   'DMath Building',
   'CoMed Laboratory',
   'Engineering Hall',
-  'Central Administration'
+  'Central Administration',
+  'University Gymnasium & Sports Center'
 ];
 
 const DEFAULT_WORK_TYPES = [
+  'HVAC',
   'Electrical',
   'Plumbing',
-  'HVAC',
-  'Mechanical',
   'Carpentry',
   'Masonry',
   'General Maintenance'
@@ -384,19 +806,280 @@ const loadSavedList = (key: string, defaults: string[]) => {
   }
 };
 
-const officeOptions = ref<string[]>(loadSavedList('genso_custom_offices', DEFAULT_OFFICES));
-const assetOptions = ref<string[]>(loadSavedList('genso_custom_assets', DEFAULT_ASSETS));
-const workTypeOptions = ref<string[]>(loadSavedList('genso_custom_worktypes', DEFAULT_WORK_TYPES));
+const officeOptions = computed(() => {
+  if (props.catalogs?.offices && props.catalogs.offices.length > 0) {
+    return props.catalogs.offices
+      .filter((o) => o.isActive !== false)
+      .map((o) => o.name);
+  }
+  return loadSavedList('genso_custom_offices', DEFAULT_OFFICES);
+});
 
-const code = ref('');
-const dateReceived = ref('');
-const requesterName = ref('');
-const requestingOffice = ref('');
-const assetName = ref('');
-const roomNo = ref('');
-const workTitle = ref('');
-const description = ref('');
-const isLocked = ref(false);
+const officeCatalogItems = computed<CatalogItem[]>(() => {
+  if (props.catalogs?.offices && props.catalogs.offices.length > 0) {
+    return props.catalogs.offices.filter((o) => o.isActive !== false);
+  }
+  return DEFAULT_OFFICES.map((name, idx) => ({
+    id: `def-off-${idx}`,
+    type: 'office',
+    name,
+    isActive: true
+  }));
+});
+
+const assetOptions = computed(() => {
+  if (props.catalogs?.assets && props.catalogs.assets.length > 0) {
+    return props.catalogs.assets
+      .filter((a) => a.isActive !== false)
+      .map((a) => a.name);
+  }
+  if (props.catalogs?.offices && props.catalogs.offices.length > 0) {
+    return props.catalogs.offices
+      .filter((o) => o.isActive !== false)
+      .map((o) => o.name);
+  }
+  return loadSavedList('genso_custom_assets', DEFAULT_ASSETS);
+});
+
+const assetCatalogItems = computed<CatalogItem[]>(() => {
+  if (props.catalogs?.assets && props.catalogs.assets.length > 0) {
+    return props.catalogs.assets.filter((a) => a.isActive !== false);
+  }
+  if (props.catalogs?.offices && props.catalogs.offices.length > 0) {
+    return props.catalogs.offices.filter((o) => o.isActive !== false);
+  }
+  return DEFAULT_ASSETS.map((name, idx) => ({
+    id: `def-ast-${idx}`,
+    type: 'asset',
+    name,
+    isActive: true
+  }));
+});
+
+const workTypeOptions = computed(() => {
+  if (props.catalogs?.workTypes && props.catalogs.workTypes.length > 0) {
+    return props.catalogs.workTypes
+      .filter((w) => w.isActive !== false)
+      .map((w) => w.name);
+  }
+  return loadSavedList('genso_custom_worktypes', DEFAULT_WORK_TYPES);
+});
+
+const workTypeCatalogItems = computed<CatalogItem[]>(() => {
+  if (props.catalogs?.workTypes && props.catalogs.workTypes.length > 0) {
+    return props.catalogs.workTypes.filter((w) => w.isActive !== false);
+  }
+  return DEFAULT_WORK_TYPES.map((name, idx) => ({
+    id: `def-wt-${idx}`,
+    type: 'work_type',
+    name,
+    isActive: true
+  }));
+});
+
+const DEFAULT_ACTIVITY_TYPES = [
+  'Carpentry Works',
+  'Masonry Works',
+  'Concreting Works',
+  'Welding Works',
+  'Painting Works',
+  'Plumbing Works',
+  'Electrical Works',
+  'Electronics Works',
+  'Mechanical Works',
+  'Airconditioning Works',
+  'Landscaping Works',
+  'Hauling Works',
+  'Fabrication Works',
+  'Demolition Works',
+  'Civil Works',
+  'General Maintenance'
+];
+
+const activityTypeOptions = computed(() => {
+  let list: string[] = [];
+  if (props.catalogs?.activityTypes && props.catalogs.activityTypes.length > 0) {
+    list = props.catalogs.activityTypes
+      .filter((a) => a.isActive !== false)
+      .map((a) => a.name);
+  } else {
+    list = [...DEFAULT_ACTIVITY_TYPES];
+  }
+  // Include existing task types if present (to avoid unselected option when opening existing order)
+  tasks.value.forEach((t) => {
+    if (t.type && t.type.trim() && !list.includes(t.type.trim())) {
+      list.push(t.type.trim());
+    }
+  });
+  return list;
+});
+
+const DEFAULT_ITEM_TYPES = [
+  'Building/Structure',
+  'Wall Partitions',
+  'Doors & Windows',
+  'Ceilings',
+  'Flooring & Tiling',
+  'Roofing & Gutters',
+  'Cabinets & Millwork',
+  'Lighting Fixtures',
+  'Power Outlets & Switches',
+  'Distribution Panel',
+  'Sanitary Fixtures',
+  'Water Pipelines & Valves',
+  'Drainage & Sewerage',
+  'Air Conditioning Units',
+  'Ventilation Fans',
+  'Exhaust Systems',
+  'Desks & Tables',
+  'Chairs & Seating',
+  'Storage & Shelving',
+  'Sidewalks & Pavements',
+  'Fences & Gates',
+  'Landscaping Elements'
+];
+
+const getTagColor = (tag: string): string => {
+  return getItemTypeColor(tag, props.catalogs);
+};
+
+const itemTypeCatalogItems = computed(() => {
+  if (props.catalogs?.itemTypes && props.catalogs.itemTypes.length > 0) {
+    return props.catalogs.itemTypes
+      .filter((it) => it.isActive !== false)
+      .map((it) => ({
+        id: it.id,
+        name: it.name,
+        code: it.code || '',
+        title: it.title || '',
+        category: it.category || '',
+        color: it.color || getItemTypeColor(it.name, props.catalogs)
+      }));
+  }
+  return DEFAULT_ITEM_TYPES.map((name, idx) => ({
+    id: `def-it-${idx}`,
+    name,
+    code: String(idx + 1).padStart(2, '0'),
+    title: '',
+    category: '',
+    color: ITEM_TYPE_COLOR_PALETTE[idx % ITEM_TYPE_COLOR_PALETTE.length]
+  }));
+});
+
+const selectedItemTypes = ref<string[]>([]);
+const tagSearchQuery = ref('');
+const isTagInputFocused = ref(false);
+const isTagDropdownOpen = ref(false);
+const highlightedTagIndex = ref(-1);
+const tagInputRef = ref<HTMLInputElement | null>(null);
+const tagBoxRef = ref<HTMLElement | null>(null);
+
+const isWorkTitleManuallyEdited = ref(false);
+
+const filteredItemTypeOptions = computed(() => {
+  const q = tagSearchQuery.value.toLowerCase().trim();
+  if (!q) return itemTypeCatalogItems.value;
+  return itemTypeCatalogItems.value.filter(
+    (item) =>
+      item.name.toLowerCase().includes(q) ||
+      (item.title && item.title.toLowerCase().includes(q)) ||
+      (item.code && item.code.toLowerCase().includes(q)) ||
+      (item.category && item.category.toLowerCase().includes(q))
+  );
+});
+
+const toggleSelectItemType = (name: string) => {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  if (selectedItemTypes.value.includes(trimmed)) {
+    selectedItemTypes.value = selectedItemTypes.value.filter((t) => t !== trimmed);
+  } else {
+    selectedItemTypes.value.push(trimmed);
+  }
+  tagSearchQuery.value = '';
+  highlightedTagIndex.value = -1;
+  tagInputRef.value?.focus();
+  tryUpdateAutoWorkTitle();
+};
+
+const removeItemType = (tag: string) => {
+  if (isLocked.value) return;
+  selectedItemTypes.value = selectedItemTypes.value.filter((t) => t !== tag);
+  tryUpdateAutoWorkTitle();
+};
+
+const toggleTagDropdown = () => {
+  if (isLocked.value) return;
+  isTagDropdownOpen.value = !isTagDropdownOpen.value;
+  if (isTagDropdownOpen.value) {
+    tagInputRef.value?.focus();
+  }
+};
+
+const focusTagInput = () => {
+  if (isLocked.value) return;
+  tagInputRef.value?.focus();
+  isTagDropdownOpen.value = true;
+};
+
+const onTagInputFocus = () => {
+  isTagInputFocused.value = true;
+  isTagDropdownOpen.value = true;
+};
+
+const onTagInputBlur = () => {
+  isTagInputFocused.value = false;
+};
+
+const onTagInputEsc = () => {
+  isTagDropdownOpen.value = false;
+  isTagInputFocused.value = false;
+  tagInputRef.value?.blur();
+};
+
+const onTagInputEnter = () => {
+  if (highlightedTagIndex.value >= 0 && highlightedTagIndex.value < filteredItemTypeOptions.value.length) {
+    toggleSelectItemType(filteredItemTypeOptions.value[highlightedTagIndex.value].name);
+    return;
+  }
+  if (tagSearchQuery.value.trim()) {
+    toggleSelectItemType(tagSearchQuery.value.trim());
+  }
+};
+
+const onTagInputBackspace = () => {
+  if (!tagSearchQuery.value && selectedItemTypes.value.length > 0) {
+    selectedItemTypes.value.pop();
+  }
+};
+
+const highlightNextTag = () => {
+  if (filteredItemTypeOptions.value.length === 0) return;
+  highlightedTagIndex.value = (highlightedTagIndex.value + 1) % filteredItemTypeOptions.value.length;
+};
+
+const highlightPrevTag = () => {
+  if (filteredItemTypeOptions.value.length === 0) return;
+  highlightedTagIndex.value =
+    highlightedTagIndex.value <= 0
+      ? filteredItemTypeOptions.value.length - 1
+      : highlightedTagIndex.value - 1;
+};
+
+const handleClickOutside = (e: MouseEvent) => {
+  if (tagBoxRef.value && !tagBoxRef.value.contains(e.target as Node)) {
+    isTagDropdownOpen.value = false;
+    isTagInputFocused.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 
 const getTodayString = () => {
   const d = new Date();
@@ -413,10 +1096,131 @@ const getFormattedTodayDate = () => {
   return `${month} ${day}, ${year}`;
 };
 
-const generateRequestCode = () => {
-  const randNum = Math.floor(100 + Math.random() * 900);
-  return `JR - BHM - 26 - ${randNum}`;
+const formatDateToDisplay = (val: string) => {
+  if (!val) return '';
+  const trimmed = val.trim();
+  const parts = trimmed.split('-');
+  if (parts.length === 3 && parts[0].length === 4) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    const date = new Date(y, m, d);
+    if (!isNaN(date.getTime())) {
+      const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+      const day = String(date.getDate()).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${month} ${day}, ${year}`;
+    }
+  }
+  const date = new Date(trimmed);
+  if (!isNaN(date.getTime())) {
+    const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month} ${day}, ${year}`;
+  }
+  return val;
 };
+
+const currentYear2 = String(new Date().getFullYear()).slice(-2);
+const codePrefix = ref('JR');
+const codeDeptYear = ref(`BHM-${currentYear2}`);
+const codeNumber = ref('');
+
+const fullComputedCode = computed(() => {
+  const p = codePrefix.value.trim().toUpperCase();
+  const d = codeDeptYear.value.trim().toUpperCase();
+  const n = codeNumber.value.trim();
+  return [p, d, n].filter(Boolean).join('-');
+});
+
+const isDuplicateCode = computed(() => {
+  const current = fullComputedCode.value.trim().toUpperCase();
+  if (!current || !codeNumber.value.trim()) return false;
+  if (!props.workOrders || props.workOrders.length === 0) return false;
+
+  return props.workOrders.some((order) => {
+    if (props.editingOrderCode && order.code && order.code.trim().toUpperCase() === props.editingOrderCode.trim().toUpperCase()) {
+      return false;
+    }
+    return Boolean(order.code && order.code.trim().toUpperCase() === current);
+  });
+});
+
+const parseExistingCode = (rawCode: string) => {
+  if (!rawCode) {
+    codePrefix.value = 'JR';
+    codeDeptYear.value = `BHM-${currentYear2}`;
+    codeNumber.value = '';
+    return;
+  }
+  const clean = rawCode.replace(/\s*-\s*/g, '-').trim();
+  const parts = clean.split('-');
+  if (parts.length >= 3) {
+    codePrefix.value = parts[0];
+    codeDeptYear.value = parts.slice(1, -1).join('-');
+    codeNumber.value = parts[parts.length - 1];
+  } else if (parts.length === 2) {
+    codePrefix.value = parts[0];
+    codeDeptYear.value = `BHM-${currentYear2}`;
+    codeNumber.value = parts[1];
+  } else {
+    codePrefix.value = 'JR';
+    codeDeptYear.value = `BHM-${currentYear2}`;
+    codeNumber.value = clean;
+  }
+};
+
+const dateReceived = ref(getFormattedTodayDate());
+const datePickerInput = ref<HTMLInputElement | null>(null);
+
+const isoDateValue = computed(() => {
+  if (!dateReceived.value) return getTodayString();
+  const trimmed = dateReceived.value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+  const parsed = new Date(trimmed);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return getTodayString();
+});
+
+const openDatePicker = () => {
+  if (isLocked.value || !datePickerInput.value) return;
+  try {
+    if ('showPicker' in HTMLInputElement.prototype) {
+      datePickerInput.value.showPicker();
+      return;
+    }
+  } catch (err) {
+    console.warn('showPicker error:', err);
+  }
+  datePickerInput.value.focus();
+};
+
+const handleDatePickerChange = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  if (target && target.value) {
+    dateReceived.value = formatDateToDisplay(target.value);
+  }
+};
+
+const requesterName = ref('');
+const requestingOffice = ref('');
+const assetName = ref('');
+const roomNo = ref('');
+const workTitle = ref('');
+const worktype = ref('');
+const description = ref('');
+const isLocked = ref(false);
+
+const activeRemarksTaskIndex = ref<number | null>(null);
+const editingNoteId = ref<string | null>(null);
 
 const tasks = ref<Task[]>([
   {
@@ -424,7 +1228,8 @@ const tasks = ref<Task[]>([
     remarks: '',
     degreeOfWork: 'Minor',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    remarksList: []
   }
 ]);
 
@@ -440,15 +1245,17 @@ watch(
     if (props.editingOrderCode) {
       const order = props.workOrders.find((o) => o.code === props.editingOrderCode);
       if (order) {
-        code.value = order.code;
-        dateReceived.value = order.dateReceived || getFormattedTodayDate();
+        parseExistingCode(order.code || '');
+        dateReceived.value = order.dateReceived ? formatDateToDisplay(order.dateReceived) : getFormattedTodayDate();
         requesterName.value = order.requesterName || '';
         requestingOffice.value = order.requestingOffice || '';
         assetName.value = order.assetName || '';
         roomNo.value = order.roomNo || order.space || '';
         workTitle.value = order.workTitle || '';
+        worktype.value = order.worktype || (order.tasks && order.tasks[0]?.type) || '';
         description.value = order.description || '';
         isLocked.value = order.isLocked || false;
+        selectedItemTypes.value = Array.isArray(order.itemTypes) ? [...order.itemTypes] : [];
 
         if (order.requestingOffice && !officeOptions.value.includes(order.requestingOffice)) {
           officeOptions.value.push(order.requestingOffice);
@@ -456,11 +1263,16 @@ watch(
         if (order.assetName && !assetOptions.value.includes(order.assetName)) {
           assetOptions.value.push(order.assetName);
         }
+        if (worktype.value && !workTypeOptions.value.includes(worktype.value)) {
+          workTypeOptions.value.push(worktype.value);
+        }
 
         if (order.tasks && order.tasks.length > 0) {
           tasks.value = order.tasks.map((t) => ({
             ...t,
-            degreeOfWork: t.degreeOfWork === 'Major' ? 'Major' : 'Minor'
+            remarks: t.remarks === 'General Maintenance Scope' ? '' : (t.remarks || ''),
+            degreeOfWork: t.degreeOfWork === 'Major' ? 'Major' : 'Minor',
+            remarksList: t.remarksList ? [...t.remarksList] : []
           }));
           order.tasks.forEach((t) => {
             if (t.type && !workTypeOptions.value.includes(t.type)) {
@@ -471,31 +1283,39 @@ watch(
           tasks.value = [
             {
               type: order.worktype || '',
-              remarks: order.scope || '',
+              remarks: (order.scope === 'General Maintenance Scope' ? '' : order.scope) || '',
               degreeOfWork: 'Minor',
               startDate: order.startDate || '',
-              endDate: order.endDate || ''
+              endDate: order.endDate || '',
+              remarksList: []
             }
           ];
         }
       }
     } else {
-      code.value = generateRequestCode();
       dateReceived.value = getFormattedTodayDate();
+      codePrefix.value = 'JR';
+      codeDeptYear.value = `BHM-${currentYear2}`;
+      codeNumber.value = '';
       requesterName.value = '';
       requestingOffice.value = '';
       assetName.value = '';
       roomNo.value = '';
       workTitle.value = '';
+      worktype.value = '';
       description.value = '';
       isLocked.value = false;
+      selectedItemTypes.value = [];
+      tagSearchQuery.value = '';
+      isTagDropdownOpen.value = false;
       tasks.value = [
         {
           type: '',
           remarks: '',
           degreeOfWork: 'Minor',
           startDate: '',
-          endDate: ''
+          endDate: '',
+          remarksList: []
         }
       ];
     }
@@ -504,53 +1324,181 @@ watch(
   { immediate: true, deep: true }
 );
 
-const handleOfficeChange = (val: string) => {
-  if (val === '__ADD_NEW__') {
-    const newName = window.prompt('Enter new Requesting Office name:');
-    if (newName && newName.trim()) {
-      const trimmed = newName.trim();
-      if (!officeOptions.value.includes(trimmed)) {
-        officeOptions.value.push(trimmed);
-        try { localStorage.setItem('genso_custom_offices', JSON.stringify(officeOptions.value)); } catch {}
-      }
-      requestingOffice.value = trimmed;
+const computeAutoWorkTitle = (): string => {
+  const parts: string[] = [];
+
+  // 1. Office Title of the requesting office (or Facility/Asset if office is not specified)
+  const officeQuery = requestingOffice.value?.trim().toLowerCase() || '';
+  const assetQuery = assetName.value?.trim().toLowerCase() || '';
+
+  let off = (props.catalogs?.offices || []).find(
+    (o) => o.name.toLowerCase() === officeQuery ||
+           (o.acronym && o.acronym.toLowerCase() === officeQuery) ||
+           (o.title && o.title.toLowerCase() === officeQuery) ||
+           (o.code && o.code.toLowerCase() === officeQuery)
+  );
+
+  // Fallback to facility/asset if requesting office is not selected
+  if (!off && assetQuery) {
+    off = (props.catalogs?.offices || []).find(
+      (o) => o.name.toLowerCase() === assetQuery ||
+             (o.acronym && o.acronym.toLowerCase() === assetQuery) ||
+             (o.title && o.title.toLowerCase() === assetQuery) ||
+             (o.code && o.code.toLowerCase() === assetQuery)
+    );
+  }
+
+  if (off) {
+    const offTitle = off.title?.trim() || off.acronym?.trim() || off.name.trim();
+    if (offTitle) {
+      parts.push(offTitle.toUpperCase());
     }
+  } else if (requestingOffice.value?.trim()) {
+    parts.push(requestingOffice.value.trim().toUpperCase());
+  }
+
+  // 2. Work Title of the work type
+  if (worktype.value && worktype.value.trim()) {
+    const wtQuery = worktype.value.trim().toLowerCase();
+    const wt = (props.catalogs?.workTypes || []).find(
+      (w) => w.name.toLowerCase() === wtQuery ||
+             (w.title && w.title.toLowerCase() === wtQuery) ||
+             (w.code && w.code.toLowerCase() === wtQuery)
+    );
+    const wtTitle = wt?.title?.trim() || worktype.value.trim();
+    if (wtTitle) {
+      parts.push(wtTitle.toUpperCase());
+    }
+  }
+
+  // 3. Item Type Title(s) with dashes if more than 1
+  if (selectedItemTypes.value && selectedItemTypes.value.length > 0) {
+    const itemTitles: string[] = [];
+    for (const itName of selectedItemTypes.value) {
+      const itQuery = itName.trim().toLowerCase();
+      const it = (props.catalogs?.itemTypes || []).find(
+        (i) => i.name.toLowerCase() === itQuery ||
+               (i.title && i.title.toLowerCase() === itQuery) ||
+               (i.code && i.code.toLowerCase() === itQuery)
+      );
+      const title = it?.title?.trim() || itName.trim();
+      if (title && !itemTitles.includes(title.toUpperCase())) {
+        itemTitles.push(title.toUpperCase());
+      }
+    }
+    if (itemTitles.length > 0) {
+      parts.push(itemTitles.join(' - '));
+    }
+  }
+
+  return parts.join(' - ');
+};
+
+const tryUpdateAutoWorkTitle = () => {
+  if (isWorkTitleManuallyEdited.value && workTitle.value.trim()) return;
+  const auto = computeAutoWorkTitle();
+  if (auto) {
+    workTitle.value = auto;
+  }
+};
+
+const handleRegenerateWorkTitle = () => {
+  isWorkTitleManuallyEdited.value = false;
+  const auto = computeAutoWorkTitle();
+  if (auto) {
+    workTitle.value = auto;
+  }
+};
+
+const handleWorkTitleManualInput = () => {
+  if (workTitle.value.trim()) {
+    isWorkTitleManuallyEdited.value = true;
   } else {
-    requestingOffice.value = val;
+    isWorkTitleManuallyEdited.value = false;
+  }
+};
+
+const handleOfficeChange = (val: string) => {
+  requestingOffice.value = val;
+  tryUpdateAutoWorkTitle();
+};
+
+const handleAddNewOffice = () => {
+  const newName = window.prompt('Enter new Requesting Office name:');
+  if (newName && newName.trim()) {
+    const trimmed = newName.trim();
+    emit('addCatalogItem', {
+      id: `off-${Date.now()}`,
+      type: 'office',
+      name: trimmed,
+      isActive: true
+    });
+    requestingOffice.value = trimmed;
+    tryUpdateAutoWorkTitle();
   }
 };
 
 const handleAssetChange = (val: string) => {
-  if (val === '__ADD_NEW__') {
-    const newName = window.prompt('Enter new Facility / Building name:');
-    if (newName && newName.trim()) {
-      const trimmed = newName.trim();
-      if (!assetOptions.value.includes(trimmed)) {
-        assetOptions.value.push(trimmed);
-        try { localStorage.setItem('genso_custom_assets', JSON.stringify(assetOptions.value)); } catch {}
-      }
-      assetName.value = trimmed;
-    }
-  } else {
-    assetName.value = val;
+  assetName.value = val;
+  tryUpdateAutoWorkTitle();
+};
+
+const handleAddNewAsset = () => {
+  const newName = window.prompt('Enter new Facility / Building name:');
+  if (newName && newName.trim()) {
+    const trimmed = newName.trim();
+    emit('addCatalogItem', {
+      id: `ast-${Date.now()}`,
+      type: 'asset',
+      name: trimmed,
+      isActive: true
+    });
+    assetName.value = trimmed;
+    tryUpdateAutoWorkTitle();
   }
 };
 
-const handleWorkTypeChange = (index: number, val: string) => {
+const handleGeneralWorkTypeChange = (val: string) => {
+  worktype.value = val;
+  tryUpdateAutoWorkTitle();
+};
+
+const handleAddNewWorkType = () => {
+  const newName = window.prompt('Enter new Work Type:');
+  if (newName && newName.trim()) {
+    const trimmed = newName.trim();
+    emit('addCatalogItem', {
+      id: `wt-${Date.now()}`,
+      type: 'work_type',
+      name: trimmed,
+      isActive: true
+    });
+    worktype.value = trimmed;
+    tryUpdateAutoWorkTitle();
+  }
+};
+
+const handleActivityTypeChange = (index: number, val: string) => {
   if (val === '__ADD_NEW__') {
-    const newName = window.prompt('Enter new Work Type:');
+    const newName = window.prompt('Enter new Activity Type:');
     if (newName && newName.trim()) {
       const trimmed = newName.trim();
-      if (!workTypeOptions.value.includes(trimmed)) {
-        workTypeOptions.value.push(trimmed);
-        try { localStorage.setItem('genso_custom_worktypes', JSON.stringify(workTypeOptions.value)); } catch {}
-      }
+      emit('addCatalogItem', {
+        id: `act-${Date.now()}`,
+        type: 'activity_type',
+        name: trimmed,
+        isActive: true
+      });
       tasks.value[index].type = trimmed;
     }
+  } else if (val === '__MANAGE__') {
+    emit('manageCatalogs');
   } else {
     tasks.value[index].type = val;
   }
 };
+
+const handleWorkTypeChange = handleActivityTypeChange;
 
 const handleAddTask = () => {
   tasks.value.push({
@@ -558,13 +1506,41 @@ const handleAddTask = () => {
     remarks: '',
     degreeOfWork: 'Minor',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    remarksList: []
   });
 };
 
 const handleDeleteTask = (index: number) => {
   if (tasks.value.length <= 1) return;
   tasks.value.splice(index, 1);
+  if (activeRemarksTaskIndex.value === index) {
+    activeRemarksTaskIndex.value = null;
+  } else if (activeRemarksTaskIndex.value !== null && activeRemarksTaskIndex.value > index) {
+    activeRemarksTaskIndex.value -= 1;
+  }
+};
+
+const moveTaskUp = (index: number) => {
+  if (isLocked.value || index <= 0) return;
+  const item = tasks.value.splice(index, 1)[0];
+  tasks.value.splice(index - 1, 0, item);
+  if (activeRemarksTaskIndex.value === index) {
+    activeRemarksTaskIndex.value = index - 1;
+  } else if (activeRemarksTaskIndex.value === index - 1) {
+    activeRemarksTaskIndex.value = index;
+  }
+};
+
+const moveTaskDown = (index: number) => {
+  if (isLocked.value || index >= tasks.value.length - 1) return;
+  const item = tasks.value.splice(index, 1)[0];
+  tasks.value.splice(index + 1, 0, item);
+  if (activeRemarksTaskIndex.value === index) {
+    activeRemarksTaskIndex.value = index + 1;
+  } else if (activeRemarksTaskIndex.value === index + 1) {
+    activeRemarksTaskIndex.value = index;
+  }
 };
 
 const handleDragStart = (e: DragEvent, index: number) => {
@@ -598,58 +1574,944 @@ const handleDragEnd = () => {
   dragOverIndex.value = null;
 };
 
+// Remarks and Notes Drawer Handlers
+const openRemarksDrawer = (index: number) => {
+  activeRemarksTaskIndex.value = index;
+  editingNoteId.value = null;
+};
+
+const closeRemarksDrawer = () => {
+  activeRemarksTaskIndex.value = null;
+  editingNoteId.value = null;
+};
+
+const handleAddRemarkNote = () => {
+  if (activeRemarksTaskIndex.value === null) return;
+  const currentTask = tasks.value[activeRemarksTaskIndex.value];
+  if (!currentTask) return;
+
+  const now = new Date();
+  const timeStr = `${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+  const newNote: RemarkNote = {
+    id: `rem-${Date.now()}`,
+    timestamp: timeStr,
+    text: ''
+  };
+
+  if (!currentTask.remarksList) {
+    currentTask.remarksList = [];
+  }
+  currentTask.remarksList.push(newNote);
+  currentTask.hasComments = true;
+  editingNoteId.value = newNote.id;
+};
+
+const handleUpdateRemarkNoteText = (noteId: string, text: string) => {
+  if (activeRemarksTaskIndex.value === null) return;
+  const currentTask = tasks.value[activeRemarksTaskIndex.value];
+  if (!currentTask || !currentTask.remarksList) return;
+
+  const note = currentTask.remarksList.find((n) => n.id === noteId);
+  if (note) {
+    note.text = text.length > 500 ? text.slice(0, 500) : text;
+  }
+};
+
+const handleDeleteRemarkNote = (noteId: string) => {
+  if (activeRemarksTaskIndex.value === null) return;
+  const currentTask = tasks.value[activeRemarksTaskIndex.value];
+  if (!currentTask || !currentTask.remarksList) return;
+
+  currentTask.remarksList = currentTask.remarksList.filter((n) => n.id !== noteId);
+  currentTask.hasComments = currentTask.remarksList.length > 0;
+  if (editingNoteId.value === noteId) {
+    editingNoteId.value = null;
+  }
+};
+
+const isSaving = ref(false);
+
+const handleAutoResize = (e: Event) => {
+  const target = e.target as HTMLTextAreaElement;
+  if (!target) return;
+  target.style.height = 'auto';
+  target.style.height = `${target.scrollHeight}px`;
+};
+
 const handleSubmit = () => {
   const newErrors: Record<string, boolean> = {};
   let isValid = true;
 
-  if (!code.value.trim()) { newErrors.code = true; isValid = false; }
-  if (!requesterName.value.trim()) { newErrors.requesterName = true; isValid = false; }
-  if (!requestingOffice.value) { newErrors.requestingOffice = true; isValid = false; }
-  if (!assetName.value) { newErrors.assetName = true; isValid = false; }
-
-  tasks.value.forEach((t, i) => {
-    if (!t.type) { newErrors[`taskType-${i}`] = true; isValid = false; }
-    if (!t.remarks.trim()) { newErrors[`taskRemarks-${i}`] = true; isValid = false; }
-  });
+  const assembledCode = fullComputedCode.value;
+  if (!assembledCode || !codeNumber.value.trim()) {
+    newErrors.code = true;
+    isValid = false;
+  } else if (isDuplicateCode.value) {
+    newErrors.code = true;
+    isValid = false;
+  }
 
   errors.value = newErrors;
 
   if (!isValid) {
-    const errKeys = Object.keys(newErrors);
-    if (errKeys.length > 0) {
-      const el = document.getElementById(errKeys[0]) || document.querySelector('.has-error');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    const el = document.getElementById('codeNumber') || document.getElementById('codePrefix') || document.querySelector('.has-error');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
 
-  const primaryTask = tasks.value[0] || { type: 'General', remarks: 'General Maintenance', startDate: getTodayString(), endDate: getTodayString() };
+  isSaving.value = true;
+
+  const existing = props.workOrders?.find((o) => o.code === props.editingOrderCode);
+  const cleanedTasks = tasks.value.filter(
+    (t) => (t.type && t.type.trim() !== '' && t.type.trim() !== '-') ||
+           (t.remarks && t.remarks.trim() !== '' && t.remarks.trim() !== '-')
+  );
+  const finalTasks = cleanedTasks.length > 0
+    ? cleanedTasks
+    : [
+        {
+          type: worktype.value.trim() || '',
+          remarks: description.value.trim() || '',
+          degreeOfWork: 'Minor' as const,
+          startDate: '',
+          endDate: '',
+          remarksList: []
+        }
+      ];
+
+  const primaryTask = finalTasks[0];
+  const effectiveWorkType = worktype.value.trim() || primaryTask.type.trim() || '';
+  const effectiveScope = primaryTask.remarks ? primaryTask.remarks.trim() : '';
 
   const payload: WorkOrder = {
-    code: code.value,
-    assetName: assetName.value || 'Default Facility',
-    space: roomNo.value || 'Main Facility',
-    scope: primaryTask.remarks,
-    workgroup: requestingOffice.value || 'General Maintenance',
-    status: 'Pending',
-    priority: 'Medium',
-    worktype: primaryTask.type || 'General',
-    startDate: primaryTask.startDate,
-    endDate: primaryTask.endDate,
-    startTime: '08:00 AM',
-    endTime: '05:00 PM',
-    foreman: requesterName.value || 'System Admin',
-    assigned: [],
-    description: description.value,
-    tasks: tasks.value,
-    workTitle: workTitle.value,
-    dateReceived: dateReceived.value,
-    requesterName: requesterName.value,
-    requestingOffice: requestingOffice.value,
-    roomNo: roomNo.value,
-    isLocked: isLocked.value
+    ...(existing || {}),
+    code: assembledCode || (existing ? existing.code : `JR-BHM-${currentYear2}-001`),
+    assetName: assetName.value.trim() || (existing ? existing.assetName : '-'),
+    space: roomNo.value.trim() || (existing ? existing.space : '-'),
+    scope: effectiveScope,
+    workgroup: existing?.workgroup || '',
+    status: existing ? existing.status : 'Pending',
+    priority: existing ? existing.priority : 'Medium',
+    worktype: effectiveWorkType,
+    startDate: primaryTask.startDate || (existing ? existing.startDate : ''),
+    endDate: primaryTask.endDate || (existing ? existing.endDate : ''),
+    startTime: existing?.startTime || '08:00 AM',
+    endTime: existing?.endTime || '05:00 PM',
+    foreman: requesterName.value.trim() || (existing ? existing.foreman : '-'),
+    assigned: existing?.assigned || [],
+    description: description.value.trim() || '-',
+    tasks: finalTasks.map((t) => ({
+      ...t,
+      type: t.type.trim() || worktype.value.trim() || '',
+      remarks: t.remarks ? t.remarks.trim() : ''
+    })),
+    workTitle: workTitle.value.trim() || '-',
+    dateReceived: dateReceived.value.trim() || getFormattedTodayDate(),
+    requesterName: requesterName.value.trim() || '-',
+    requestingOffice: requestingOffice.value.trim() || '-',
+    roomNo: roomNo.value.trim() || '-',
+    isLocked: Boolean(isLocked.value),
+    itemTypes: [...selectedItemTypes.value]
   };
 
   emit('saveOrder', payload);
 };
 </script>
+
+<style scoped>
+/* Item Types Field Container */
+.item-types-field-group {
+  position: relative;
+}
+
+.tag-count-indicator {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8BA869;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Modern Tag Input Box */
+.modern-tag-input-box {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  box-sizing: border-box;
+  width: 100%;
+  background: #FFFFFF;
+  border: 1px solid #BBCABF;
+  border-radius: 8px;
+  padding: 4px 12px;
+  cursor: text;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.modern-tag-input-box:hover:not(.is-locked):not(.is-focused):not(:focus-within) {
+  border-color: #8BA869;
+}
+
+.modern-tag-input-box.is-focused,
+.modern-tag-input-box:focus-within {
+  border-color: #006C49;
+  box-shadow: 0 0 0 2px rgba(0, 108, 73, 0.15);
+}
+
+.modern-tag-input-box.is-locked {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+/* Selected Tag Pill (Styled identically to user reference image row 4) */
+.item-type-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 10px 0 11px;
+  background-color: #8BA869;
+  color: #FFFFFF;
+  border-radius: 9999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  user-select: none;
+  transition: background-color 0.15s ease, transform 0.12s ease;
+  white-space: nowrap;
+}
+
+.item-type-tag-pill:hover {
+  background-color: #7E9B5C;
+}
+
+.tag-pill-icon {
+  flex-shrink: 0;
+  stroke: #FFFFFF;
+  opacity: 0.95;
+}
+
+.tag-pill-text {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-pill-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  margin-left: 2px;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  outline: none;
+  line-height: 1;
+}
+
+.tag-pill-remove:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.35);
+  transform: scale(1.15);
+}
+
+.tag-pill-remove:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Inline Input inside Tag Box */
+.tag-inline-input {
+  flex: 1;
+  min-width: 80px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #0B1C30;
+  padding: 6px 4px;
+}
+
+.tag-inline-input::placeholder {
+  color: rgba(187, 202, 191, 0.7);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.tag-inline-input:disabled {
+  cursor: not-allowed;
+}
+
+/* Dropdown Toggle Chevron Button */
+.tag-box-toggle-btn {
+  background: none;
+  border: none;
+  color: #6C7A71;
+  cursor: pointer;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  border-radius: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.tag-box-toggle-btn:hover:not(:disabled) {
+  color: #006C49;
+  background: rgba(0, 108, 73, 0.08);
+}
+
+/* Dropdown Menu */
+.tag-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #FFFFFF;
+  border: 1px solid #BBCABF;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+  z-index: 60;
+  padding: 5px;
+}
+
+.tag-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1E293B;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.tag-dropdown-item:hover,
+.tag-dropdown-item.is-highlighted {
+  background-color: #F1F5F0;
+  color: #006C49;
+}
+
+.tag-dropdown-item.is-selected {
+  font-weight: 600;
+  color: #006C49;
+  background-color: rgba(139, 168, 105, 0.14);
+}
+
+.tag-dropdown-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-dropdown-code {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8BA869;
+  background: rgba(139, 168, 105, 0.15);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.tag-dropdown-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag-dropdown-check {
+  font-size: 13px;
+  font-weight: 800;
+  color: #006C49;
+  margin-left: 8px;
+}
+
+.tag-dropdown-empty {
+  padding: 12px;
+  text-align: center;
+  font-size: 12.5px;
+  color: #64748B;
+}
+
+.tag-dropdown-item.custom-add {
+  border-top: 1px dashed #E2E8F0;
+  color: #006C49;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* Label Row with Auto-generate Button Above Text Box */
+.modern-title-label-row,
+.modern-code-label-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-wrap: nowrap !important;
+  min-height: 22px;
+}
+
+.modern-title-label-row .modern-field-label,
+.modern-code-label-row .modern-field-label {
+  white-space: nowrap;
+  font-size: 11.5px;
+  letter-spacing: 0.3px;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.modern-title-label-row .btn-reset-suggested-code {
+  position: static;
+  margin-left: auto;
+  font-size: 10.5px;
+  padding: 2px 7px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Modern Segmented Code Box */
+.modern-code-segmented-box {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border: 1px solid #6B7280;
+  border-radius: 8px;
+  height: 42px;
+  padding: 2px 6px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.modern-code-segmented-box:focus-within {
+  border-color: #006C49;
+  box-shadow: 0 0 0 2px rgba(0, 108, 73, 0.15);
+}
+
+.modern-code-segmented-box.is-disabled {
+  background-color: #F8FAFC;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.has-error .modern-code-segmented-box {
+  border-color: #EF4444 !important;
+  background-color: #FEF2F2 !important;
+}
+
+.code-segment-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0B1C30;
+  padding: 6px 6px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.code-segment-input:disabled {
+  cursor: not-allowed;
+  color: #64748B;
+}
+
+.code-prefix-input {
+  width: 60px;
+  min-width: 48px;
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #006C49;
+}
+
+.code-dept-year-input {
+  width: 95px;
+  min-width: 80px;
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+.code-number-input {
+  flex: 1;
+  min-width: 70px;
+  font-weight: 600;
+  color: #0B1C30;
+}
+
+.code-segment-divider {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #94A3B8;
+  user-select: none;
+  padding: 0 1px;
+  flex-shrink: 0;
+}
+
+/* Scope of Works Responsive Switching */
+.scope-desktop-table {
+  display: block;
+  width: 100%;
+}
+
+.scope-mobile-cards {
+  display: none;
+}
+
+@media (max-width: 992px) {
+  .create-order-container,
+  .modern-section-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    align-items: stretch !important;
+  }
+
+  .modern-general-info-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 24px !important;
+  }
+
+  .modern-left-col,
+  .modern-right-col {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border-right: none !important;
+    box-sizing: border-box !important;
+  }
+
+  .modern-left-col {
+    border-bottom: 1px solid rgba(187, 202, 191, 0.25) !important;
+    padding-bottom: 24px !important;
+  }
+
+  .modern-field-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .modern-code-segmented-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .code-segment-input {
+    min-width: 0 !important;
+  }
+
+  .code-prefix-input {
+    width: 52px !important;
+    min-width: 40px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .code-dept-year-input {
+    width: 88px !important;
+    min-width: 70px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .code-number-input {
+    flex: 1 1 auto !important;
+    min-width: 50px !important;
+    width: 0 !important;
+  }
+
+  .modern-input,
+  .modern-combobox-wrapper,
+  .modern-textarea,
+  .modern-tag-input-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .modern-section-card {
+    padding: 16px !important;
+    gap: 16px !important;
+  }
+
+  .modern-card-header {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    padding-bottom: 12px !important;
+  }
+
+  .modern-heading-text {
+    font-size: 16px !important;
+    line-height: 22px !important;
+  }
+
+  .modern-row-order-date {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    width: 100% !important;
+  }
+
+  .modern-code-field,
+  .modern-received-date-col {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: none !important;
+    margin-top: 0 !important;
+  }
+
+  .modern-date-input-wrapper {
+    width: 100% !important;
+  }
+
+  .modern-date-text-input {
+    width: 100% !important;
+  }
+
+  /* Scope of Works Mobile Card Redesign */
+  .scope-desktop-table {
+    display: none !important;
+  }
+
+  .scope-mobile-cards {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  .scope-mob-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px rgba(11, 28, 48, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .scope-mob-card:focus-within {
+    border-color: #006C49;
+    box-shadow: 0 2px 8px rgba(0, 108, 73, 0.08);
+  }
+
+  .scope-mob-card.is-locked-card {
+    background: #F8FAFC;
+    opacity: 0.85;
+  }
+
+  /* Header */
+  .scope-mob-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #F1F5F9;
+  }
+
+  .scope-mob-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .scope-mob-badge-num {
+    background: #006C49;
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    line-height: 1.2;
+  }
+
+  .scope-mob-badge-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .scope-mob-card-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .scope-mob-reorder-group {
+    display: inline-flex;
+    align-items: center;
+    background: #F1F5F9;
+    border-radius: 6px;
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .scope-mob-order-btn {
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 0;
+  }
+
+  .scope-mob-order-btn:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
+
+  .scope-mob-order-btn:not(:disabled):hover {
+    background: #E2E8F0;
+    color: #0F172A;
+  }
+
+  .scope-mob-delete-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #FEE2E2;
+    background: #FEF2F2;
+    color: #DC2626;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 0;
+  }
+
+  .scope-mob-delete-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .scope-mob-delete-btn:not(:disabled):hover {
+    background: #FEE2E2;
+    color: #991B1B;
+    border-color: #FECACA;
+  }
+
+  /* Body */
+  .scope-mob-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .scope-mob-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+  }
+
+  .scope-mob-field-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: #64748B;
+    text-transform: uppercase;
+  }
+
+  .scope-mob-select {
+    width: 100%;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid #CBD5E1;
+    padding: 0 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: #0F172A;
+    background-color: #FFFFFF;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .scope-mob-select.is-placeholder-selected {
+    color: #94A3B8;
+  }
+
+  .scope-mob-select:focus {
+    border-color: #006C49;
+    box-shadow: 0 0 0 2px rgba(0, 108, 73, 0.15);
+  }
+
+  .scope-mob-textarea {
+    width: 100%;
+    min-height: 60px;
+    border-radius: 8px;
+    border: 1px solid #CBD5E1;
+    padding: 8px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #0F172A;
+    background-color: #FFFFFF;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .scope-mob-textarea:focus {
+    border-color: #006C49;
+    box-shadow: 0 0 0 2px rgba(0, 108, 73, 0.15);
+  }
+
+  /* Footer row */
+  .scope-mob-footer-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: start;
+    padding-top: 4px;
+  }
+
+  .scope-mob-degree-section,
+  .scope-mob-remarks-section {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .scope-mob-degree-pills {
+    display: flex;
+    background: #F1F5F9;
+    border-radius: 8px;
+    padding: 2.5px;
+    gap: 2px;
+    height: 36px;
+    box-sizing: border-box;
+  }
+
+  .scope-mob-degree-pill {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748B;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .scope-mob-degree-pill.active {
+    background: #FFFFFF;
+    color: #006C49;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .scope-mob-degree-pill.pill-major.active {
+    color: #B45309;
+  }
+
+  .scope-mob-remarks-btn {
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+    background: #F8FAFC;
+    color: #475569;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.15s;
+    padding: 0 8px;
+    box-sizing: border-box;
+  }
+
+  .scope-mob-remarks-btn.has-data {
+    border-color: #A7F3D0;
+    background: #ECFDF5;
+    color: #006C49;
+    font-weight: 700;
+  }
+
+  .scope-mob-remarks-btn:hover {
+    background: #F1F5F9;
+  }
+
+  /* Make Add More Scope full width and prominent on mobile */
+  .modern-add-scope-wrapper {
+    width: 100%;
+  }
+
+  .btn-modern-add-scope {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 44px !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+  }
+}
+</style>
