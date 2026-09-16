@@ -71,6 +71,7 @@ interface BreadcrumbItem {
 const props = defineProps<{
   activeView: string;
   editingOrderCode?: string | null;
+  originView?: string;
 }>();
 
 defineEmits<{
@@ -91,7 +92,22 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
         { label: 'Work Orders', view: 'workorders' },
         { label: 'Daily Work Log' }
       ];
+    case 'workloghistory':
+      return [
+        root,
+        { label: 'Work Orders', view: 'workorders' },
+        { label: 'Daily Work Log', view: 'dailyworklog' },
+        { label: 'Work Log History' }
+      ];
     case 'create-order':
+      if (props.originView === 'dailyworklog') {
+        return [
+          root,
+          { label: 'Work Orders', view: 'workorders' },
+          { label: 'Daily Work Log', view: 'dailyworklog' },
+          { label: props.editingOrderCode ? `Edit Order (${props.editingOrderCode})` : 'Create Work Order' }
+        ];
+      }
       return [
         root,
         { label: 'Work Orders', view: 'workorders' },
@@ -101,6 +117,8 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
       return [root, { label: 'Teams & Groups' }];
     case 'personnel':
       return [root, { label: 'Personnel & Staff' }];
+    case 'catalogs':
+      return [root, { label: 'System Registries & Assets' }];
     case 'quick-onboard':
       return [
         root,
