@@ -1,0 +1,2318 @@
+<template>
+  <section id="view-catalogs" class="view-section active" style="display: flex; flex-direction: column; gap: 20px">
+    <!-- Header Row -->
+    <div class="view-header-row">
+      <div>
+        <h1 class="view-main-title">System Registries & Assets</h1>
+        <p class="view-main-subtitle">
+          Centralized operational database for university offices, work classifications, activity types, item types, and equipment inventories.
+        </p>
+      </div>
+      <div class="view-header-actions" style="display: flex; gap: 12px; align-items: center">
+        <!-- Quick Search -->
+        <div class="catalog-search-wrapper">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            v-model="searchQuery"
+            :placeholder="`Search ${currentTabMeta.label.toLowerCase()}...`"
+            class="catalog-search-input"
+          />
+          <button v-if="searchQuery" class="catalog-search-clear" @click="searchQuery = ''">&times;</button>
+        </div>
+
+
+        <!-- Add Button (Triggers Dedicated Pop Window) -->
+        <button class="btn btn-primary-sm" @click="openAddModal">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          <span>Add {{ currentTabMeta.singular }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Folder Tabs Navigation Bar with Scroll Arrows (No scrollbar) -->
+    <div class="catalog-tabs-nav-wrapper">
+      <!-- Previous Arrow Button -->
+      <button
+        v-if="canScrollLeft"
+        type="button"
+        class="catalog-tab-arrow prev"
+        @click="scrollTabs('left')"
+        title="See previous tabs"
+        aria-label="Previous tabs"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+
+      <!-- Scrollable Tabs Area -->
+      <div
+        ref="tabsContainerRef"
+        class="catalog-folder-tabs"
+        @scroll="checkScrollArrows"
+      >
+        <button
+          v-for="tab in TABS"
+          :key="tab.type"
+          :class="['catalog-folder-tab', { active: activeTab === tab.type }]"
+          @click="switchTab(tab.type)"
+        >
+          <span class="tab-icon">{{ tab.icon }}</span>
+          <span class="tab-label">{{ tab.label }}</span>
+          <span class="tab-count-badge">{{ getListCount(tab.type) }}</span>
+        </button>
+      </div>
+
+      <!-- Next Arrow Button -->
+      <button
+        v-if="canScrollRight"
+        type="button"
+        class="catalog-tab-arrow next"
+        @click="scrollTabs('right')"
+        title="See more tabs"
+        aria-label="Next tabs"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Active Catalog Card / Table View -->
+    <div class="card catalog-data-card" style="padding: 20px; flex: 1">
+      <div class="catalog-card-topbar">
+        <div class="catalog-meta-info">
+          <h2 class="catalog-active-title">
+            {{ currentTabMeta.icon }} {{ currentTabMeta.label }}
+          </h2>
+          <span class="catalog-active-desc">{{ currentTabMeta.description }}</span>
+        </div>
+
+        <div class="catalog-stats-pill">
+          <strong>{{ filteredList.length }}</strong> of {{ getListCount(activeTab) }} records displayed
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-if="filteredList.length === 0" class="catalog-empty-state">
+        <div class="catalog-empty-icon">{{ currentTabMeta.icon }}</div>
+        <h4>No {{ currentTabMeta.label }} found</h4>
+        <p v-if="searchQuery">No results matching "{{ searchQuery }}". Try clearing the search query.</p>
+        <p v-else>There are no registered entries in this catalog yet.</p>
+        <button class="btn btn-primary-sm" style="margin-top: 12px" @click="openAddModal">
+          + Add First {{ currentTabMeta.singular }}
+        </button>
+      </div>
+
+      <!-- Table View with Inline Editing -->
+      <!-- Table View with Inline Editing (Desktop) -->
+      <div v-else class="catalog-views-wrapper">
+        <div class="table-responsive catalog-table-container catalog-desktop-table">
+          <table class="catalog-table">
+            <thead>
+              <tr>
+                <th
+                  style="width: 130px; cursor: pointer; user-select: none;"
+                  class="sortable-header"
+                  :class="{ active: sortBy === 'code-asc' || sortBy === 'code-desc' }"
+                  @click="toggleSort('code')"
+                  title="Sort by Number / Code (Click to toggle)"
+                >
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span>CODE / ID</span>
+                    <span class="sort-indicator">
+                      <template v-if="sortBy === 'code-asc'">▲</template>
+                      <template v-else-if="sortBy === 'code-desc'">▼</template>
+                      <template v-else>↕</template>
+                    </span>
+                  </div>
+                </th>
+                <th
+                  style="cursor: pointer; user-select: none;"
+                  class="sortable-header"
+                  :class="{ active: sortBy === 'name-asc' || sortBy === 'name-desc' }"
+                  @click="toggleSort('name')"
+                  title="Sort Alphabetically by Name (Click to toggle)"
+                >
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>{{ currentTabMeta.nameColHeader }}</span>
+                    <span class="sort-indicator">
+                      <template v-if="sortBy === 'name-asc'">▲</template>
+                      <template v-else-if="sortBy === 'name-desc'">▼</template>
+                      <template v-else>↕</template>
+                    </span>
+                  </div>
+                </th>
+
+                <!-- Offices columns -->
+                <th
+                  v-if="activeTab === 'office'"
+                  style="width: 180px; cursor: pointer; user-select: none;"
+                  class="sortable-header"
+                  :class="{ active: sortBy === 'acronym-asc' || sortBy === 'acronym-desc' }"
+                  @click="toggleSort('acronym')"
+                  title="Sort by Acronym (Click to toggle)"
+                >
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>ACRONYM</span>
+                    <span class="sort-indicator">
+                      <template v-if="sortBy === 'acronym-asc'">▲</template>
+                      <template v-else-if="sortBy === 'acronym-desc'">▼</template>
+                      <template v-else>↕</template>
+                    </span>
+                  </div>
+                </th>
+                <th
+                  v-if="activeTab === 'office'"
+                  style="width: 200px; cursor: pointer; user-select: none;"
+                  class="sortable-header"
+                  :class="{ active: sortBy === 'title-asc' || sortBy === 'title-desc' }"
+                  @click="toggleSort('title')"
+                  title="Sort by Office Title (Click to toggle)"
+                >
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>OFFICE TITLE</span>
+                    <span class="sort-indicator">
+                      <template v-if="sortBy === 'title-asc'">▲</template>
+                      <template v-else-if="sortBy === 'title-desc'">▼</template>
+                      <template v-else>↕</template>
+                    </span>
+                  </div>
+                </th>
+
+                <!-- Work Type column -->
+                <th
+                  v-if="activeTab === 'work_type'"
+                  style="width: 200px; cursor: pointer; user-select: none;"
+                  class="sortable-header"
+                  :class="{ active: sortBy === 'title-asc' || sortBy === 'title-desc' }"
+                  @click="toggleSort('title')"
+                  title="Sort by Work Title (Click to toggle)"
+                >
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>WORK TITLE</span>
+                    <span class="sort-indicator">
+                      <template v-if="sortBy === 'title-asc'">▲</template>
+                      <template v-else-if="sortBy === 'title-desc'">▼</template>
+                      <template v-else>↕</template>
+                    </span>
+                  </div>
+                </th>
+
+                <!-- Item Type column -->
+                <th
+                  v-if="activeTab === 'item_type'"
+                  style="width: 190px; cursor: pointer; user-select: none;"
+                  class="sortable-header"
+                  :class="{ active: sortBy === 'title-asc' || sortBy === 'title-desc' }"
+                  @click="toggleSort('title')"
+                  title="Sort by Item Title (Click to toggle)"
+                >
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>ITEM TITLE</span>
+                    <span class="sort-indicator">
+                      <template v-if="sortBy === 'title-asc'">▲</template>
+                      <template v-else-if="sortBy === 'title-desc'">▼</template>
+                      <template v-else>↕</template>
+                    </span>
+                  </div>
+                </th>
+
+                <!-- Item Type Tag Color Column -->
+                <th
+                  v-if="activeTab === 'item_type'"
+                  style="width: 170px;"
+                >
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>TAG COLOR</span>
+                  </div>
+                </th>
+
+                <!-- Equipment columns -->
+                <th
+                  v-if="activeTab === 'equipment'"
+                  style="cursor: pointer; user-select: none;"
+                  class="sortable-header"
+                  :class="{ active: sortBy === 'category-asc' || sortBy === 'category-desc' }"
+                  @click="toggleSort('category')"
+                  title="Sort by Category (Click to toggle)"
+                >
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>CATEGORY</span>
+                    <span class="sort-indicator">
+                      <template v-if="sortBy === 'category-asc'">▲</template>
+                      <template v-else-if="sortBy === 'category-desc'">▼</template>
+                      <template v-else>↕</template>
+                    </span>
+                  </div>
+                </th>
+                <th
+                  v-if="activeTab === 'equipment'"
+                  style="cursor: pointer; user-select: none;"
+                  class="sortable-header"
+                  :class="{ active: sortBy === 'location-asc' || sortBy === 'location-desc' }"
+                  @click="toggleSort('location')"
+                  title="Sort by Storage Location (Click to toggle)"
+                >
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>STORAGE LOCATION</span>
+                    <span class="sort-indicator">
+                      <template v-if="sortBy === 'location-asc'">▲</template>
+                      <template v-else-if="sortBy === 'location-desc'">▼</template>
+                      <template v-else>↕</template>
+                    </span>
+                  </div>
+                </th>
+                <th v-if="activeTab === 'equipment'" style="text-align: center; width: 90px">UNITS</th>
+
+                <th style="text-align: right; width: 110px">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="item in filteredList"
+                :key="item.id"
+                :class="['catalog-table-row', { 'is-inline-editing': editingRowId === item.id }]"
+              >
+                <!-- 1. Code / ID Cell -->
+                <td>
+                  <template v-if="editingRowId === item.id">
+                    <input
+                      type="text"
+                      class="catalog-inline-input code-input"
+                      v-model="inlineFormCode"
+                      placeholder="Code"
+                      @keydown.enter="saveInlineEdit(item)"
+                      @keydown.esc="cancelInlineEdit"
+                    />
+                  </template>
+                  <template v-else>
+                    <span class="catalog-code-badge">{{ item.code || 'N/A' }}</span>
+                  </template>
+                </td>
+
+                <!-- 2. Primary Name Cell -->
+                <td>
+                  <template v-if="editingRowId === item.id">
+                    <div class="catalog-inline-name-group">
+                      <input
+                        type="text"
+                        class="catalog-inline-input name-input"
+                        v-model="inlineFormName"
+                        placeholder="Name (Required)"
+                        @keydown.enter="saveInlineEdit(item)"
+                        @keydown.esc="cancelInlineEdit"
+                        ref="inlineNameInputRef"
+                      />
+                      <input
+                        v-if="activeTab === 'equipment'"
+                        type="text"
+                        class="catalog-inline-input desc-input"
+                        v-model="inlineFormDescription"
+                        placeholder="Description / details"
+                        @keydown.enter="saveInlineEdit(item)"
+                        @keydown.esc="cancelInlineEdit"
+                      />
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="catalog-primary-name">{{ item.name }}</div>
+                    <div v-if="item.description && activeTab === 'equipment'" class="catalog-sub-desc">
+                      {{ item.description }}
+                    </div>
+                  </template>
+                </td>
+
+                <!-- 3. Offices: Acronym & Office Title -->
+                <template v-if="activeTab === 'office'">
+                  <td>
+                    <input
+                      v-if="editingRowId === item.id"
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormAcronym"
+                      placeholder="Acronym"
+                      @keydown.enter="saveInlineEdit(item)"
+                      @keydown.esc="cancelInlineEdit"
+                    />
+                    <span v-else class="catalog-cat-tag" style="background: rgba(30, 64, 175, 0.08); color: #1E40AF; font-weight: 600">
+                      {{ item.acronym || '—' }}
+                    </span>
+                  </td>
+                  <td>
+                    <input
+                      v-if="editingRowId === item.id"
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormTitle"
+                      placeholder="Office Title"
+                      @keydown.enter="saveInlineEdit(item)"
+                      @keydown.esc="cancelInlineEdit"
+                    />
+                    <span v-else class="catalog-loc-text" style="font-weight: 500">
+                      {{ item.title || '—' }}
+                    </span>
+                  </td>
+                </template>
+
+                <!-- 4. Work Type: Work Title -->
+                <td v-if="activeTab === 'work_type'">
+                  <input
+                    v-if="editingRowId === item.id"
+                    type="text"
+                    class="catalog-inline-input"
+                    v-model="inlineFormTitle"
+                    placeholder="Work Title"
+                    @keydown.enter="saveInlineEdit(item)"
+                    @keydown.esc="cancelInlineEdit"
+                  />
+                  <span v-else class="catalog-cat-tag" style="background: rgba(0, 108, 73, 0.08); color: #006C49; font-weight: 600">
+                    {{ item.title || '—' }}
+                  </span>
+                </td>
+
+                <!-- 5. Item Type: Item Title & Tag Color -->
+                <template v-if="activeTab === 'item_type'">
+                  <td>
+                    <input
+                      v-if="editingRowId === item.id"
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormTitle"
+                      placeholder="Item Title"
+                      @keydown.enter="saveInlineEdit(item)"
+                      @keydown.esc="cancelInlineEdit"
+                    />
+                    <span v-else class="catalog-cat-tag" style="background: rgba(180, 83, 9, 0.08); color: #B45309; font-weight: 600">
+                      {{ item.title || '—' }}
+                    </span>
+                  </td>
+
+                  <!-- Tag Color Cell -->
+                  <td>
+                    <!-- Inline Edit Mode -->
+                    <div v-if="editingRowId === item.id" class="catalog-inline-color-wrapper">
+                      <button
+                        type="button"
+                        class="catalog-inline-color-swatch-btn"
+                        :style="{ backgroundColor: inlineFormColor || '#8BA869' }"
+                        @click="openQuickColorPicker(item, true)"
+                        title="Open color presets & advanced picker"
+                      ></button>
+                      <input
+                        type="text"
+                        class="catalog-inline-input color-hex-input"
+                        v-model="inlineFormColor"
+                        placeholder="#8BA869"
+                        maxlength="9"
+                        @keydown.enter="saveInlineEdit(item)"
+                        @keydown.esc="cancelInlineEdit"
+                      />
+                    </div>
+
+                    <!-- View Mode: Dynamic Color Badge & Quick Change Pen -->
+                    <div v-else class="catalog-color-display-row">
+                      <div
+                        class="catalog-color-badge-pill"
+                        :style="{ backgroundColor: item.color || getItemTypeColor(item.name, props.catalogs) }"
+                        :title="`Tag Color: ${item.color || getItemTypeColor(item.name, props.catalogs)} (Click to customize)`"
+                        @click="openQuickColorPicker(item)"
+                        style="cursor: pointer;"
+                      >
+                        <span class="catalog-color-pill-dot"></span>
+                        <span class="catalog-color-pill-hex">
+                          {{ (item.color || getItemTypeColor(item.name, props.catalogs)).toUpperCase() }}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        class="catalog-quick-color-btn"
+                        title="Choose color with presets & advanced mode"
+                        @click="openQuickColorPicker(item)"
+                      >
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" class="quick-color-pen">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </template>
+
+                <!-- 6. Equipment Columns -->
+                <template v-if="activeTab === 'equipment'">
+                  <td>
+                    <input
+                      v-if="editingRowId === item.id"
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormCategory"
+                      placeholder="Category"
+                      @keydown.enter="saveInlineEdit(item)"
+                      @keydown.esc="cancelInlineEdit"
+                    />
+                    <span v-else class="catalog-cat-tag">{{ item.category || 'General' }}</span>
+                  </td>
+                  <td>
+                    <input
+                      v-if="editingRowId === item.id"
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormLocation"
+                      placeholder="Location"
+                      @keydown.enter="saveInlineEdit(item)"
+                      @keydown.esc="cancelInlineEdit"
+                    />
+                    <span v-else class="catalog-loc-text">{{ item.location || 'Depot' }}</span>
+                  </td>
+                  <td style="text-align: center">
+                    <input
+                      v-if="editingRowId === item.id"
+                      type="number"
+                      min="0"
+                      class="catalog-inline-input qty-input"
+                      v-model.number="inlineFormQuantity"
+                      @keydown.enter="saveInlineEdit(item)"
+                      @keydown.esc="cancelInlineEdit"
+                    />
+                    <span v-else class="catalog-qty-badge">{{ item.quantity ?? 1 }}</span>
+                  </td>
+                </template>
+
+                <!-- 7. Actions Cell -->
+                <td style="text-align: right">
+                  <!-- If Inline Editing this row -->
+                  <div v-if="editingRowId === item.id" class="catalog-actions-cell">
+                    <button
+                      type="button"
+                      class="btn-catalog-action save"
+                      @click="saveInlineEdit(item)"
+                      title="Save changes (Enter)"
+                      aria-label="Save"
+                    >
+                      ✓
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-catalog-action cancel"
+                      @click="cancelInlineEdit"
+                      title="Cancel edit (Esc)"
+                      aria-label="Cancel"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <!-- Normal view: Edit & Delete buttons -->
+                  <div v-else class="catalog-actions-cell">
+                    <button
+                      type="button"
+                      class="btn-catalog-action edit"
+                      @click="startInlineEdit(item)"
+                      title="Quick inline edit"
+                      aria-label="Edit"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-catalog-action delete"
+                      @click="handleDeleteClick(item)"
+                      title="Delete record"
+                      aria-label="Delete"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile Card List View -->
+        <div class="catalog-mobile-list">
+          <div
+            v-for="item in filteredList"
+            :key="'mob-' + item.id"
+            :class="['catalog-mobile-card', { 'is-editing': editingRowId === item.id }]"
+          >
+            <!-- 1. NORMAL VIEW MODE -->
+            <template v-if="editingRowId !== item.id">
+              <!-- Header Row: Code & Category/Acronym on left, Action buttons on right -->
+              <div class="catalog-mc-header">
+                <div class="catalog-mc-badges">
+                  <span class="catalog-code-badge">{{ item.code || 'N/A' }}</span>
+                  <span
+                    v-if="activeTab === 'office' && item.acronym"
+                    class="catalog-cat-tag"
+                    style="background: rgba(30, 64, 175, 0.08); color: #1E40AF; font-weight: 600"
+                  >
+                    {{ item.acronym }}
+                  </span>
+                  <span
+                    v-else-if="activeTab === 'equipment' && item.category"
+                    class="catalog-cat-tag"
+                  >
+                    {{ item.category }}
+                  </span>
+                </div>
+
+                <!-- Actions on Mobile Header -->
+                <div class="catalog-mc-actions">
+                  <button
+                    type="button"
+                    class="btn-catalog-action edit"
+                    @click="startInlineEdit(item)"
+                    title="Edit record"
+                    aria-label="Edit"
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-catalog-action delete"
+                    @click="handleDeleteClick(item)"
+                    title="Delete record"
+                    aria-label="Delete"
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Body: Primary Name -->
+              <div class="catalog-mc-body">
+                <div class="catalog-mc-primary-name">{{ item.name }}</div>
+
+                <!-- Tab-Specific Details -->
+                <!-- Office: Title -->
+                <div v-if="activeTab === 'office' && item.title" class="catalog-mc-detail-row">
+                  <span class="catalog-mc-label">Office Title:</span>
+                  <span class="catalog-mc-value">{{ item.title }}</span>
+                </div>
+
+                <!-- Work Type: Title -->
+                <div v-if="activeTab === 'work_type' && item.title" class="catalog-mc-detail-row">
+                  <span class="catalog-mc-label">Work Title:</span>
+                  <span class="catalog-cat-tag" style="background: rgba(0, 108, 73, 0.08); color: #006C49; font-weight: 600">
+                    {{ item.title }}
+                  </span>
+                </div>
+
+                <!-- Item Type: Title & Tag Color -->
+                <template v-if="activeTab === 'item_type'">
+                  <div v-if="item.title" class="catalog-mc-detail-row">
+                    <span class="catalog-mc-label">Item Title:</span>
+                    <span class="catalog-cat-tag" style="background: rgba(180, 83, 9, 0.08); color: #B45309; font-weight: 600">
+                      {{ item.title }}
+                    </span>
+                  </div>
+
+                  <!-- Tag Color Row -->
+                  <div class="catalog-mc-detail-row" style="align-items: center">
+                    <span class="catalog-mc-label">Tag Color:</span>
+                    <div class="catalog-color-display-row">
+                      <div
+                        class="catalog-color-badge-pill"
+                        :style="{ backgroundColor: item.color || getItemTypeColor(item.name, props.catalogs) }"
+                        :title="`Tag Color: ${item.color || getItemTypeColor(item.name, props.catalogs)}`"
+                        @click="openQuickColorPicker(item)"
+                        style="cursor: pointer;"
+                      >
+                        <span class="catalog-color-pill-dot"></span>
+                        <span class="catalog-color-pill-hex">
+                          {{ (item.color || getItemTypeColor(item.name, props.catalogs)).toUpperCase() }}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        class="catalog-quick-color-btn"
+                        title="Choose color"
+                        @click="openQuickColorPicker(item)"
+                      >
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" class="quick-color-pen">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Equipment: Description, Location, Quantity -->
+                <template v-if="activeTab === 'equipment'">
+                  <div v-if="item.description" class="catalog-sub-desc">
+                    {{ item.description }}
+                  </div>
+                  <div class="catalog-mc-meta-footer">
+                    <div class="catalog-mc-loc">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: #94A3B8">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                      </svg>
+                      <span>{{ item.location || 'Depot' }}</span>
+                    </div>
+                    <span class="catalog-qty-badge">{{ item.quantity ?? 1 }} Units</span>
+                  </div>
+                </template>
+              </div>
+            </template>
+
+            <!-- 2. MOBILE INLINE EDIT MODE -->
+            <template v-else>
+              <div class="catalog-mc-edit-form">
+                <div class="catalog-mc-edit-header">
+                  <span class="catalog-mc-edit-title">Editing Record</span>
+                  <span class="catalog-code-badge">{{ inlineFormCode || item.code || 'N/A' }}</span>
+                </div>
+
+                <div class="catalog-mc-field">
+                  <label class="catalog-mc-field-label">Code / ID</label>
+                  <input
+                    type="text"
+                    class="catalog-inline-input"
+                    v-model="inlineFormCode"
+                    placeholder="Code"
+                  />
+                </div>
+
+                <div class="catalog-mc-field">
+                  <label class="catalog-mc-field-label">{{ currentTabMeta.nameColHeader }} *</label>
+                  <input
+                    type="text"
+                    class="catalog-inline-input"
+                    v-model="inlineFormName"
+                    placeholder="Name"
+                    ref="inlineNameInputRef"
+                  />
+                </div>
+
+                <!-- Office Edit Fields -->
+                <template v-if="activeTab === 'office'">
+                  <div class="catalog-mc-field">
+                    <label class="catalog-mc-field-label">Acronym</label>
+                    <input
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormAcronym"
+                      placeholder="Acronym (e.g. HRMO)"
+                    />
+                  </div>
+                  <div class="catalog-mc-field">
+                    <label class="catalog-mc-field-label">Office Title</label>
+                    <input
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormTitle"
+                      placeholder="Office Title"
+                    />
+                  </div>
+                </template>
+
+                <!-- Work Type Edit Field -->
+                <div v-if="activeTab === 'work_type'" class="catalog-mc-field">
+                  <label class="catalog-mc-field-label">Work Title</label>
+                  <input
+                    type="text"
+                    class="catalog-inline-input"
+                    v-model="inlineFormTitle"
+                    placeholder="Work Title"
+                  />
+                </div>
+
+                <!-- Item Type Edit Fields -->
+                <template v-if="activeTab === 'item_type'">
+                  <div class="catalog-mc-field">
+                    <label class="catalog-mc-field-label">Item Title</label>
+                    <input
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormTitle"
+                      placeholder="Item Title"
+                    />
+                  </div>
+                  <div class="catalog-mc-field">
+                    <label class="catalog-mc-field-label">Tag Color</label>
+                    <div class="catalog-inline-color-wrapper">
+                      <button
+                        type="button"
+                        class="catalog-inline-color-swatch-btn"
+                        :style="{ backgroundColor: inlineFormColor || '#8BA869' }"
+                        @click="openQuickColorPicker(item, true)"
+                        title="Pick Color"
+                      ></button>
+                      <input
+                        type="text"
+                        class="catalog-inline-input color-hex-input"
+                        v-model="inlineFormColor"
+                        placeholder="#8BA869"
+                        maxlength="9"
+                      />
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Equipment Edit Fields -->
+                <template v-if="activeTab === 'equipment'">
+                  <div class="catalog-mc-field">
+                    <label class="catalog-mc-field-label">Category</label>
+                    <input
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormCategory"
+                      placeholder="Category"
+                    />
+                  </div>
+                  <div class="catalog-mc-field">
+                    <label class="catalog-mc-field-label">Storage Location</label>
+                    <input
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormLocation"
+                      placeholder="Location"
+                    />
+                  </div>
+                  <div class="catalog-mc-field">
+                    <label class="catalog-mc-field-label">Quantity</label>
+                    <input
+                      type="number"
+                      min="0"
+                      class="catalog-inline-input"
+                      v-model.number="inlineFormQuantity"
+                      placeholder="Units"
+                    />
+                  </div>
+                  <div class="catalog-mc-field">
+                    <label class="catalog-mc-field-label">Description</label>
+                    <input
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormDescription"
+                      placeholder="Description"
+                    />
+                  </div>
+                </template>
+
+                <!-- Edit Mode Actions -->
+                <div class="catalog-mc-edit-actions">
+                  <button
+                    type="button"
+                    class="btn-catalog-action save catalog-mc-btn-save"
+                    @click="saveInlineEdit(item)"
+                  >
+                    ✓ Save Changes
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-catalog-action cancel catalog-mc-btn-cancel"
+                    @click="cancelInlineEdit"
+                  >
+                    ✕ Cancel
+                  </button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEDICATED ADD POPUP WINDOW (POP WINDOW) -->
+    <Teleport to="body">
+      <div
+        v-if="isAddModalOpen"
+        class="catalog-pop-backdrop"
+        @click.self="closeAddModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="catalog-add-title"
+      >
+        <div class="catalog-pop-window" role="document">
+          <!-- Pop Window Header -->
+          <div class="catalog-pop-header">
+            <div class="catalog-pop-header-main">
+              <span class="catalog-pop-icon-badge">{{ currentTabMeta.icon }}</span>
+              <div>
+                <h3 id="catalog-add-title" class="catalog-pop-title">
+                  Register New {{ currentTabMeta.singular }}
+                </h3>
+                <p class="catalog-pop-subtitle">
+                  Adding entry to <span class="catalog-pop-tag">{{ currentTabMeta.label }}</span>
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="catalog-pop-close-btn"
+              @click="closeAddModal"
+              title="Close window (Esc)"
+              aria-label="Close"
+            >
+              &times;
+            </button>
+          </div>
+
+          <!-- Pop Window Form -->
+          <form @submit.prevent="handleSaveAddForm" class="catalog-pop-form">
+            <div class="catalog-pop-grid">
+              <!-- 1. Primary Name (Required for all tabs) -->
+              <div class="catalog-pop-field full">
+                <label class="catalog-pop-label">
+                  {{ currentTabMeta.nameColHeader }} <span class="required-star">*</span>
+                </label>
+                <div class="catalog-pop-input-wrapper">
+                  <input
+                    ref="addNameInputRef"
+                    type="text"
+                    class="catalog-pop-input name-input"
+                    v-model="addFormName"
+                    :placeholder="`e.g. ${currentTabMeta.namePlaceholder}`"
+                    required
+                    autocomplete="off"
+                  />
+                </div>
+                <span class="catalog-pop-hint">The primary operational name displayed across work orders and logs.</span>
+              </div>
+
+              <!-- 2. Code / ID -->
+              <div class="catalog-pop-field half">
+                <div class="catalog-pop-label-row">
+                  <label class="catalog-pop-label">
+                    Code / Identifier
+                  </label>
+                  <span
+                    v-if="suggestedCode"
+                    class="catalog-suggested-pill"
+                    :class="{ 'is-applied': addFormCode.trim() === suggestedCode }"
+                    @click="addFormCode = suggestedCode"
+                    title="Click to apply suggested sequential code"
+                  >
+                    Auto: <strong>{{ suggestedCode }}</strong>
+                  </span>
+                </div>
+                <div class="catalog-code-input-wrapper">
+                  <input
+                    type="text"
+                    class="catalog-pop-input code"
+                    v-model="addFormCode"
+                    :placeholder="suggestedCode || `e.g. ${currentTabMeta.codePlaceholder}`"
+                    autocomplete="off"
+                  />
+                  <button
+                    v-if="suggestedCode && addFormCode.trim() !== suggestedCode"
+                    type="button"
+                    class="btn-reset-suggested-code"
+                    @click="addFormCode = suggestedCode"
+                    title="Reset to suggested sequential code"
+                  >
+                    ↺ Use {{ suggestedCode }}
+                  </button>
+                </div>
+                <span class="catalog-pop-hint">
+                  Auto-suggested based on saved order. You can freely edit or type your own code.
+                </span>
+              </div>
+
+              <!-- 3. Offices Specific Fields: Acronym & Office Title -->
+              <template v-if="activeTab === 'office'">
+                <div class="catalog-pop-field half">
+                  <label class="catalog-pop-label">
+                    Acronym
+                  </label>
+                  <input
+                    type="text"
+                    class="catalog-pop-input"
+                    v-model="addFormAcronym"
+                    placeholder="e.g. OP, HRMO, UICTS"
+                    autocomplete="off"
+                  />
+                  <span class="catalog-pop-hint">Standard university abbreviation or acronym</span>
+                </div>
+                <div class="catalog-pop-field full">
+                  <label class="catalog-pop-label">
+                    Office Title
+                  </label>
+                  <input
+                    type="text"
+                    class="catalog-pop-input"
+                    v-model="addFormTitle"
+                    placeholder="e.g. OP, HRMO, AUDIT"
+                    autocomplete="off"
+                  />
+                  <span class="catalog-pop-hint">Short formal title used in registry</span>
+                </div>
+              </template>
+
+              <!-- 4. Work Type Specific Field: Work Title -->
+              <div v-if="activeTab === 'work_type'" class="catalog-pop-field half">
+                <label class="catalog-pop-label">
+                  Work Title
+                </label>
+                <input
+                  type="text"
+                  class="catalog-pop-input"
+                  v-model="addFormTitle"
+                  placeholder="e.g. REPAIR, REPLACEMENT, FAB & INSTALL"
+                  autocomplete="off"
+                />
+                <span class="catalog-pop-hint">Uppercase short title for job classification</span>
+              </div>
+
+              <!-- 5. Item Type Specific Fields: Item Title & Tag Color -->
+              <template v-if="activeTab === 'item_type'">
+                <div class="catalog-pop-field half">
+                  <label class="catalog-pop-label">
+                    Item Title
+                  </label>
+                  <input
+                    type="text"
+                    class="catalog-pop-input"
+                    v-model="addFormTitle"
+                    placeholder="e.g. BUILDING, FLOOR, WALL, DOOR"
+                    autocomplete="off"
+                  />
+                  <span class="catalog-pop-hint">Uppercase title identifier</span>
+                </div>
+
+                <div class="catalog-pop-field full">
+                  <label class="catalog-pop-label">
+                    Assign Tag Color
+                  </label>
+                  <ColorPickerWithPresets
+                    v-model="addFormColor"
+                    :preview-text="addFormName || 'Sample Item Tag'"
+                  />
+                  <span class="catalog-pop-hint">Select a curated preset or expand Advanced Mode for custom spectrum, eyedropper, and RGB channels.</span>
+                </div>
+              </template>
+
+              <!-- 6. Equipment Specific Fields -->
+              <template v-if="activeTab === 'equipment'">
+                <div class="catalog-pop-field half">
+                  <label class="catalog-pop-label">
+                    Category / Classification
+                  </label>
+                  <input
+                    type="text"
+                    class="catalog-pop-input"
+                    v-model="addFormCategory"
+                    placeholder="e.g. Heavy Duty, Hand Tools, Power Tools"
+                    autocomplete="off"
+                  />
+                  <span class="catalog-pop-hint">Tool classification or group</span>
+                </div>
+
+                <div class="catalog-pop-field half">
+                  <label class="catalog-pop-label">
+                    Storage Location / Depot Bay
+                  </label>
+                  <input
+                    type="text"
+                    class="catalog-pop-input"
+                    v-model="addFormLocation"
+                    placeholder="e.g. Depot Bay 1, Rack A"
+                    autocomplete="off"
+                  />
+                  <span class="catalog-pop-hint">Where tools and equipment are kept</span>
+                </div>
+
+                <div class="catalog-pop-field half">
+                  <label class="catalog-pop-label">
+                    Units in Stock / Quantity
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    class="catalog-pop-input qty"
+                    v-model.number="addFormQuantity"
+                    placeholder="1"
+                  />
+                  <span class="catalog-pop-hint">Current depot quantity</span>
+                </div>
+
+                <div class="catalog-pop-field full">
+                  <label class="catalog-pop-label">
+                    Additional Notes / Specifications
+                  </label>
+                  <textarea
+                    class="catalog-pop-textarea"
+                    v-model="addFormDescription"
+                    placeholder="Add specifications, model info, or remarks..."
+                    rows="3"
+                  ></textarea>
+                </div>
+              </template>
+            </div>
+
+            <!-- Pop Window Footer -->
+            <div class="catalog-pop-footer">
+              <button
+                type="button"
+                class="catalog-pop-btn-cancel"
+                @click="closeAddModal"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="catalog-pop-btn-submit"
+                :disabled="!addFormName.trim()"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+                </svg>
+                <span>Save & Register {{ currentTabMeta.singular }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Dedicated Quick Color Picker Modal for Item Type Rows -->
+    <Teleport to="body">
+      <div
+        v-if="quickColorTargetItem"
+        class="catalog-pop-backdrop color-picker-backdrop"
+        @click.self="closeQuickColorPicker"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div class="color-quick-picker-modal" role="document">
+          <!-- Pop Window Header -->
+          <div class="color-picker-modal-header">
+            <div class="color-picker-header-left">
+              <div class="color-picker-icon-badge">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"/>
+                  <circle cx="13.5" cy="6.5" r=".7" fill="currentColor"/>
+                  <circle cx="17.5" cy="10.5" r=".7" fill="currentColor"/>
+                  <circle cx="8.5" cy="7.5" r=".7" fill="currentColor"/>
+                  <circle cx="6.5" cy="12.5" r=".7" fill="currentColor"/>
+                </svg>
+              </div>
+              <div>
+                <div class="color-picker-title-row">
+                  <h3 class="color-picker-modal-title">Tag Color: {{ quickColorTargetItem.name }}</h3>
+                </div>
+                <p class="color-picker-modal-subtitle">Pick from 24 curated swatches or customize with advanced tools</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="color-picker-close-btn"
+              @click="closeQuickColorPicker"
+              title="Close (Esc)"
+              aria-label="Close"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Pop Window Body -->
+          <div class="color-quick-picker-body">
+            <ColorPickerWithPresets
+              :model-value="quickColorValue"
+              :preview-text="quickColorTargetItem.name"
+              @update:model-value="handleQuickColorUpdate"
+            />
+          </div>
+
+          <!-- Pop Window Footer -->
+          <div class="color-picker-modal-footer">
+            <button
+              type="button"
+              class="color-picker-cancel-btn"
+              @click="closeQuickColorPicker"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="color-picker-apply-btn"
+              @click="saveQuickColorChange"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Apply Tag Color</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+  </section>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { CatalogItem, CatalogType, MasterCatalogsState } from '../types';
+import { ITEM_TYPE_COLOR_PALETTE, getItemTypeColor } from '../utils/catalogsData';
+import ColorPickerWithPresets from './ColorPickerWithPresets.vue';
+
+const props = defineProps<{
+  catalogs: MasterCatalogsState;
+}>();
+
+const emit = defineEmits<{
+  (e: 'addItem', item: CatalogItem): void;
+  (e: 'updateItem', item: CatalogItem): void;
+  (e: 'deleteItem', id: string, type: CatalogType): void;
+  (e: 'toast', message: string, type?: 'info' | 'success' | 'warning'): void;
+}>();
+
+interface TabMeta {
+  type: CatalogType;
+  label: string;
+  singular: string;
+  icon: string;
+  description: string;
+  nameColHeader: string;
+  namePlaceholder: string;
+  codePlaceholder: string;
+}
+
+const TABS: TabMeta[] = [
+  {
+    type: 'office',
+    label: 'Offices',
+    singular: 'Office',
+    icon: '🏢',
+    description: 'University administrative offices, colleges, departments, and housing facilities.',
+    nameColHeader: 'OFFICE NAME',
+    namePlaceholder: 'Office of the President',
+    codePlaceholder: '100'
+  },
+  {
+    type: 'work_type',
+    label: 'Work Type',
+    singular: 'Work Type',
+    icon: '🛠️',
+    description: 'Operational work classifications and job types.',
+    nameColHeader: 'WORK TYPE',
+    namePlaceholder: 'Repair',
+    codePlaceholder: '11'
+  },
+  {
+    type: 'activity_type',
+    label: 'Activity Type',
+    singular: 'Activity Type',
+    icon: '📋',
+    description: 'Operational activity classifications and trade tasks.',
+    nameColHeader: 'ACTIVITY TYPE',
+    namePlaceholder: 'Carpentry Works',
+    codePlaceholder: '01'
+  },
+  {
+    type: 'item_type',
+    label: 'Item Type',
+    singular: 'Item Type',
+    icon: '📦',
+    description: 'Facility structure elements, architectural categories, and asset item types.',
+    nameColHeader: 'ITEM TYPE',
+    namePlaceholder: 'Building/Structure',
+    codePlaceholder: '01'
+  },
+  {
+    type: 'equipment',
+    label: 'Equipment & Tools Registry',
+    singular: 'Equipment / Tool',
+    icon: '🧰',
+    description: 'Depot machinery, testing apparatus, and field tools available for checkout.',
+    nameColHeader: 'EQUIPMENT / TOOL NAME',
+    namePlaceholder: 'Industrial Scaffolding Kit',
+    codePlaceholder: 'EQ-001'
+  }
+];
+
+const activeTab = ref<CatalogType>('office');
+const searchQuery = ref('');
+
+type SortOption =
+  | 'code-asc'
+  | 'code-desc'
+  | 'name-asc'
+  | 'name-desc'
+  | 'acronym-asc'
+  | 'acronym-desc'
+  | 'title-asc'
+  | 'title-desc'
+  | 'category-asc'
+  | 'category-desc'
+  | 'location-asc'
+  | 'location-desc';
+
+const sortBy = ref<SortOption>('code-asc');
+
+const toggleSort = (field: 'code' | 'name' | 'acronym' | 'title' | 'category' | 'location') => {
+  if (field === 'code') {
+    sortBy.value = sortBy.value === 'code-asc' ? 'code-desc' : 'code-asc';
+  } else if (field === 'name') {
+    sortBy.value = sortBy.value === 'name-asc' ? 'name-desc' : 'name-asc';
+  } else if (field === 'acronym') {
+    sortBy.value = sortBy.value === 'acronym-asc' ? 'acronym-desc' : 'acronym-asc';
+  } else if (field === 'title') {
+    sortBy.value = sortBy.value === 'title-asc' ? 'title-desc' : 'title-asc';
+  } else if (field === 'category') {
+    sortBy.value = sortBy.value === 'category-asc' ? 'category-desc' : 'category-asc';
+  } else if (field === 'location') {
+    sortBy.value = sortBy.value === 'location-asc' ? 'location-desc' : 'location-asc';
+  }
+};
+
+const currentTabMeta = computed(() => {
+  return TABS.find((t) => t.type === activeTab.value) || TABS[0];
+});
+
+const currentList = computed<CatalogItem[]>(() => {
+  if (activeTab.value === 'office') return props.catalogs.offices || [];
+  if (activeTab.value === 'work_type') return props.catalogs.workTypes || [];
+  if (activeTab.value === 'activity_type') return props.catalogs.activityTypes || [];
+  if (activeTab.value === 'item_type') return props.catalogs.itemTypes || [];
+  if (activeTab.value === 'equipment') return props.catalogs.equipment || [];
+  return [];
+});
+
+const getListCount = (type: CatalogType): number => {
+  if (type === 'office') return (props.catalogs.offices || []).length;
+  if (type === 'work_type') return (props.catalogs.workTypes || []).length;
+  if (type === 'activity_type') return (props.catalogs.activityTypes || []).length;
+  if (type === 'item_type') return (props.catalogs.itemTypes || []).length;
+  if (type === 'equipment') return (props.catalogs.equipment || []).length;
+  return 0;
+};
+
+const filteredList = computed(() => {
+  const q = searchQuery.value.toLowerCase().trim();
+  let list = currentList.value;
+
+  if (q) {
+    list = list.filter((item) => {
+      return (
+        item.name.toLowerCase().includes(q) ||
+        (item.code && item.code.toLowerCase().includes(q)) ||
+        (item.acronym && item.acronym.toLowerCase().includes(q)) ||
+        (item.title && item.title.toLowerCase().includes(q)) ||
+        (item.category && item.category.toLowerCase().includes(q)) ||
+        (item.location && item.location.toLowerCase().includes(q)) ||
+        (item.description && item.description.toLowerCase().includes(q))
+      );
+    });
+  }
+
+  const sorted = [...list].sort((a, b) => {
+    if (sortBy.value === 'code-asc') {
+      if (!a.code && !b.code) return 0;
+      if (!a.code) return 1;
+      if (!b.code) return -1;
+      return a.code.localeCompare(b.code, undefined, { numeric: true, sensitivity: 'base' });
+    }
+    if (sortBy.value === 'code-desc') {
+      if (!a.code && !b.code) return 0;
+      if (!a.code) return 1;
+      if (!b.code) return -1;
+      return b.code.localeCompare(a.code, undefined, { numeric: true, sensitivity: 'base' });
+    }
+    if (sortBy.value === 'name-asc') {
+      return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+    }
+    if (sortBy.value === 'name-desc') {
+      return (b.name || '').localeCompare(a.name || '', undefined, { sensitivity: 'base' });
+    }
+    if (sortBy.value === 'acronym-asc') {
+      return (a.acronym || '').localeCompare(b.acronym || '', undefined, { sensitivity: 'base' });
+    }
+    if (sortBy.value === 'acronym-desc') {
+      return (b.acronym || '').localeCompare(a.acronym || '', undefined, { sensitivity: 'base' });
+    }
+    if (sortBy.value === 'title-asc') {
+      return (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' });
+    }
+    if (sortBy.value === 'title-desc') {
+      return (b.title || '').localeCompare(a.title || '', undefined, { sensitivity: 'base' });
+    }
+    if (sortBy.value === 'category-asc') {
+      return (a.category || '').localeCompare(b.category || '', undefined, { sensitivity: 'base' });
+    }
+    if (sortBy.value === 'category-desc') {
+      return (b.category || '').localeCompare(a.category || '', undefined, { sensitivity: 'base' });
+    }
+    if (sortBy.value === 'location-asc') {
+      return (a.location || '').localeCompare(b.location || '', undefined, { sensitivity: 'base' });
+    }
+    if (sortBy.value === 'location-desc') {
+      return (b.location || '').localeCompare(a.location || '', undefined, { sensitivity: 'base' });
+    }
+    return 0;
+  });
+
+  return sorted;
+});
+
+// ==========================================
+// TABS NAVIGATION & SMOOTH ARROW SCROLLING
+// ==========================================
+const tabsContainerRef = ref<HTMLElement | null>(null);
+const canScrollLeft = ref(false);
+const canScrollRight = ref(false);
+
+const checkScrollArrows = () => {
+  if (!tabsContainerRef.value) return;
+  const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.value;
+  canScrollLeft.value = scrollLeft > 6;
+  canScrollRight.value = scrollLeft + clientWidth < scrollWidth - 6;
+};
+
+const scrollTabs = (direction: 'left' | 'right') => {
+  if (!tabsContainerRef.value) return;
+  const scrollAmount = 240;
+  tabsContainerRef.value.scrollBy({
+    left: direction === 'left' ? -scrollAmount : scrollAmount,
+    behavior: 'smooth'
+  });
+  setTimeout(checkScrollArrows, 280);
+};
+
+const switchTab = (type: CatalogType) => {
+  cancelInlineEdit();
+  activeTab.value = type;
+  nextTick(() => {
+    checkScrollArrows();
+    const activeEl = tabsContainerRef.value?.querySelector('.catalog-folder-tab.active') as HTMLElement | null;
+    if (activeEl) {
+      activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+  });
+};
+
+// ==========================================
+// 1. INLINE ROW EDITING
+// ==========================================
+const editingRowId = ref<string | null>(null);
+const inlineFormCode = ref('');
+const inlineFormName = ref('');
+const inlineFormAcronym = ref('');
+const inlineFormTitle = ref('');
+const inlineFormColor = ref('');
+const inlineFormCategory = ref('');
+const inlineFormLocation = ref('');
+const inlineFormQuantity = ref<number>(1);
+const inlineFormDescription = ref('');
+const inlineNameInputRef = ref<HTMLInputElement | null>(null);
+
+const startInlineEdit = (item: CatalogItem) => {
+  editingRowId.value = item.id;
+  inlineFormCode.value = item.code || '';
+  inlineFormName.value = item.name;
+  inlineFormAcronym.value = item.acronym || '';
+  inlineFormTitle.value = item.title || '';
+  inlineFormColor.value = item.color || getItemTypeColor(item.name, props.catalogs);
+  inlineFormCategory.value = item.category || '';
+  inlineFormLocation.value = item.location || '';
+  inlineFormQuantity.value = item.quantity ?? 1;
+  inlineFormDescription.value = item.description || '';
+
+  nextTick(() => {
+    if (inlineNameInputRef.value) {
+      inlineNameInputRef.value.focus();
+    }
+  });
+};
+
+const cancelInlineEdit = () => {
+  editingRowId.value = null;
+  inlineFormCode.value = '';
+  inlineFormName.value = '';
+  inlineFormAcronym.value = '';
+  inlineFormTitle.value = '';
+  inlineFormColor.value = '';
+  inlineFormCategory.value = '';
+  inlineFormLocation.value = '';
+  inlineFormQuantity.value = 1;
+  inlineFormDescription.value = '';
+};
+
+const saveInlineEdit = (item: CatalogItem) => {
+  if (!inlineFormName.value.trim()) {
+    emit('toast', '⚠️ Name cannot be empty', 'warning');
+    return;
+  }
+
+  const updated: CatalogItem = {
+    ...item,
+    name: inlineFormName.value.trim(),
+    code: inlineFormCode.value.trim() || undefined,
+    acronym: activeTab.value === 'office' ? (inlineFormAcronym.value.trim() || undefined) : undefined,
+    title: (activeTab.value === 'office' || activeTab.value === 'work_type' || activeTab.value === 'item_type') ? (inlineFormTitle.value.trim() || undefined) : undefined,
+    color: activeTab.value === 'item_type' ? (inlineFormColor.value.trim() || item.color || getItemTypeColor(inlineFormName.value, props.catalogs)) : item.color,
+    category: activeTab.value === 'equipment' ? (inlineFormCategory.value.trim() || undefined) : item.category,
+    location: activeTab.value === 'equipment' ? (inlineFormLocation.value.trim() || undefined) : undefined,
+    quantity: activeTab.value === 'equipment' ? Math.max(0, Number(inlineFormQuantity.value) || 0) : undefined,
+    description: inlineFormDescription.value.trim() || undefined,
+    isActive: true
+  };
+
+  emit('updateItem', updated);
+  emit('toast', `✓ Saved ${currentTabMeta.value.singular}: ${updated.name}`, 'success');
+  editingRowId.value = null;
+};
+
+const handleQuickColorChange = (item: CatalogItem, newColor: string) => {
+  if (!newColor) return;
+  const updated: CatalogItem = {
+    ...item,
+    color: newColor.trim()
+  };
+  emit('updateItem', updated);
+  emit('toast', `✓ Updated tag color for "${item.name}"`, 'success');
+};
+
+// Color Picker Dialog (Presets + Advanced Mode)
+const quickColorTargetItem = ref<CatalogItem | null>(null);
+const quickColorValue = ref<string>('');
+const isInlineColorPicker = ref(false);
+
+const openQuickColorPicker = (item: CatalogItem, isInline = false) => {
+  quickColorTargetItem.value = item;
+  isInlineColorPicker.value = isInline;
+  quickColorValue.value = isInline
+    ? (inlineFormColor.value || item.color || getItemTypeColor(item.name, props.catalogs))
+    : (item.color || getItemTypeColor(item.name, props.catalogs));
+};
+
+const closeQuickColorPicker = () => {
+  quickColorTargetItem.value = null;
+};
+
+const handleQuickColorUpdate = (newColor: string) => {
+  quickColorValue.value = newColor;
+};
+
+const saveQuickColorChange = () => {
+  if (!quickColorTargetItem.value) return;
+  const newColor = quickColorValue.value.trim();
+  if (isInlineColorPicker.value) {
+    inlineFormColor.value = newColor;
+  } else {
+    handleQuickColorChange(quickColorTargetItem.value, newColor);
+  }
+  quickColorTargetItem.value = null;
+};
+
+// ==========================================
+// 2. DEDICATED ADD POPUP WINDOW ("POP WINDOW")
+// ==========================================
+const isAddModalOpen = ref(false);
+const addFormName = ref('');
+const addFormCode = ref('');
+const addFormAcronym = ref('');
+const addFormTitle = ref('');
+const addFormColor = ref('#8BA869');
+const addFormCategory = ref('');
+const addFormLocation = ref('');
+const addFormQuantity = ref<number>(1);
+const addFormDescription = ref('');
+const addNameInputRef = ref<HTMLInputElement | null>(null);
+
+// Automatically compute next suggested code based on saved records in active tab
+const computeSuggestedCode = (type: CatalogType): string => {
+  const items: CatalogItem[] = (
+    type === 'office' ? props.catalogs.offices :
+    type === 'work_type' ? props.catalogs.workTypes :
+    type === 'activity_type' ? props.catalogs.activityTypes :
+    type === 'item_type' ? props.catalogs.itemTypes :
+    props.catalogs.equipment
+  ) || [];
+
+  if (!items || items.length === 0) {
+    if (type === 'equipment') return 'EQ-001';
+    if (type === 'activity_type' || type === 'item_type') return '01';
+    return '100';
+  }
+
+  const validCodes = items
+    .map((i) => i.code?.trim().toUpperCase())
+    .filter((c): c is string => Boolean(c));
+
+  if (type === 'equipment') {
+    let highestNum = 0;
+    for (const c of validCodes) {
+      const match = c.match(/(?:[-_]|^)(\d+)$/);
+      if (match) {
+        const numVal = parseInt(match[1], 10);
+        if (numVal > highestNum) highestNum = numVal;
+      }
+    }
+    return `EQ-${String(highestNum + 1).padStart(3, '0')}`;
+  }
+
+  // Numerical codes (offices, work_type, activity_type, item_type)
+  let highestNum = 0;
+  let pad = 2;
+  for (const c of validCodes) {
+    const match = c.match(/^(\d+)$/);
+    if (match) {
+      const numVal = parseInt(match[1], 10);
+      if (numVal > highestNum) {
+        highestNum = numVal;
+        pad = Math.max(pad, match[1].length);
+      }
+    }
+  }
+
+  if (highestNum > 0) {
+    return String(highestNum + 1).padStart(pad, '0');
+  }
+
+  return String(items.length + 1).padStart(pad, '0');
+};
+
+const suggestedCode = computed(() => computeSuggestedCode(activeTab.value));
+
+const openAddModal = () => {
+  cancelInlineEdit();
+  addFormName.value = '';
+  addFormCode.value = suggestedCode.value;
+  addFormAcronym.value = '';
+  addFormTitle.value = '';
+  if (activeTab.value === 'item_type') {
+    const existingCount = (props.catalogs.itemTypes || []).length;
+    addFormColor.value = ITEM_TYPE_COLOR_PALETTE[existingCount % ITEM_TYPE_COLOR_PALETTE.length];
+  } else {
+    addFormColor.value = '#8BA869';
+  }
+  addFormCategory.value = '';
+  addFormLocation.value = '';
+  addFormQuantity.value = 1;
+  addFormDescription.value = '';
+  isAddModalOpen.value = true;
+
+  nextTick(() => {
+    if (addNameInputRef.value) {
+      addNameInputRef.value.focus();
+    }
+  });
+};
+
+const closeAddModal = () => {
+  isAddModalOpen.value = false;
+};
+
+// Global Esc key support for popup window
+const handleWindowKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    if (quickColorTargetItem.value) {
+      closeQuickColorPicker();
+    } else if (isAddModalOpen.value) {
+      closeAddModal();
+    }
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('keydown', handleWindowKeydown);
+  window.addEventListener('resize', checkScrollArrows);
+  nextTick(checkScrollArrows);
+  setTimeout(checkScrollArrows, 300);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleWindowKeydown);
+  window.removeEventListener('resize', checkScrollArrows);
+});
+
+const handleSaveAddForm = () => {
+  if (!addFormName.value.trim()) return;
+
+  const newItem: CatalogItem = {
+    id: `${activeTab.value}-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+    type: activeTab.value,
+    name: addFormName.value.trim(),
+    code: addFormCode.value.trim() || undefined,
+    acronym: activeTab.value === 'office' ? (addFormAcronym.value.trim() || undefined) : undefined,
+    title: (activeTab.value === 'office' || activeTab.value === 'work_type' || activeTab.value === 'item_type') ? (addFormTitle.value.trim() || undefined) : undefined,
+    color: activeTab.value === 'item_type' ? (addFormColor.value.trim() || '#8BA869') : undefined,
+    category: activeTab.value === 'equipment' ? (addFormCategory.value.trim() || undefined) : (activeTab.value === 'office' ? 'University Office' : undefined),
+    location: activeTab.value === 'equipment' ? (addFormLocation.value.trim() || undefined) : undefined,
+    quantity: activeTab.value === 'equipment' ? Math.max(0, Number(addFormQuantity.value) || 1) : 1,
+    description: addFormDescription.value.trim() || undefined,
+    isActive: true,
+    createdAt: new Date().toISOString().split('T')[0]
+  };
+
+  emit('addItem', newItem);
+  emit('toast', `✓ Registered new ${currentTabMeta.value.singular}: ${newItem.name}`, 'success');
+  closeAddModal();
+};
+
+// ==========================================
+// 3. DELETE RECORD
+// ==========================================
+const handleDeleteClick = (item: CatalogItem) => {
+  const confirmed = window.confirm(
+    `Are you sure you want to delete "${item.name}" from ${currentTabMeta.value.label}?\n\nThis will remove it from all active work order and log dropdown choices.`
+  );
+  if (!confirmed) return;
+
+  if (editingRowId.value === item.id) {
+    cancelInlineEdit();
+  }
+
+  emit('deleteItem', item.id, item.type);
+  emit('toast', `✓ Deleted ${item.name} from ${currentTabMeta.value.label}`, 'info');
+};
+</script>
+
+<style scoped>
+
+.sortable-header {
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sortable-header:hover {
+  background-color: rgba(0, 108, 73, 0.06);
+  color: #006C49;
+}
+
+.sortable-header.active {
+  color: #006C49;
+  font-weight: 700;
+}
+
+.sort-indicator {
+  display: inline-flex;
+  font-size: 11px;
+  margin-left: 4px;
+  opacity: 0.5;
+  color: #6C7A71;
+}
+
+.sortable-header.active .sort-indicator {
+  opacity: 1;
+  color: #006C49;
+  font-weight: 800;
+}
+
+/* ==========================================
+   ITEM TYPE COLOR STYLING & CONTROLS
+   ========================================== */
+.catalog-color-display-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalog-color-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  user-select: none;
+}
+
+.catalog-color-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+}
+
+.catalog-color-pill-hex {
+  font-family: 'JetBrains Mono', monospace, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
+}
+
+.catalog-quick-color-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  color: #64748B;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.catalog-quick-color-label:hover {
+  color: #006C49;
+  background-color: rgba(0, 108, 73, 0.08);
+}
+
+.catalog-quick-color-input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.catalog-inline-color-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.catalog-inline-color-swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.color-hex-input {
+  width: 90px !important;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Modal Assign Color Box */
+.catalog-color-assign-box {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.catalog-color-preview-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.catalog-color-preview-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+}
+
+.item-type-tag-pill-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px 0 9px;
+  color: #FFFFFF;
+  border-radius: 9999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.catalog-color-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.catalog-color-picker-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.catalog-modal-color-swatch {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.catalog-palette-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: 320px;
+}
+
+.palette-dot-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 0 0 1px #CBD5E1;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.palette-dot-btn:hover {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 1.5px #006C49;
+}
+
+.palette-dot-btn.active {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 2px #006C49;
+}
+
+/* Dedicated Quick Color Picker Modal */
+.color-picker-backdrop {
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  padding: 20px;
+}
+
+.color-quick-picker-modal {
+  background: #FFFFFF;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 530px;
+  max-height: 90vh;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  overflow-y: auto;
+  animation: catalogPopZoomIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 10001;
+  margin: auto;
+}
+
+.color-picker-modal-header {
+  padding: 18px 22px;
+  background: linear-gradient(180deg, #FAFCFB 0%, #FFFFFF 100%);
+  border-bottom: 1px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.color-picker-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.color-picker-icon-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+  color: #006C49;
+  border: 1px solid #A7F3D0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 108, 73, 0.1);
+  flex-shrink: 0;
+}
+
+.color-picker-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-picker-modal-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.color-picker-modal-subtitle {
+  font-size: 11.5px;
+  color: #64748B;
+  margin: 2px 0 0 0;
+}
+
+.color-picker-close-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94A3B8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.color-picker-close-btn:hover {
+  background: #F1F5F9;
+  border-color: #E2E8F0;
+  color: #0F172A;
+}
+
+.color-quick-picker-body {
+  padding: 18px 22px;
+}
+
+.color-picker-modal-footer {
+  padding: 14px 22px;
+  background: #F8FAFC;
+  border-top: 1px solid #E2E8F0;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.color-picker-cancel-btn {
+  padding: 9px 18px;
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 9px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.color-picker-cancel-btn:hover {
+  background: #F1F5F9;
+  border-color: #94A3B8;
+  color: #0F172A;
+}
+
+.color-picker-apply-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  background: linear-gradient(135deg, #00875A 0%, #006C49 100%);
+  border: none;
+  border-radius: 9px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFFFFF;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 108, 73, 0.28);
+  transition: all 0.15s ease;
+}
+
+.color-picker-apply-btn:hover {
+  background: linear-gradient(135deg, #007A51 0%, #00563A 100%);
+  box-shadow: 0 5px 14px rgba(0, 108, 73, 0.35);
+  transform: translateY(-1px);
+}
+
+.color-picker-apply-btn:active {
+  transform: translateY(0);
+}
+
+.catalog-inline-color-swatch-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.catalog-inline-color-swatch-btn:hover {
+  transform: scale(1.1);
+}
+
+.catalog-quick-color-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6C7A71;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.catalog-quick-color-btn:hover {
+  background: rgba(0, 108, 73, 0.08);
+  color: #006C49;
+}
+
+/* ==========================================
+   RESPONSIVE MOBILE REGISTRY CARDS
+   ========================================== */
+.catalog-desktop-table {
+  display: block;
+}
+
+.catalog-mobile-list {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .catalog-desktop-table {
+    display: none !important;
+  }
+
+  .catalog-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .catalog-mobile-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 14px 14px 12px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: all 0.15s ease;
+  }
+
+  .catalog-mobile-card.is-editing {
+    border-color: #006C49;
+    box-shadow: 0 0 0 2px rgba(0, 108, 73, 0.12);
+    background: #FAFCF9;
+  }
+
+  .catalog-mc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .catalog-mc-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .catalog-mc-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .catalog-mc-actions .btn-catalog-action {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+  }
+
+  .catalog-mc-body {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .catalog-mc-primary-name {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #0B1C30;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .catalog-mc-detail-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+
+  .catalog-mc-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+  }
+
+  .catalog-mc-value {
+    font-size: 13px;
+    color: #1E293B;
+    font-weight: 500;
+    word-break: break-word;
+  }
+
+  .catalog-mc-meta-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid #F1F5F9;
+  }
+
+  .catalog-mc-loc {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #64748B;
+  }
+
+  /* Inline Editing inside Mobile Card */
+  .catalog-mc-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 2px 0;
+  }
+
+  .catalog-mc-edit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #E2E8F0;
+    padding-bottom: 8px;
+  }
+
+  .catalog-mc-edit-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #006C49;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .catalog-mc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .catalog-mc-field-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .catalog-mc-edit-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 6px;
+    padding-top: 10px;
+    border-top: 1px solid #E2E8F0;
+  }
+
+  .catalog-mc-btn-save {
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+  }
+
+  .catalog-mc-btn-cancel {
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+  }
+
+  /* Card Topbar & Controls on Mobile */
+  .catalog-card-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .catalog-stats-pill {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .catalog-search-wrapper {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .catalog-search-input {
+    width: 100%;
+  }
+
+  .view-header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .view-header-actions .btn-primary-sm {
+    width: 100%;
+    justify-content: center;
+    height: 38px;
+  }
+}
+</style>
