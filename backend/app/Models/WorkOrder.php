@@ -14,6 +14,7 @@ class WorkOrder extends Model
     protected $casts = [
         'assigned' => 'array',
         'tasks' => 'array',
+        'item_types' => 'array',
         'is_locked' => 'boolean',
     ];
 }

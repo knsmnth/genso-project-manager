@@ -1,0 +1,1195 @@
+{
+  "offices": [
+    {
+      "code": "100",
+      "name": "Office of the President",
+      "acronym": "OP",
+      "title": "OP"
+    },
+    {
+      "code": "110",
+      "name": "Human Resources Management Office",
+      "acronym": "HRMO",
+      "title": "HRMO"
+    },
+    {
+      "code": "111",
+      "name": "Recruitment, Selection, Placement, and Personnel Records Office",
+      "acronym": "RSPPRO",
+      "title": "RSPPRO"
+    },
+    {
+      "code": "120",
+      "name": "University Information and Communications Technology Services",
+      "acronym": "UICTS",
+      "title": "UICTS"
+    },
+    {
+      "code": "126",
+      "name": "University Integrated Media and Public Affairs",
+      "acronym": "UIMPA",
+      "title": "UIMPA"
+    },
+    {
+      "code": "130",
+      "name": "Quality Assurance Center",
+      "acronym": "QAC",
+      "title": "QAC"
+    },
+    {
+      "code": "136",
+      "name": "Internal Audit Unit",
+      "acronym": "IAO",
+      "title": "AUDIT"
+    },
+    {
+      "code": "140",
+      "name": "Legal Affairs and Services Office",
+      "acronym": "LASO",
+      "title": "LEGAL"
+    },
+    {
+      "code": "150",
+      "name": "Disaster Resilience and Management Office",
+      "acronym": "DRMO",
+      "title": "DISASTER"
+    },
+    {
+      "code": "160",
+      "name": "International Affairs and Relations Office",
+      "acronym": "IARO",
+      "title": "INTERNATIONAL"
+    },
+    {
+      "code": "161",
+      "name": "International Mobility",
+      "acronym": "",
+      "title": "MOBILITY"
+    },
+    {
+      "code": "162",
+      "name": "International Partnership",
+      "acronym": "",
+      "title": "PARTNERSHIP"
+    },
+    {
+      "code": "163",
+      "name": "Global Univerisy Affairs",
+      "acronym": "",
+      "title": "GLOBAL"
+    },
+    {
+      "code": "170",
+      "name": "Gender and Development Office",
+      "acronym": "GDO",
+      "title": "GENDER"
+    },
+    {
+      "code": "180",
+      "name": "Data Privacy and FOI Services",
+      "acronym": "",
+      "title": "PRIVACY"
+    },
+    {
+      "code": "190",
+      "name": "Office of the University Board Secretary",
+      "acronym": "OUBS",
+      "title": "BOARDSEC"
+    },
+    {
+      "code": "200",
+      "name": "Office of the Vice President for Adminstration and Finance",
+      "acronym": "OVPAF",
+      "title": "VPAF"
+    },
+    {
+      "code": "210",
+      "name": "Security & Safety Services Office",
+      "acronym": "SSSO",
+      "title": "SECURITY"
+    },
+    {
+      "code": "220",
+      "name": "University Health Services",
+      "acronym": "UHS",
+      "title": "HOSPITAL"
+    },
+    {
+      "code": "230",
+      "name": "Adminsitrative Services",
+      "acronym": "ASO",
+      "title": "ADMIN SERVICES"
+    },
+    {
+      "code": "231",
+      "name": "Cash Division",
+      "acronym": "",
+      "title": "CASH"
+    },
+    {
+      "code": "232",
+      "name": "Procurement Office",
+      "acronym": "",
+      "title": "PROCUREMENT"
+    },
+    {
+      "code": "233",
+      "name": "Supply and Property Management Office",
+      "acronym": "SPMO",
+      "title": "SUPPLY"
+    },
+    {
+      "code": "234",
+      "name": "Records Management and Archival Office",
+      "acronym": "RMAO",
+      "title": "RECORDS"
+    },
+    {
+      "code": "235",
+      "name": "Janitorial and Messengerial Services",
+      "acronym": "JMS",
+      "title": "JMS"
+    },
+    {
+      "code": "240",
+      "name": "Finance Management Office",
+      "acronym": "",
+      "title": "FINANCE"
+    },
+    {
+      "code": "241",
+      "name": "Accounting Division",
+      "acronym": "",
+      "title": "ACCOUNTING"
+    },
+    {
+      "code": "242",
+      "name": "Budgeting Office",
+      "acronym": "",
+      "title": "BUDGET"
+    },
+    {
+      "code": "250",
+      "name": "General Services Directors Office",
+      "acronym": "GenSO",
+      "title": "GENSO"
+    },
+    {
+      "code": "251",
+      "name": "GenSO-Building and Housing Maintenance",
+      "acronym": "GenSO-BHMU",
+      "title": "GENSO BHM"
+    },
+    {
+      "code": "252",
+      "name": "GenSO-Plumbing and Sanitation",
+      "acronym": "GenSO-PSU",
+      "title": "GENSO PS"
+    },
+    {
+      "code": "253",
+      "name": "GenSO-Power Plant and Electrical Services",
+      "acronym": "GenSO-PPESU",
+      "title": "GENSO PPES"
+    },
+    {
+      "code": "254",
+      "name": "GenSO-Motorpool Services",
+      "acronym": "GenSO-MPSU",
+      "title": "GENSO MPS"
+    },
+    {
+      "code": "255",
+      "name": "GenSO-Grounds Maintenance and Landscaping",
+      "acronym": "GenSO-GMLU",
+      "title": "GENSO GML"
+    },
+    {
+      "code": "256",
+      "name": "GenSO-Instrumentation and Calibration",
+      "acronym": "GenSO-ICU",
+      "title": "GENSO IC"
+    },
+    {
+      "code": "300",
+      "name": "Office of the Vice President for Research, Extension, and Innovation",
+      "acronym": "OVPREI",
+      "title": "VPREI"
+    },
+    {
+      "code": "301",
+      "name": "ViCARP Secretariat",
+      "acronym": "VICARP",
+      "title": "VICARP"
+    },
+    {
+      "code": "302",
+      "name": "Research Ethics Board",
+      "acronym": "",
+      "title": "ETHICS"
+    },
+    {
+      "code": "303",
+      "name": "Knowledge Management Unit",
+      "acronym": "",
+      "title": "KNOWLEDGE"
+    },
+    {
+      "code": "304",
+      "name": "Monitoring Impact Assessment",
+      "acronym": "",
+      "title": "IMPACT"
+    },
+    {
+      "code": "305",
+      "name": "Journal Publication and Printing",
+      "acronym": "",
+      "title": "JOURNAL"
+    },
+    {
+      "code": "310",
+      "name": "Central Analytics Science Laboratory",
+      "acronym": "CASL",
+      "title": "CASL"
+    },
+    {
+      "code": "320",
+      "name": "Director for Research",
+      "acronym": "",
+      "title": "RESEARCH"
+    },
+    {
+      "code": "330",
+      "name": "Director for Innovation & Co-Creation",
+      "acronym": "",
+      "title": "INNOVATION"
+    },
+    {
+      "code": "340",
+      "name": "Director for Extension",
+      "acronym": "",
+      "title": "EXTENSION"
+    },
+    {
+      "code": "350",
+      "name": "Director for Research Centers",
+      "acronym": "",
+      "title": "CENTERS"
+    },
+    {
+      "code": "351",
+      "name": "Philippine Rootcrops Research and Training Center",
+      "acronym": "PRCRTC",
+      "title": "ROOTCROPS"
+    },
+    {
+      "code": "352",
+      "name": "National Abaca Research Center",
+      "acronym": "NARC",
+      "title": "NARC"
+    },
+    {
+      "code": "353",
+      "name": "National Coconut Research Center",
+      "acronym": "NCRC",
+      "title": "NCRC"
+    },
+    {
+      "code": "354",
+      "name": "Livestock and Poultry Research and Development Center",
+      "acronym": "",
+      "title": "LIVESTOCK"
+    },
+    {
+      "code": "355",
+      "name": "Forest Product Innovation and Training Center",
+      "acronym": "FPITC",
+      "title": "F PRODUCTS"
+    },
+    {
+      "code": "361",
+      "name": "Advance Research and Innovation Center",
+      "acronym": "ARIC",
+      "title": "ARIC"
+    },
+    {
+      "code": "362",
+      "name": "Eastern Visayas Innovation Center for Health Biotechnology",
+      "acronym": "EV BIOTECH",
+      "title": "EVBIOTECH"
+    },
+    {
+      "code": "363",
+      "name": "Biodiversity Research Center",
+      "acronym": "",
+      "title": "BIODIVERSITY"
+    },
+    {
+      "code": "371",
+      "name": "Renewable Energy Research Center",
+      "acronym": "RERC",
+      "title": "RERC"
+    },
+    {
+      "code": "372",
+      "name": "Regional Climate Change Research and Development Center",
+      "acronym": "RCCRDC",
+      "title": "CLIMATE CHANGE"
+    },
+    {
+      "code": "373",
+      "name": "Geospatial Research, Innovation and Development Center",
+      "acronym": "GRID",
+      "title": "GRID"
+    },
+    {
+      "code": "391",
+      "name": "Center for Socio-Cultural Research and Heritage Studies",
+      "acronym": "",
+      "title": "SOCIO-CULTURAL"
+    },
+    {
+      "code": "400",
+      "name": "Office of the Vice President for Student Affairs and Services",
+      "acronym": "OVPSAS",
+      "title": "VPSAS"
+    },
+    {
+      "code": "410",
+      "name": "University Learning Commons",
+      "acronym": "ULC",
+      "title": "LIBRARY"
+    },
+    {
+      "code": "420",
+      "name": "University Admissions Office",
+      "acronym": "",
+      "title": "ADMISSIONS"
+    },
+    {
+      "code": "430",
+      "name": "Student Affairs and Services",
+      "acronym": "DSAS",
+      "title": "STUDENT AFFAIRS"
+    },
+    {
+      "code": "440",
+      "name": "Culture and Arts Office",
+      "acronym": "",
+      "title": "CULTURE"
+    },
+    {
+      "code": "450",
+      "name": "Guidance and Counseling Office",
+      "acronym": "",
+      "title": "GUIDANCE"
+    },
+    {
+      "code": "460",
+      "name": "Sports Development Office",
+      "acronym": "SDO",
+      "title": "SPORTS"
+    },
+    {
+      "code": "500",
+      "name": "Office of the Vice President for Planning and Development",
+      "acronym": "OVPPD",
+      "title": "VPPD"
+    },
+    {
+      "code": "501",
+      "name": "Foresight and Sustainable Futures",
+      "acronym": "",
+      "title": "FORESIGHT"
+    },
+    {
+      "code": "502",
+      "name": "Private-Public Partnership",
+      "acronym": "",
+      "title": "PPP"
+    },
+    {
+      "code": "503",
+      "name": "VSU Manila Office",
+      "acronym": "",
+      "title": "MANILA"
+    },
+    {
+      "code": "504",
+      "name": "VSU Cebu Office",
+      "acronym": "",
+      "title": "CEBU"
+    },
+    {
+      "code": "510",
+      "name": "Project Development Office",
+      "acronym": "PDO",
+      "title": "PROJECTDEV"
+    },
+    {
+      "code": "511",
+      "name": "Infrastructure Project Development Office",
+      "acronym": "IPDO",
+      "title": "INFRA"
+    },
+    {
+      "code": "512",
+      "name": "Project Contract Management and Monitoring Office",
+      "acronym": "",
+      "title": "CONTRACTS"
+    },
+    {
+      "code": "520",
+      "name": "Planning & Development Office",
+      "acronym": "",
+      "title": "PLANNING"
+    },
+    {
+      "code": "521",
+      "name": "Institutional Planning and Performance Monitoring",
+      "acronym": "",
+      "title": "PERFORMANCE"
+    },
+    {
+      "code": "522",
+      "name": "Land Use, Development, & Infrastructure Planning",
+      "acronym": "LUDIP",
+      "title": "LANDUSE"
+    },
+    {
+      "code": "523",
+      "name": "Research and Data Analysis",
+      "acronym": "",
+      "title": "DATA ANALYSIS"
+    },
+    {
+      "code": "530",
+      "name": "Center for Continuing Education",
+      "acronym": "CCE",
+      "title": "CCE"
+    },
+    {
+      "code": "531",
+      "name": "University Review Services",
+      "acronym": "",
+      "title": "REVIEW"
+    },
+    {
+      "code": "532",
+      "name": "Continuing Professional Development",
+      "acronym": "",
+      "title": "CPD"
+    },
+    {
+      "code": "540",
+      "name": "Business & Resource Generation Office",
+      "acronym": "BARGO",
+      "title": "BARGO"
+    },
+    {
+      "code": "541",
+      "name": "Income Generating Projects",
+      "acronym": "IGP",
+      "title": "IGP"
+    },
+    {
+      "code": "542",
+      "name": "VSU Accommodations",
+      "acronym": "",
+      "title": "ACCOM"
+    },
+    {
+      "code": "543",
+      "name": "VSU Apartelle",
+      "acronym": "",
+      "title": "VSU APARTELLE"
+    },
+    {
+      "code": "544",
+      "name": "VSU Hostel",
+      "acronym": "",
+      "title": "VSU HOSTEL"
+    },
+    {
+      "code": "551",
+      "name": "VSU Pavillion and Guest House",
+      "acronym": "",
+      "title": "VSU PAVI GH"
+    },
+    {
+      "code": "561",
+      "name": "VSU Market",
+      "acronym": "",
+      "title": "VSU MARKET"
+    },
+    {
+      "code": "600",
+      "name": "Office of the Vice President for Academic Affairs",
+      "acronym": "OVPAA",
+      "title": "VPAA"
+    },
+    {
+      "code": "601",
+      "name": "Instruction and Evaluation Office",
+      "acronym": "IEO",
+      "title": "IEO"
+    },
+    {
+      "code": "602",
+      "name": "Instructional Materials Development Office",
+      "acronym": "IMDO",
+      "title": "IMDO"
+    },
+    {
+      "code": "603",
+      "name": "Publishing Office",
+      "acronym": "",
+      "title": "PUBLISH"
+    },
+    {
+      "code": "604",
+      "name": "Graduate Education Office",
+      "acronym": "",
+      "title": "GRADUATE"
+    },
+    {
+      "code": "605",
+      "name": "Distance Education Office",
+      "acronym": "",
+      "title": "DISTANCE"
+    },
+    {
+      "code": "606",
+      "name": "Tech-Voc Education & Training",
+      "acronym": "TVET",
+      "title": "TVET"
+    },
+    {
+      "code": "607",
+      "name": "University Registrar",
+      "acronym": "",
+      "title": "REGISTRAR"
+    },
+    {
+      "code": "608",
+      "name": "National Service Training Program",
+      "acronym": "NSTP",
+      "title": "NSTP"
+    },
+    {
+      "code": "610",
+      "name": "Faculty of Agriculture and Food Science",
+      "acronym": "FAFS",
+      "title": "F AGRIC"
+    },
+    {
+      "code": "611",
+      "name": "Dept of Agronomy",
+      "acronym": "DA",
+      "title": "AGRONOMY"
+    },
+    {
+      "code": "612",
+      "name": "Dept of Horticulture",
+      "acronym": "DoH",
+      "title": "HORTI"
+    },
+    {
+      "code": "613",
+      "name": "Dept of Plant Breeding and Genetics",
+      "acronym": "DPBG",
+      "title": "PLANT BREEDING"
+    },
+    {
+      "code": "614",
+      "name": "Dept of Food Science and Technology",
+      "acronym": "DFST",
+      "title": "FOODTECH"
+    },
+    {
+      "code": "615",
+      "name": "Dept of Agricultural Education and Extensions",
+      "acronym": "DAEEx",
+      "title": "AGEEX"
+    },
+    {
+      "code": "616",
+      "name": "Dept of Developmental Communications",
+      "acronym": "DDC",
+      "title": "DEVCOM"
+    },
+    {
+      "code": "617",
+      "name": "Multi Media Development Center",
+      "acronym": "MMDC",
+      "title": "MMDC"
+    },
+    {
+      "code": "618",
+      "name": "Dept of Soil Science",
+      "acronym": "DSS",
+      "title": "SOILS"
+    },
+    {
+      "code": "619",
+      "name": "Dept of Animal Sciences",
+      "acronym": "DAS",
+      "title": "ANSCI"
+    },
+    {
+      "code": "620",
+      "name": "Dept  of Pest Management",
+      "acronym": "DPM",
+      "title": "PEST"
+    },
+    {
+      "code": "621",
+      "name": "Plant Disease Diagnostic Laboratory",
+      "acronym": "PDDL",
+      "title": "PDDL"
+    },
+    {
+      "code": "622",
+      "name": "Ecological Farm and Resource Management Institute",
+      "acronym": "Eco-FARMI",
+      "title": "ECOFARMI"
+    },
+    {
+      "code": "630",
+      "name": "Faculty of Engineering",
+      "acronym": "FE",
+      "title": "F ENGG"
+    },
+    {
+      "code": "631",
+      "name": "Dept of Agriculture and Biosystems Engineering",
+      "acronym": "DABE",
+      "title": "ABE"
+    },
+    {
+      "code": "632",
+      "name": "Dept of Civil Engineering",
+      "acronym": "DCE",
+      "title": "CIVIL"
+    },
+    {
+      "code": "633",
+      "name": "Dept of Geodetic Engineering",
+      "acronym": "DGE",
+      "title": "GEODETIC"
+    },
+    {
+      "code": "634",
+      "name": "Dept of Mechanical Engineering",
+      "acronym": "DME",
+      "title": "MECHANICAL"
+    },
+    {
+      "code": "640",
+      "name": "Faculty of Nursing",
+      "acronym": "FN",
+      "title": "F NURSING"
+    },
+    {
+      "code": "650",
+      "name": "Faculty of Veterinary Medicine",
+      "acronym": "FVM",
+      "title": "F VETMED"
+    },
+    {
+      "code": "651",
+      "name": "Dept of Veterinary Basic Science",
+      "acronym": "",
+      "title": "VETBASIC"
+    },
+    {
+      "code": "652",
+      "name": "Dept of Veterinary Paraclinical Sciences",
+      "acronym": "",
+      "title": "VETPARA"
+    },
+    {
+      "code": "653",
+      "name": "Dept of Veterinary Clinical Sciences",
+      "acronym": "",
+      "title": "VETCLINICAL"
+    },
+    {
+      "code": "654",
+      "name": "PCAARRD-VSU Semen Laboraty",
+      "acronym": "",
+      "title": "VETSEMEN"
+    },
+    {
+      "code": "660",
+      "name": "College of Medicine",
+      "acronym": "CoM",
+      "title": "COMED"
+    },
+    {
+      "code": "670",
+      "name": "Faculty of Forestry and Environmental Sciences",
+      "acronym": "FFES",
+      "title": "F FORESTRY"
+    },
+    {
+      "code": "671",
+      "name": "Dept of Forest Science",
+      "acronym": "DFS",
+      "title": "FORESTSCI"
+    },
+    {
+      "code": "672",
+      "name": "Institute of Tropical Ecology and Environmental Sciences",
+      "acronym": "ITEES",
+      "title": "ITEES"
+    },
+    {
+      "code": "680",
+      "name": "Faculty of Computing",
+      "acronym": "FC",
+      "title": "F COMP"
+    },
+    {
+      "code": "681",
+      "name": "Dept of Computer Science and Technology",
+      "acronym": "DCST",
+      "title": "COMPSCI"
+    },
+    {
+      "code": "690",
+      "name": "Faculty of Teacher Education",
+      "acronym": "FTE",
+      "title": "F TEACHER ED"
+    },
+    {
+      "code": "691",
+      "name": "Dept of Early Childhood and Elementary Education",
+      "acronym": "",
+      "title": "ELEM ED"
+    },
+    {
+      "code": "692",
+      "name": "Dept of Secondary Education",
+      "acronym": "",
+      "title": "HIGH ED"
+    },
+    {
+      "code": "693",
+      "name": "VSU Integrated High School",
+      "acronym": "VSUIHS",
+      "title": "HIGH SCHOOL"
+    },
+    {
+      "code": "694",
+      "name": "Institure of Human Kinetics",
+      "acronym": "IHK",
+      "title": "IHK"
+    },
+    {
+      "code": "710",
+      "name": "Faculty of Humanities and Social Sciences",
+      "acronym": "FHSS",
+      "title": "F MANAGEMENT"
+    },
+    {
+      "code": "711",
+      "name": "Dept of Arts, Literature, and Letters",
+      "acronym": "DALL",
+      "title": "ARTS"
+    },
+    {
+      "code": "712",
+      "name": "Dept of Philosophy and Social Sciences",
+      "acronym": "DPSS",
+      "title": "SOCSCI"
+    },
+    {
+      "code": "713",
+      "name": "Institute of Strategic Research and Developmental Studies",
+      "acronym": "ISRDS",
+      "title": "ISRDS"
+    },
+    {
+      "code": "720",
+      "name": "Faculty of Natural and Mathematical Sciences",
+      "acronym": "FNMS",
+      "title": "F NATMATSCI"
+    },
+    {
+      "code": "721",
+      "name": "Dept of Statistics",
+      "acronym": "DStat",
+      "title": "STAT"
+    },
+    {
+      "code": "722",
+      "name": "Dept of Physics",
+      "acronym": "DPhys",
+      "title": "PHYSICS"
+    },
+    {
+      "code": "723",
+      "name": "Dept of Mathematics",
+      "acronym": "DMath",
+      "title": "MATH"
+    },
+    {
+      "code": "724",
+      "name": "Dept of Biotechnology",
+      "acronym": "BioTech",
+      "title": "BIOTECH"
+    },
+    {
+      "code": "725",
+      "name": "Dept of Biological Sciences",
+      "acronym": "DBS",
+      "title": "BIOSCI"
+    },
+    {
+      "code": "726",
+      "name": "Marine Laboratory",
+      "acronym": "",
+      "title": "MARINELAB"
+    },
+    {
+      "code": "727",
+      "name": "Fish Ecology Laboratory",
+      "acronym": "",
+      "title": "FISHECO"
+    },
+    {
+      "code": "728",
+      "name": "Dept of Pure and Applied Chemistry",
+      "acronym": "DoPAC",
+      "title": "CHEM"
+    },
+    {
+      "code": "729",
+      "name": "Dept of Meteorology",
+      "acronym": "DMet",
+      "title": "METEO"
+    },
+    {
+      "code": "730",
+      "name": "Faculty of Management and Economics",
+      "acronym": "FME",
+      "title": "F MANAGEMENT"
+    },
+    {
+      "code": "731",
+      "name": "Dept of Business Management",
+      "acronym": "DBM",
+      "title": "BUSINESS"
+    },
+    {
+      "code": "732",
+      "name": "Dept of Hospitality Management",
+      "acronym": "DHM",
+      "title": "HOSPITALITY"
+    },
+    {
+      "code": "733",
+      "name": "Dept of Tourism Management",
+      "acronym": "DTM",
+      "title": "TOURISM"
+    },
+    {
+      "code": "734",
+      "name": "Dept of Entrepreneurship and Innovation",
+      "acronym": "DEI",
+      "title": "ENTREP"
+    },
+    {
+      "code": "735",
+      "name": "Dept of Economics",
+      "acronym": "DEcon",
+      "title": "ECON"
+    },
+    {
+      "code": "736",
+      "name": "Visayas Socio-Economic Research and Data Analytics Center",
+      "acronym": "ViSERDAC",
+      "title": "VISERDAC"
+    },
+    {
+      "code": "800",
+      "name": "University Housing",
+      "acronym": "",
+      "title": ""
+    },
+    {
+      "code": "810",
+      "name": "Student Housing",
+      "acronym": "",
+      "title": "DORM"
+    },
+    {
+      "code": "860",
+      "name": "Faculty and Staff Housing",
+      "acronym": "",
+      "title": "HOUSING"
+    },
+    {
+      "code": "900",
+      "name": "Other Offices",
+      "acronym": "",
+      "title": ""
+    },
+    {
+      "code": "910",
+      "name": "Philippine Carabao Center",
+      "acronym": "PCC",
+      "title": "PCC"
+    },
+    {
+      "code": "921",
+      "name": "Commision on Audit",
+      "acronym": "COA",
+      "title": "COA"
+    },
+    {
+      "code": "922",
+      "name": "VISCA Foundatiion Elementary School",
+      "acronym": "VFES",
+      "title": "VFES"
+    },
+    {
+      "code": "923",
+      "name": "PAGASA Agrometeorological Station",
+      "acronym": "",
+      "title": "PAGASA"
+    },
+    {
+      "code": "951",
+      "name": "Bids and Awards Committee",
+      "acronym": "BAC",
+      "title": "BAC"
+    },
+    {
+      "code": "952",
+      "name": "Grants Development Office",
+      "acronym": "",
+      "title": "GRANTS"
+    }
+  ],
+  "workTypes": [
+    {
+      "code": "11",
+      "name": "Repair",
+      "title": "REPAIR"
+    },
+    {
+      "code": "12",
+      "name": "Replacement",
+      "title": "REPLACEMENT"
+    },
+    {
+      "code": "13",
+      "name": "Renovation",
+      "title": "RENOVATION"
+    },
+    {
+      "code": "14",
+      "name": "Removal",
+      "title": "REMOVAL"
+    },
+    {
+      "code": "21",
+      "name": "Fabrication",
+      "title": "FABRICATION"
+    },
+    {
+      "code": "22",
+      "name": "Fabrication & Installation",
+      "title": "FAB & INSTALL"
+    },
+    {
+      "code": "23",
+      "name": "Installation",
+      "title": "INSTALLATION"
+    },
+    {
+      "code": "30",
+      "name": "Manpower",
+      "title": "MANPOWER"
+    },
+    {
+      "code": "40",
+      "name": "Design & Estimates",
+      "title": "D&E"
+    },
+    {
+      "code": "50",
+      "name": "New Structure",
+      "title": "NEW"
+    },
+    {
+      "code": "60",
+      "name": "Material Only",
+      "title": "MATERIAL"
+    }
+  ],
+  "activityTypes": [
+    {
+      "code": "01",
+      "name": "Carpentry Works"
+    },
+    {
+      "code": "02",
+      "name": "Masonry Works"
+    },
+    {
+      "code": "03",
+      "name": "Concreting Works"
+    },
+    {
+      "code": "04",
+      "name": "Welding Works"
+    },
+    {
+      "code": "05",
+      "name": "Painting Works"
+    },
+    {
+      "code": "06",
+      "name": "Steel Works"
+    },
+    {
+      "code": "11",
+      "name": "Roof Works"
+    },
+    {
+      "code": "12",
+      "name": "Installation Works"
+    },
+    {
+      "code": "13",
+      "name": "Manpower Works"
+    },
+    {
+      "code": "14",
+      "name": "Clearing and Cleaning Works"
+    },
+    {
+      "code": "98",
+      "name": "Records Management"
+    },
+    {
+      "code": "99",
+      "name": "Other Works"
+    }
+  ],
+  "itemTypes": [
+    {
+      "code": "01",
+      "name": "Building/Structure",
+      "title": "BUILDING"
+    },
+    {
+      "code": "02",
+      "name": "Floor Structure & Finish",
+      "title": "FLOOR"
+    },
+    {
+      "code": "03",
+      "name": "Wall Structure & Finish",
+      "title": "WALL"
+    },
+    {
+      "code": "04",
+      "name": "Ceiling Structure & Finish",
+      "title": "CEILING"
+    },
+    {
+      "code": "05",
+      "name": "Roof Structure & Finish",
+      "title": "ROOF"
+    },
+    {
+      "code": "11",
+      "name": "Door & Accessories",
+      "title": "DOOR"
+    },
+    {
+      "code": "12",
+      "name": "Window & Accessories",
+      "title": "WINDOW"
+    },
+    {
+      "code": "21",
+      "name": "Sports Facilities",
+      "title": "SPORTS FACILITY"
+    },
+    {
+      "code": "31",
+      "name": "Frame/Signage",
+      "title": "FRAME"
+    },
+    {
+      "code": "32",
+      "name": "Board",
+      "title": "BOARD"
+    },
+    {
+      "code": "33",
+      "name": "Cabinet/Shelves",
+      "title": "CABINET"
+    },
+    {
+      "code": "34",
+      "name": "Counter",
+      "title": "COUNTER"
+    },
+    {
+      "code": "35",
+      "name": "Table & Accessories",
+      "title": "TABLE"
+    },
+    {
+      "code": "36",
+      "name": "Chair & Accessories",
+      "title": "CHAIR"
+    },
+    {
+      "code": "37",
+      "name": "Bed & Accessories",
+      "title": "BED"
+    },
+    {
+      "code": "38",
+      "name": "Flag Pole and Stands",
+      "title": "POLE & STAND"
+    },
+    {
+      "code": "39",
+      "name": "Feedback/Suggestion Box",
+      "title": "FEEDBACK"
+    },
+    {
+      "code": "41",
+      "name": "Electrical",
+      "title": "ELECTRICAL"
+    },
+    {
+      "code": "42",
+      "name": "Appliance & Accessories",
+      "title": "APPLIANCE"
+    },
+    {
+      "code": "43",
+      "name": "Fire Extinguisher",
+      "title": "FIREEX"
+    },
+    {
+      "code": "51",
+      "name": "Manpower",
+      "title": "MANPOWER"
+    },
+    {
+      "code": "90",
+      "name": "Others",
+      "title": "OTHERS"
+    }
+  ]
+}

@@ -34,6 +34,7 @@ class WorkOrderController extends Controller
                 'roomNo' => $item->room_no ?? '',
                 'isLocked' => (bool) ($item->is_locked ?? false),
                 'tasks' => $item->tasks ?? [],
+                'itemTypes' => $item->item_types ?? [],
             ];
         });
 
@@ -68,6 +69,7 @@ class WorkOrderController extends Controller
                 'room_no' => $data['roomNo'] ?? null,
                 'is_locked' => $data['isLocked'] ?? false,
                 'tasks' => $data['tasks'] ?? [],
+                'item_types' => $data['itemTypes'] ?? [],
             ]
         );
 
