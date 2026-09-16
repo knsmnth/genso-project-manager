@@ -10,9 +10,7 @@
       :active-view="activeView"
       :sidebar-open="sidebarOpen"
       :is-collapsed="sidebarMode !== 'pinned-open'"
-      :is-pinned="sidebarMode === 'pinned-open'"
       :sidebar-mode="sidebarMode"
-      @toggle-pin="handleTogglePin"
       @view-change="handleViewChange"
       @sidebar-close="sidebarOpen = false"
       @create-order="handleCreateOrder"
@@ -22,6 +20,8 @@
     <main class="main-content">
       <Header
         v-model:search-query="searchQuery"
+        :is-syncing="isSyncing"
+        @sync="handleManualSync"
         @menu-toggle="handleMenuToggle"
         @create-order="handleCreateOrder"
       />
@@ -32,6 +32,7 @@
         <Breadcrumbs
           :active-view="activeView"
           :editing-order-code="editingOrderCode"
+          :origin-view="previousViewBeforeOrderForm"
           @navigate="handleViewChange"
         />
 
@@ -39,6 +40,7 @@
           v-if="activeView === 'dashboard'"
           :work-orders="workOrders"
           :teams-count="teams.length"
+          :teams="teams"
           :personnel="personnel"
           @select-order="handleSelectOrder"
           @view-all="activeView = 'workorders'"
@@ -48,18 +50,43 @@
           v-if="activeView === 'workorders'"
           :work-orders="workOrders"
           :search-query="searchQuery"
+          :catalogs="masterCatalogs"
           @select-order="handleSelectOrder"
           @edit-order="handleEditOrder"
           @delete-order="handleDeleteOrder"
+          @update-status="handleUpdateOrderStatus"
+          @toggle-active="handleToggleOrderActive"
+          @update-inspections="handleUpdateOrderInspections"
           @create-order="handleCreateOrder"
           @navigate-daily-log="activeView = 'dailyworklog'"
+          @navigate-history="activeView = 'workloghistory'"
+          @toast="addToast"
         />
 
         <DailyWorkLogView
           v-if="activeView === 'dailyworklog'"
           :personnel="personnel"
           :work-orders="workOrders"
+          :teams="teams"
+          :equipment-catalog="masterCatalogs.equipment"
           @select-order="handleSelectOrder"
+          @edit-order="handleEditOrder"
+          @update-workgroup="handleUpdateOrderWorkgroup"
+          @navigate-orders="activeView = 'workorders'"
+          @navigate-history="activeView = 'workloghistory'"
+          @toast="addToast"
+        />
+
+        <WorkLogHistoryView
+          v-if="activeView === 'workloghistory'"
+          :work-orders="workOrders"
+          :personnel="personnel"
+          :teams="teams"
+          :equipment-catalog="masterCatalogs.equipment"
+          @select-order="handleSelectOrder"
+          @navigate-orders="activeView = 'workorders'"
+          @navigate-daily-log="activeView = 'dailyworklog'"
+          @toast="addToast"
         />
 
         <TeamsView
@@ -83,13 +110,26 @@
           @cancel="activeView = 'personnel'"
         />
 
+        <CatalogsView
+          v-if="activeView === 'catalogs'"
+          :catalogs="masterCatalogs"
+          @add-item="handleCatalogAddItem"
+          @update-item="handleCatalogUpdateItem"
+          @delete-item="handleCatalogDeleteItem"
+          @toast="addToast"
+        />
+
         <CreateOrderView
           v-if="activeView === 'create-order'"
           :editing-order-code="editingOrderCode"
+          :return-view="previousViewBeforeOrderForm"
           :work-orders="workOrders"
           :personnel="personnel"
+          :catalogs="masterCatalogs"
           @save-order="handleSaveOrder"
           @cancel="handleCancelForm"
+          @manage-catalogs="activeView = 'catalogs'"
+          @add-catalog-item="handleCatalogAddItem"
         />
       </div>
     </main>
@@ -110,8 +150,10 @@
       :is-open="isDetailsModalOpen"
       :order-code="selectedOrderCode"
       :work-orders="workOrders"
+      :catalogs="masterCatalogs"
       @close="handleCloseDetailsModal"
       @edit="handleEditOrder"
+      @toggle-active="handleToggleOrderActive"
     />
 
     <!-- Daily Attendance Modal Overlay -->
@@ -123,72 +165,184 @@
     />
 
     <!-- Mobile Bottom Navigation -->
-    <nav class="mobile-bottom-nav" style="padding: 0 8px">
+    <!-- Mobile Bottom Navigation (Streamlined 5-Slot Architecture) -->
+    <nav class="mobile-bottom-nav">
+      <!-- 1. Overview -->
       <button
         :class="['bottom-nav-item', { active: activeView === 'dashboard' }]"
-        @click="activeView = 'dashboard'"
+        @click="activeView = 'dashboard'; isMobileMoreOpen = false"
       >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="7" height="9" rx="1" />
           <rect x="14" y="3" width="7" height="5" rx="1" />
           <rect x="14" y="12" width="7" height="9" rx="1" />
           <rect x="3" y="16" width="7" height="5" rx="1" />
         </svg>
-        <span style="font-size: 10px">Overview</span>
+        <span>Overview</span>
       </button>
 
+      <!-- 2. Orders -->
       <button
         :class="['bottom-nav-item', { active: activeView === 'workorders' }]"
-        @click="activeView = 'workorders'"
+        @click="activeView = 'workorders'; isMobileMoreOpen = false"
       >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
           <polyline points="14 2 14 8 20 8" />
           <line x1="16" y1="13" x2="8" y2="13" />
           <line x1="16" y1="17" x2="8" y2="17" />
         </svg>
-        <span style="font-size: 10px">Orders</span>
+        <span>Orders</span>
       </button>
 
+      <!-- 3. Center Elevated Action Button (Create Work Order) -->
+      <div class="bottom-nav-center-slot">
+        <button
+          class="mobile-nav-center-btn"
+          @click="handleCreateOrder(); isMobileMoreOpen = false"
+          title="Create Work Order"
+          aria-label="Create Work Order"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- 4. Daily Log -->
       <button
-        :class="['bottom-nav-item', { active: activeView === 'teams' }]"
-        @click="activeView = 'teams'"
+        :class="['bottom-nav-item', { active: activeView === 'dailyworklog' }]"
+        @click="activeView = 'dailyworklog'; isMobileMoreOpen = false"
       >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+          <line x1="9" y1="12" x2="15" y2="12" />
+          <line x1="9" y1="16" x2="15" y2="16" />
         </svg>
-        <span style="font-size: 10px">Teams</span>
+        <span>Daily Log</span>
       </button>
 
+      <!-- 5. More Menu Sheet Toggle -->
       <button
-        :class="['bottom-nav-item', { active: activeView === 'personnel' || activeView === 'quick-onboard' }]"
-        @click="activeView = 'personnel'"
+        :class="['bottom-nav-item', { active: isMobileMoreOpen || ['teams', 'personnel', 'quick-onboard', 'catalogs', 'workloghistory'].includes(activeView) }]"
+        @click="isMobileMoreOpen = !isMobileMoreOpen"
+        aria-label="More Options"
       >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="7" r="4" />
-          <path d="M5.5 21a8.5 8.5 0 0 1 13 0" />
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="1.5" />
+          <circle cx="19" cy="12" r="1.5" />
+          <circle cx="5" cy="12" r="1.5" />
         </svg>
-        <span style="font-size: 10px">Staff</span>
-      </button>
-
-      <button
-        :class="['bottom-nav-item', { active: activeView === 'alerts' }]"
-        @click="alert('Alert notifications are currently empty.')"
-      >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-        </svg>
-        <span style="font-size: 10px">Alerts</span>
+        <span>More</span>
       </button>
     </nav>
 
-    <!-- Pinned Mobile Floating Action Button (FAB) -->
-    <button class="mobile-fab-create" @click="handleCreateOrder" aria-label="Create Work Order">
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
-        <path d="M12 5v14M5 12h14" stroke-linecap="round" />
-      </svg>
-    </button>
+    <!-- Mobile More Bottom Sheet Modal -->
+    <transition name="mobile-fade">
+      <div
+        v-if="isMobileMoreOpen"
+        class="mobile-more-backdrop"
+        @click="isMobileMoreOpen = false"
+      />
+    </transition>
+
+    <transition name="mobile-sheet">
+      <div v-if="isMobileMoreOpen" class="mobile-more-sheet">
+        <div class="mobile-sheet-drag-handle" @click="isMobileMoreOpen = false"></div>
+        <div class="mobile-sheet-header">
+          <span class="mobile-sheet-title">More Services</span>
+          <button class="mobile-sheet-close-btn" @click="isMobileMoreOpen = false" aria-label="Close menu">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="mobile-sheet-grid">
+          <button
+            :class="['mobile-sheet-card', { active: activeView === 'workloghistory' }]"
+            @click="activeView = 'workloghistory'; isMobileMoreOpen = false"
+          >
+            <div class="mobile-sheet-icon teal">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <div class="mobile-sheet-card-text">
+              <span class="mobile-sheet-card-name">Work Log History</span>
+              <span class="mobile-sheet-card-sub">Daily Archives & Accomplishments</span>
+            </div>
+          </button>
+
+          <button
+            :class="['mobile-sheet-card', { active: activeView === 'teams' }]"
+            @click="activeView = 'teams'; isMobileMoreOpen = false"
+          >
+            <div class="mobile-sheet-icon emerald">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+              </svg>
+            </div>
+            <div class="mobile-sheet-card-text">
+              <span class="mobile-sheet-card-name">Teams</span>
+              <span class="mobile-sheet-card-sub">{{ teams.length }} Maintenance Teams</span>
+            </div>
+          </button>
+
+          <button
+            :class="['mobile-sheet-card', { active: activeView === 'personnel' || activeView === 'quick-onboard' }]"
+            @click="activeView = 'personnel'; isMobileMoreOpen = false"
+          >
+            <div class="mobile-sheet-icon blue">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="7" r="4" />
+                <path d="M5.5 21a8.5 8.5 0 0 1 13 0" />
+              </svg>
+            </div>
+            <div class="mobile-sheet-card-text">
+              <span class="mobile-sheet-card-name">Staff Roster</span>
+              <span class="mobile-sheet-card-sub">{{ personnel.length }} Technicians</span>
+            </div>
+          </button>
+
+          <button
+            :class="['mobile-sheet-card', { active: activeView === 'catalogs' }]"
+            @click="activeView = 'catalogs'; isMobileMoreOpen = false"
+          >
+            <div class="mobile-sheet-icon amber">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round" />
+                <line x1="12" y1="11" x2="12" y2="17" stroke-linecap="round" />
+                <line x1="9" y1="14" x2="15" y2="14" stroke-linecap="round" />
+              </svg>
+            </div>
+            <div class="mobile-sheet-card-text">
+              <span class="mobile-sheet-card-name">Registry & Assets</span>
+              <span class="mobile-sheet-card-sub">Offices, Equipment & Types</span>
+            </div>
+          </button>
+
+          <button
+            class="mobile-sheet-card"
+            @click="alert('Alert notifications are currently empty.'); isMobileMoreOpen = false"
+          >
+            <div class="mobile-sheet-icon purple">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              </svg>
+            </div>
+            <div class="mobile-sheet-card-text">
+              <span class="mobile-sheet-card-name">Alerts</span>
+              <span class="mobile-sheet-card-sub">System & Workgroup Alerts</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -206,20 +360,25 @@ import PersonnelView from './components/PersonnelView.vue';
 import AttendanceModal from './components/AttendanceModal.vue';
 import QuickOnboardView from './components/QuickOnboardView.vue';
 import DailyWorkLogView from './components/DailyWorkLogView.vue';
+import WorkLogHistoryView from './components/WorkLogHistoryView.vue';
+import CatalogsView from './components/CatalogsView.vue';
 import ToastContainer, { ToastMessage } from './components/Toast.vue';
 import CreateTeamModal from './components/CreateTeamModal.vue';
-import { WorkOrder, Person, Team } from './types';
+import { WorkOrder, Person, Team, MasterCatalogsState, CatalogItem, CatalogType, InspectionItem } from './types';
 import { getWorkOrders, saveWorkOrderToDb, deleteWorkOrderFromDb } from './services/workOrderService';
 import { getPersonnel, savePersonToDb } from './services/personnelService';
+import { loadStoredCatalogs, saveStoredCatalogs } from './utils/catalogsData';
+import { syncLocalStorageToBackend } from './services/syncService';
 
 const DEFAULT_WORK_ORDERS: WorkOrder[] = [
   {
     code: 'WO-8492',
+    workTitle: 'LED Fixtures & Electrical Inspection',
     assetName: 'Coconut Dorm',
     space: 'Room 21',
     scope: 'Check electrical outlets, install new LED light fixtures, inspect wire insulation.',
     workgroup: 'Building Repair & Maintenance',
-    status: 'In Progress',
+    status: 'On-going',
     priority: 'Medium',
     worktype: 'Electrical',
     startDate: '2024-08-24',
@@ -227,17 +386,34 @@ const DEFAULT_WORK_ORDERS: WorkOrder[] = [
     startTime: '08:30 AM',
     endTime: '05:00 PM',
     foreman: 'Robert Chen',
+    requesterName: 'Robert Chen',
+    requestingOffice: 'Office of Student Housing',
+    dateReceived: '2024-08-23',
+    isActive: true,
     assigned: ['Sarah Jenkins', 'Marcus Thorne', 'Elena Rodriguez'],
     description:
-      'Multiple electrical outlets are inactive. Main breaker checked. Technician needs to test lines and replace standard panels with newer LED light fixtures.'
+      'Multiple electrical outlets are inactive. Main breaker checked. Technician needs to test lines and replace standard panels with newer LED light fixtures.',
+    tasks: [
+      {
+        type: 'Electrical',
+        remarks: 'Check and repair faulty electrical outlets and rewire main panel line',
+        degreeOfWork: 'Moderate'
+      },
+      {
+        type: 'Electrical',
+        remarks: 'Install 12 energy-efficient LED light fixtures across Room 21',
+        degreeOfWork: 'Routine'
+      }
+    ]
   },
   {
     code: 'WO-9104',
+    workTitle: 'Roof Deck Sealing & Leak Repair',
     assetName: 'DMath',
     space: 'Roof Deck B-4',
     scope: 'Waterproofing repair on cracks, replace sealing membranes, check drainage pipes.',
     workgroup: 'Student Housing Repair & Maintenance',
-    status: 'Pending',
+    status: 'Scheduled',
     priority: 'High',
     worktype: 'Plumbing',
     startDate: '2024-08-25',
@@ -245,12 +421,29 @@ const DEFAULT_WORK_ORDERS: WorkOrder[] = [
     startTime: '09:00 AM',
     endTime: '04:30 PM',
     foreman: 'Sarah Jenkins',
+    requesterName: 'Dean of Sciences',
+    requestingOffice: 'College of Mathematics Office',
+    dateReceived: '2024-08-24',
+    isActive: true,
     assigned: ['John Doe', 'Alice Williams'],
     description:
-      'Minor rainwater leaks reported in classroom ceilings directly below Roof Deck B-4. Sealing membranes degraded.'
+      'Minor rainwater leaks reported in classroom ceilings directly below Roof Deck B-4. Sealing membranes degraded.',
+    tasks: [
+      {
+        type: 'Plumbing',
+        remarks: 'Check drainage pipes and unclog roof gutter outflows',
+        degreeOfWork: 'Major'
+      },
+      {
+        type: 'Masonry',
+        remarks: 'Apply high-durability waterproof coating over cracks',
+        degreeOfWork: 'Moderate'
+      }
+    ]
   },
   {
     code: 'WO-7731',
+    workTitle: 'Climate Control Recalibration',
     assetName: 'CoMed Laboratory',
     space: 'Lab 101',
     scope: 'Re-calibrate HVAC climate controls, replace filters, clean air duct grills.',
@@ -263,9 +456,25 @@ const DEFAULT_WORK_ORDERS: WorkOrder[] = [
     startTime: '10:00 AM',
     endTime: '02:00 PM',
     foreman: 'Marcus Thorne',
+    requesterName: 'Dr. Aris Thorne',
+    requestingOffice: 'Medical Sciences Division',
+    dateReceived: '2024-08-20',
+    isActive: true,
     assigned: ['Elena Rodriguez', 'David Kim'],
     description:
-      'Lab 101 climate sensors fluctuated by 3 degrees. Calibrated HVAC controls and installed clean filter elements.'
+      'Lab 101 climate sensors fluctuated by 3 degrees. Calibrated HVAC controls and installed clean filter elements.',
+    tasks: [
+      {
+        type: 'HVAC',
+        remarks: 'Recalibrate digital thermostat sensors and damper actuators',
+        degreeOfWork: 'Routine'
+      },
+      {
+        type: 'Ventilation',
+        remarks: 'Replace HEPA filtration units and clean air grilles',
+        degreeOfWork: 'Routine'
+      }
+    ]
   }
 ];
 
@@ -316,19 +525,19 @@ const activeView = ref('dashboard');
 const workOrders = ref<WorkOrder[]>([]);
 const personnel = ref<Person[]>([]);
 const teams = ref<Team[]>([]);
+const masterCatalogs = ref<MasterCatalogsState>(loadStoredCatalogs());
 const searchQuery = ref('');
 const sidebarOpen = ref(false);
+const isMobileMoreOpen = ref(false);
 const sidebarMode = ref<SidebarMode>(
   (localStorage.getItem('sidebar_mode') as SidebarMode) || 'pinned-open'
 );
 
-const handleTogglePin = () => {
+const handleMenuToggle = () => {
   if (sidebarMode.value === 'pinned-open') {
-    sidebarMode.value = 'auto'; // unpinned (hover to auto-expand)
-    addToast('Navigation unpinned: Auto-collapse on mouse leave enabled.', 'info');
+    sidebarMode.value = 'pinned-collapsed';
   } else {
-    sidebarMode.value = 'pinned-open'; // pinned open permanently
-    addToast('Navigation pinned: Staying open permanently.', 'info');
+    sidebarMode.value = 'pinned-open';
   }
   localStorage.setItem('sidebar_mode', sidebarMode.value);
 };
@@ -338,6 +547,7 @@ const isDetailsModalOpen = ref(false);
 const isAttendanceModalOpen = ref(false);
 const isCreateTeamModalOpen = ref(false);
 const editingOrderCode = ref<string | null>(null);
+const previousViewBeforeOrderForm = ref<string>('workorders');
 const toasts = ref<ToastMessage[]>([]);
 
 const addToast = (message: string, type: 'success' | 'info' | 'warning' | 'error' = 'success', duration?: number) => {
@@ -349,14 +559,76 @@ const removeToast = (id: string) => {
   toasts.value = toasts.value.filter((t) => t.id !== id);
 };
 
-onMounted(async () => {
+const isSyncing = ref(false);
+
+const refreshAllData = async () => {
   const orders = await getWorkOrders();
-  if (orders.length === 0) {
-    workOrders.value = DEFAULT_WORK_ORDERS;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_WORK_ORDERS));
-  } else {
-    workOrders.value = orders;
-  }
+  const rawList = orders.length === 0 ? DEFAULT_WORK_ORDERS : orders;
+  const normalized = rawList.map((o) => {
+    let st = o.status || 'Not Scheduled';
+    let act = o.isActive;
+    const lower = st.toLowerCase().trim();
+    if (lower === 'on hold' || lower === 'pending' || lower === 'not scheduled' || lower === 'notscheduled' || lower === 'unscheduled') {
+      st = 'Not Scheduled';
+      if (lower === 'on hold') act = false;
+    } else if (lower === 'in progress' || lower === 'ongoing' || lower === 'on-going') {
+      st = 'On-going';
+    } else if (lower === 'completed') {
+      st = 'Completed';
+    } else if (lower === 'scheduled') {
+      st = 'Scheduled';
+    }
+    if (act === undefined) {
+      act = true;
+    }
+
+    let cleanedTasks = o.tasks;
+    if (cleanedTasks && cleanedTasks.length > 0) {
+      cleanedTasks = cleanedTasks.map((t) => ({
+        ...t,
+        remarks: t.remarks === 'General Maintenance Scope' ? '' : (t.remarks || '')
+      }));
+      const valid = cleanedTasks.filter(
+        (t) => (t.type && t.type.trim() !== '' && t.type.trim() !== '-') ||
+               (t.remarks && t.remarks.trim() !== '' && t.remarks.trim() !== '-')
+      );
+      if (valid.length > 0) {
+        cleanedTasks = valid;
+      }
+    }
+
+    const cleanedScope = o.scope === 'General Maintenance Scope' ? '' : (o.scope || '');
+
+    return {
+      ...o,
+      scope: cleanedScope,
+      status: st,
+      isActive: act,
+      tasks: cleanedTasks
+    };
+  });
+
+  // Preserve & migrate any inspections previously stored in Daily Work Log into work orders
+  try {
+    const rawLogs = localStorage.getItem('infra_daily_work_logs');
+    if (rawLogs) {
+      const parsedLogs = JSON.parse(rawLogs);
+      if (Array.isArray(parsedLogs)) {
+        parsedLogs.forEach((l: any) => {
+          if (l.workOrderNumber && l.inspectionList && l.inspectionList.length > 0) {
+            const matchedOrder = normalized.find((o) => o.code === l.workOrderNumber);
+            if (matchedOrder && (!matchedOrder.inspectionList || matchedOrder.inspectionList.length === 0)) {
+              matchedOrder.inspectionList = [...l.inspectionList];
+              matchedOrder.inspectionsCount = l.inspectionList.length;
+            }
+          }
+        });
+      }
+    }
+  } catch {}
+
+  workOrders.value = normalized;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
 
   const staff = await getPersonnel();
   if (staff.length === 0) {
@@ -377,6 +649,59 @@ onMounted(async () => {
     teams.value = DEFAULT_WORK_GROUPS;
     localStorage.setItem(TEAMS_STORAGE_KEY, JSON.stringify(DEFAULT_WORK_GROUPS));
   }
+
+  // Load catalogs from Laravel backend if reachable
+  try {
+    const catRes = await fetch('/api/catalogs', { headers: { Accept: 'application/json' } });
+    if (catRes.ok) {
+      const catData = await catRes.json();
+      if (catData && catData.offices && catData.offices.length > 0) {
+        masterCatalogs.value = {
+          offices: catData.offices || [],
+          workTypes: catData.workTypes || [],
+          activityTypes: catData.activityTypes || [],
+          itemTypes: catData.itemTypes || [],
+          equipment: catData.equipment || [],
+          assets: catData.assets || []
+        };
+        saveStoredCatalogs(masterCatalogs.value);
+      }
+    }
+  } catch (e) {
+    // Offline mode: already initialized from local storage
+  }
+};
+
+const handleManualSync = async () => {
+  if (isSyncing.value) return;
+  isSyncing.value = true;
+  try {
+    const syncRes = await syncLocalStorageToBackend();
+    await refreshAllData();
+    if (syncRes.totalSynced > 0) {
+      addToast(`✓ Imported ${syncRes.totalSynced} offline record(s) into database!`, 'success', 4000);
+    } else {
+      addToast('Data is fully synchronized with database.', 'info', 3000);
+    }
+  } catch (err) {
+    console.error('Manual sync failed:', err);
+    addToast('Sync failed. Please ensure backend is running.', 'error', 4000);
+  } finally {
+    isSyncing.value = false;
+  }
+};
+
+onMounted(async () => {
+  try {
+    const syncRes = await syncLocalStorageToBackend();
+    if (syncRes.totalSynced > 0) {
+      addToast(`✓ Automatically imported ${syncRes.totalSynced} offline record(s) to database!`, 'success', 5000);
+    }
+  } catch (err) {
+    console.warn('Initial sync check:', err);
+  }
+
+  await refreshAllData();
 });
 
 const saveToStorage = (updatedOrders: WorkOrder[]) => {
@@ -387,24 +712,7 @@ const saveToStorage = (updatedOrders: WorkOrder[]) => {
 const handleViewChange = (view: string) => {
   activeView.value = view;
   sidebarOpen.value = false;
-};
-
-const handleMenuToggle = () => {
-  if (window.innerWidth > 1024) {
-    if (sidebarMode.value === 'pinned-open') {
-      sidebarMode.value = 'pinned-collapsed';
-      addToast('Navigation pinned in collapsed mode.', 'info');
-    } else if (sidebarMode.value === 'pinned-collapsed') {
-      sidebarMode.value = 'pinned-open';
-      addToast('Navigation pinned open.', 'info');
-    } else {
-      sidebarMode.value = 'pinned-collapsed';
-      addToast('Navigation pinned in collapsed mode.', 'info');
-    }
-    localStorage.setItem('sidebar_mode', sidebarMode.value);
-  } else {
-    sidebarOpen.value = !sidebarOpen.value;
-  }
+  isMobileMoreOpen.value = false;
 };
 
 const handleSelectOrder = (code: string) => {
@@ -418,9 +726,57 @@ const handleCloseDetailsModal = () => {
 };
 
 const handleEditOrder = (code: string) => {
+  previousViewBeforeOrderForm.value = activeView.value;
   editingOrderCode.value = code;
   activeView.value = 'create-order';
   isDetailsModalOpen.value = false;
+};
+
+const handleUpdateOrderStatus = async (code: string, newStatus: string) => {
+  const target = workOrders.value.find((o) => o.code === code);
+  if (target) {
+    target.status = newStatus;
+    const updated = [...workOrders.value];
+    saveToStorage(updated);
+    await saveWorkOrderToDb(target);
+    addToast(`Status of ${code} changed to ${newStatus}`);
+  }
+};
+
+const handleToggleOrderActive = async (code: string) => {
+  const target = workOrders.value.find((o) => o.code === code);
+  if (target) {
+    target.isActive = target.isActive === false ? true : false;
+    const updated = [...workOrders.value];
+    saveToStorage(updated);
+    await saveWorkOrderToDb(target);
+    addToast(
+      `Work order ${code} marked as ${target.isActive ? 'Active' : 'Inactive'}`,
+      target.isActive ? 'success' : 'info'
+    );
+  }
+};
+
+const handleUpdateOrderInspections = async (code: string, inspectionList: InspectionItem[]) => {
+  const target = workOrders.value.find((o) => o.code === code);
+  if (target) {
+    target.inspectionList = inspectionList;
+    target.inspectionsCount = inspectionList.length;
+    const updated = [...workOrders.value];
+    saveToStorage(updated);
+    await saveWorkOrderToDb(target);
+  }
+};
+
+const handleUpdateOrderWorkgroup = async (code: string, workgroup: string) => {
+  const target = workOrders.value.find((o) => o.code === code);
+  if (target) {
+    target.workgroup = workgroup;
+    const updated = [...workOrders.value];
+    saveToStorage(updated);
+    await saveWorkOrderToDb(target);
+    addToast(`✓ Work Order ${code} assigned to ${workgroup || 'Unassigned'}`);
+  }
 };
 
 const handleDeleteOrder = async (code: string) => {
@@ -438,25 +794,29 @@ const handleSaveOrder = async (data: WorkOrder) => {
   let updated: WorkOrder[] = [];
   if (editingOrderCode.value) {
     updated = workOrders.value.map((o) => (o.code === editingOrderCode.value ? data : o));
-    addToast(`Work order ${data.code} updated successfully`);
+    const lockStatusText = data.isLocked ? '🔒 Locked' : '🔓 Unlocked';
+    addToast(`✓ Work Order ${data.code} updated & saved successfully (${lockStatusText})`, 'success', 4000);
   } else {
     updated = [data, ...workOrders.value];
-    addToast(`Work order ${data.code} created successfully`);
+    addToast(`✓ Work Order ${data.code} created & saved successfully`, 'success', 4000);
   }
   saveToStorage(updated);
   await saveWorkOrderToDb(data);
+  const returnTo = previousViewBeforeOrderForm.value || 'workorders';
   editingOrderCode.value = null;
-  activeView.value = 'workorders';
+  activeView.value = returnTo;
 };
 
 const handleCreateOrder = () => {
+  previousViewBeforeOrderForm.value = activeView.value;
   editingOrderCode.value = null;
   activeView.value = 'create-order';
 };
 
 const handleCancelForm = () => {
+  const returnTo = previousViewBeforeOrderForm.value || 'workorders';
   editingOrderCode.value = null;
-  activeView.value = 'workorders';
+  activeView.value = returnTo;
 };
 
 const handleCreateTeam = (newTeam: Team) => {
@@ -495,5 +855,82 @@ const handleCompleteOnboarding = async (newPerson: Person) => {
   await savePersonToDb(newPerson);
   addToast(`Personnel ${newPerson.name} onboarded successfully!`);
   activeView.value = 'personnel';
+};
+
+const getTargetCatalogKey = (type: CatalogType): keyof MasterCatalogsState => {
+  if (type === 'office') return 'offices';
+  if (type === 'work_type') return 'workTypes';
+  if (type === 'activity_type') return 'activityTypes';
+  if (type === 'item_type') return 'itemTypes';
+  if (type === 'equipment') return 'equipment';
+  return 'offices';
+};
+
+const handleCatalogAddItem = async (newItem: CatalogItem) => {
+  const targetKey = getTargetCatalogKey(newItem.type);
+  const currentArr = masterCatalogs.value[targetKey] || [];
+  const updated = [...currentArr, newItem];
+  masterCatalogs.value = {
+    ...masterCatalogs.value,
+    [targetKey]: updated
+  };
+  saveStoredCatalogs(masterCatalogs.value);
+
+  try {
+    await fetch('/api/catalogs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(newItem)
+    });
+  } catch (err) {
+    // Graceful offline fallback
+  }
+};
+
+const handleCatalogUpdateItem = async (updatedItem: CatalogItem) => {
+  const targetKey = getTargetCatalogKey(updatedItem.type);
+  const currentArr = masterCatalogs.value[targetKey] || [];
+  const updated = currentArr.map((item) =>
+    item.id === updatedItem.id ? updatedItem : item
+  );
+  masterCatalogs.value = {
+    ...masterCatalogs.value,
+    [targetKey]: updated
+  };
+  saveStoredCatalogs(masterCatalogs.value);
+
+  try {
+    await fetch(`/api/catalogs/${updatedItem.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(updatedItem)
+    });
+  } catch (err) {
+    // Graceful offline fallback
+  }
+};
+
+const handleCatalogDeleteItem = async (id: string, type: CatalogType) => {
+  const targetKey = getTargetCatalogKey(type);
+  const currentArr = masterCatalogs.value[targetKey] || [];
+  const updated = currentArr.filter((item) => item.id !== id);
+  masterCatalogs.value = {
+    ...masterCatalogs.value,
+    [targetKey]: updated
+  };
+  saveStoredCatalogs(masterCatalogs.value);
+
+  try {
+    await fetch(`/api/catalogs/${id}`, {
+      method: 'DELETE',
+      headers: { Accept: 'application/json' }
+    });
+  } catch (err) {
+    // Graceful offline fallback
+  }
+};
+
+const alert = (message?: any) => {
+  window.alert(message);
 };
 </script>

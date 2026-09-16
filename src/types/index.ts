@@ -1,10 +1,12 @@
 export interface Task {
   type: string;
   remarks: string;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
   degreeOfWork?: string;
   description?: string;
+  remarksList?: RemarkNote[];
+  hasComments?: boolean;
 }
 
 export interface WorkOrder {
@@ -30,6 +32,10 @@ export interface WorkOrder {
   requestingOffice?: string;
   roomNo?: string;
   isLocked?: boolean;
+  isActive?: boolean;
+  itemTypes?: string[];
+  inspectionList?: InspectionItem[];
+  inspectionsCount?: number;
 }
 
 export interface Person {
@@ -72,6 +78,24 @@ export interface EquipmentItem {
   quantity: string;
   borrower: string;
   checked: boolean;
+  notes?: string;
+}
+
+export interface InspectionPhoto {
+  id: string;
+  url: string; // Base64 data URL or remote cloud URL
+  name?: string;
+  timestamp?: string;
+}
+
+export interface InspectionItem {
+  id: string;
+  inspector: string;
+  date: string;
+  notes: string;
+  detailedNotes?: string;
+  status: string;
+  photos?: InspectionPhoto[];
 }
 
 export interface DailyWorkLogEntry {
@@ -92,7 +116,38 @@ export interface DailyWorkLogEntry {
   isOnHold?: boolean;
   remarksList?: RemarkNote[];
   equipmentList?: EquipmentItem[];
+  inspectionList?: InspectionItem[];
+  requestingOffice?: string;
+  workTitle?: string;
+  isActive?: boolean;
+  isUserSetStartDate?: boolean;
+  isUserSetCompletionDate?: boolean;
 }
 
+export type CatalogType = 'office' | 'work_type' | 'activity_type' | 'item_type' | 'equipment' | 'asset';
 
+export interface CatalogItem {
+  id: string;
+  type: CatalogType;
+  name: string;
+  code?: string;
+  acronym?: string;
+  title?: string;
+  color?: string;
+  category?: string;
+  location?: string;
+  contactPerson?: string;
+  quantity?: number;
+  isActive?: boolean;
+  description?: string;
+  createdAt?: string;
+}
 
+export interface MasterCatalogsState {
+  offices: CatalogItem[];
+  workTypes: CatalogItem[];
+  activityTypes: CatalogItem[];
+  itemTypes: CatalogItem[];
+  equipment: CatalogItem[];
+  assets?: CatalogItem[];
+}
