@@ -313,6 +313,10 @@ const getAvailabilityClass = (status: string) => {
   }
 };
 
+const alert = (message?: any) => {
+  window.alert(message);
+};
+
 const handleExportCsv = () => {
   alert('CSV Export completed.');
 };
