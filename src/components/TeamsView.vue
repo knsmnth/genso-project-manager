@@ -40,7 +40,7 @@
       </div>
 
       <div
-        style="
+        style=" 
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
           gap: 20px;
@@ -312,4 +312,8 @@ const activeCount = computed(() => {
 const idleCount = computed(() => {
   return activeMembersData.value.filter((m) => m.status.toLowerCase() === 'available').length;
 });
+
+const alert = (message?: any) => {
+  window.alert(message);
+};
 </script>
