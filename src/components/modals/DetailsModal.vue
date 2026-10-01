@@ -209,8 +209,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { WorkOrder, MasterCatalogsState } from '../types';
-import { getItemTypeColor } from '../utils/catalogsData';
+import { WorkOrder, MasterCatalogsState } from '../../types';
+import { getItemTypeColor } from '../../utils/catalogsData';
 
 const props = defineProps<{
   isOpen: boolean;

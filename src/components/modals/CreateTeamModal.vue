@@ -88,7 +88,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Team, Person } from '../types';
+import { Team, Person } from '../../types';
 
 const props = defineProps<{
   isOpen: boolean;

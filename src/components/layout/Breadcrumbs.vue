@@ -114,15 +114,24 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
         { label: props.editingOrderCode ? `Edit Order (${props.editingOrderCode})` : 'Create Work Order' }
       ];
     case 'teams':
-      return [root, { label: 'Teams & Groups' }];
+      return [
+        root,
+        { label: 'Personnel', view: 'personnel' },
+        { label: 'Teams & Groups' }
+      ];
     case 'personnel':
-      return [root, { label: 'Personnel & Staff' }];
+      return [
+        root,
+        { label: 'Personnel', view: 'personnel' },
+        { label: 'Staff Registry' }
+      ];
     case 'catalogs':
       return [root, { label: 'System Registries & Assets' }];
     case 'quick-onboard':
       return [
         root,
-        { label: 'Personnel & Staff', view: 'personnel' },
+        { label: 'Personnel', view: 'personnel' },
+        { label: 'Staff Registry', view: 'personnel' },
         { label: 'Quick Onboard' }
       ];
     default:

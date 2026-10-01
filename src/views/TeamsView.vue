@@ -1,22 +1,67 @@
 <template>
-  <section id="view-teams" class="view-section active" style="display: flex">
+  <section id="view-teams" class="view-section active personnel-view-container">
     <div class="view-header-row">
-      <div>
-        <h1 class="view-main-title">Personnel & Resource Allocation</h1>
-        <p class="view-main-subtitle">Manage inter-departmental teams and individual field personnel.</p>
+      <div class="personnel-title-group">
+        <h1 class="view-main-title">Teams & Groups Allocation</h1>
+        <p class="view-main-subtitle" style="margin: 0">Manage inter-departmental teams and individual field personnel.</p>
       </div>
       <div class="view-header-actions">
-        <button class="btn btn-outline-sm" @click="alert('Filter options are under development.')">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <button
+          type="button"
+          class="btn btn-outline-sm"
+          @click="alert('Filter options are under development.')"
+          style="height: 36px; padding: 0 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
           </svg>
           <span>Filter</span>
         </button>
-        <button class="btn btn-primary-sm" @click="$emit('newGroup')">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+        <button
+          type="button"
+          class="btn btn-primary-sm"
+          @click="$emit('newGroup')"
+          style="height: 36px; padding: 0 16px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px"
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#FFFFFF" stroke-width="2.5">
             <path d="M12 5v14M5 12h14" stroke-linecap="round" />
           </svg>
           <span>New Work Group</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sub-View Module Navigation Tabs (same as Work Orders) -->
+    <div class="module-tab-bar">
+      <!-- Left: Segmented Sub-View Navigation Tabs -->
+      <div class="module-tabs">
+        <button
+          type="button"
+          class="module-tab-btn"
+          @click="$emit('navigatePersonnel')"
+          title="Switch to Staff Registry"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="7" r="4" />
+            <path d="M5.5 21a8.5 8.5 0 0 1 13 0" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Staff Registry</span>
+          <span v-if="personnel" class="module-tab-count">{{ personnel.length }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="module-tab-btn active"
+          title="Teams & Groups"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Teams & Groups</span>
+          <span class="module-tab-count">{{ teams.length }}</span>
         </button>
       </div>
     </div>
@@ -252,6 +297,7 @@ const props = defineProps<{
 
 defineEmits<{
   (e: 'newGroup'): void;
+  (e: 'navigatePersonnel'): void;
 }>();
 
 const selectedTeamIndex = ref<number | null>(null);
@@ -317,3 +363,5 @@ const alert = (message?: any) => {
   window.alert(message);
 };
 </script>
+
+<style scoped src="../styles/personnel.css"></style>

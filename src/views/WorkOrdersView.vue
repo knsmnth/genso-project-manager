@@ -81,20 +81,6 @@
 
       <!-- Right: Data Utilities (Sort, Export CSV, Advanced Filters) -->
       <div class="module-utility-actions">
-        <!-- Sort Control -->
-        <div class="wo-sort-wrapper">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 6h18M6 12h12M9 18h6" stroke-linecap="round" />
-          </svg>
-          <select v-model="sortBy" class="wo-sort-select" aria-label="Sort Work Orders">
-            <option value="code-asc">Number / Code (0 → 9)</option>
-            <option value="code-desc">Number / Code (9 → 0)</option>
-            <option value="alpha-asc">Alphabet (A → Z)</option>
-            <option value="alpha-desc">Alphabet (Z → A)</option>
-            <option value="date-desc">Date (Newest First)</option>
-            <option value="date-asc">Date (Oldest First)</option>
-          </select>
-        </div>
 
         <button class="btn btn-outline-sm" id="btn-export-csv" @click="handleExportCsv">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -1081,6 +1067,8 @@ const activeStatusOrder = computed(() => {
   return props.workOrders.find((o) => o.code === statusDropdownCode.value) || null;
 });
 
+let lastStatusDropdownOpenTime = 0;
+
 const toggleStatusDropdown = (e: MouseEvent, code: string) => {
   e.stopPropagation();
 
@@ -1092,7 +1080,7 @@ const toggleStatusDropdown = (e: MouseEvent, code: string) => {
   const target = (e.currentTarget as HTMLElement) || (e.target as HTMLElement);
   const rect = target.getBoundingClientRect();
   const menuWidth = 185;
-  const menuHeight = 160;
+  const menuHeight = 175;
 
   const spaceBelow = window.innerHeight - rect.bottom;
   let top = rect.bottom + 6;
@@ -1101,13 +1089,14 @@ const toggleStatusDropdown = (e: MouseEvent, code: string) => {
     top = rect.top - menuHeight - 6;
   }
 
-  let left = rect.left;
+  let left = Math.max(10, rect.left);
   if (left + menuWidth > window.innerWidth - 10) {
     left = window.innerWidth - menuWidth - 10;
   }
 
   statusDropdownPosition.value = { top, left };
   statusDropdownCode.value = code;
+  lastStatusDropdownOpenTime = Date.now();
 };
 
 const handleSelectStatusFromPill = (st: string) => {
@@ -1118,6 +1107,7 @@ const handleSelectStatusFromPill = (st: string) => {
 };
 
 const closeAllPopovers = () => {
+  if (Date.now() - lastStatusDropdownOpenTime < 150) return;
   statusDropdownCode.value = null;
 };
 
@@ -1477,38 +1467,6 @@ const handleDeleteInspection = (inspId: string) => {
 </script>
 
 <style scoped>
-.wo-sort-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.wo-sort-wrapper svg {
-  position: absolute;
-  left: 10px;
-  color: var(--color-text-muted, #6C7A71);
-  pointer-events: none;
-}
-
-.wo-sort-select {
-  height: 32px;
-  padding: 0 12px 0 28px;
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-text-main, #0f172a);
-  background: #FFFFFF;
-  border: 1px solid var(--color-border, #e2e8f0);
-  border-radius: 6px;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.wo-sort-select:focus {
-  border-color: var(--color-primary, #006C49);
-  box-shadow: 0 0 0 2px rgba(0, 108, 73, 0.15);
-}
 
 .sortable-th {
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -1766,5 +1724,99 @@ const handleDeleteInspection = (inspId: string) => {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+</style>
+
+<style>
+/* Global styles for Teleported Status Picker Popover */
+.floating-actions-popover.status-picker-popover {
+  position: fixed !important;
+  width: 185px !important;
+  background: #FFFFFF !important;
+  border: 1px solid rgba(226, 232, 240, 0.95) !important;
+  box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.2), 0 6px 14px -2px rgba(15, 23, 42, 0.08) !important;
+  border-radius: 12px !important;
+  z-index: 999999 !important;
+  padding: 6px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  animation: fapPopoverIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  transform-origin: top left !important;
+}
+
+@keyframes fapPopoverIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.status-picker-header {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  color: #64748B !important;
+  padding: 4px 8px 6px 8px !important;
+  letter-spacing: 0.5px !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+  margin-bottom: 3px !important;
+}
+
+.fap-status-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.fap-item.fap-status-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 7px 10px !important;
+  border-radius: 7px !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  text-align: left !important;
+}
+
+.fap-item.fap-status-item:hover {
+  background: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+.fap-item.fap-status-item.is-active-status {
+  background: #F0FDF4 !important;
+  color: #006C49 !important;
+  font-weight: 600 !important;
+}
+
+.fap-status-label-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.fap-status-dot {
+  width: 7px !important;
+  height: 7px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+}
+
+.fap-check-icon {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  color: #006C49 !important;
 }
 </style>

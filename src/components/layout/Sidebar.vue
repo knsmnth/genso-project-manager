@@ -183,39 +183,120 @@
         </div>
       </div>
 
-      <!-- Teams -->
-      <a
-        href="#"
-        :class="['nav-item', { active: activeView === 'teams' }]"
-        @click.prevent="$emit('viewChange', 'teams')"
-        title="Teams"
+      <!-- Personnel & Teams Group -->
+      <div
+        :class="['nav-parent-group', { 'flyout-active': isPersonnelFlyoutActive }]"
+        @mouseenter="handleMouseEnterPersonnelFlyout"
+        @mouseleave="handleMouseLeavePersonnelFlyout"
       >
-        <div class="nav-item-icon-box">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </div>
-        <span>Teams</span>
-      </a>
+        <a
+          href="#"
+          :class="['nav-item', { active: activeView === 'personnel' || activeView === 'teams' || activeView === 'quick-onboard' }]"
+          @click.prevent="handlePersonnelMainClick"
+          title="Personnel & Teams"
+          style="justify-content: space-between"
+        >
+          <div style="display: flex; align-items: center; gap: 12px">
+            <div class="nav-item-icon-box">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+            <span>Personnel</span>
+          </div>
+          <button
+            type="button"
+            class="nav-expand-btn"
+            @click.stop="personnelExpanded = !personnelExpanded"
+            aria-label="Toggle Submenu"
+            title="Toggle Submenu"
+            style="background: transparent; border: none; padding: 4px; color: inherit; cursor: pointer; display: flex; align-items: center"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              :style="{
+                transform: personnelExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s ease'
+              }"
+            >
+              <polyline points="6 9 12 15 18 9" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </a>
 
-      <!-- Personnel -->
-      <a
-        href="#"
-        :class="['nav-item', { active: activeView === 'personnel' || activeView === 'quick-onboard' }]"
-        @click.prevent="$emit('viewChange', 'personnel')"
-        title="Personnel"
-      >
-        <div class="nav-item-icon-box">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="7" r="4" />
-            <path d="M5.5 21a8.5 8.5 0 0 1 13 0" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
+        <!-- Sub-menu: Staff Registry & Teams/Groups (when expanded) -->
+        <div v-if="personnelExpanded" class="nav-sub-menu">
+          <a
+            href="#"
+            :class="['nav-sub-item', { active: activeView === 'personnel' || activeView === 'quick-onboard' }]"
+            @click.prevent="$emit('viewChange', 'personnel')"
+            title="Staff Registry"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="7" r="4" />
+              <path d="M5.5 21a8.5 8.5 0 0 1 13 0" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Staff Registry</span>
+          </a>
+
+          <a
+            href="#"
+            :class="['nav-sub-item', { active: activeView === 'teams' }]"
+            @click.prevent="$emit('viewChange', 'teams')"
+            title="Teams & Groups"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Teams & Groups</span>
+          </a>
         </div>
-        <span>Personnel</span>
-      </a>
+
+        <!-- Floating Flyout Popover (when collapsed) -->
+        <div
+          class="nav-flyout-popover"
+          @mouseenter="handleMouseEnterPersonnelFlyout"
+          @mouseleave="handleMouseLeavePersonnelFlyout"
+        >
+          <div class="flyout-header">Personnel & Teams</div>
+          <a
+            href="#"
+            :class="['flyout-item', { active: activeView === 'personnel' || activeView === 'quick-onboard' }]"
+            @click.prevent="handlePersonnelFlyoutNav('personnel')"
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="7" r="4" />
+              <path d="M5.5 21a8.5 8.5 0 0 1 13 0" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Staff Registry</span>
+          </a>
+
+          <a
+            href="#"
+            :class="['flyout-item', { active: activeView === 'teams' }]"
+            @click.prevent="handlePersonnelFlyoutNav('teams')"
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Teams & Groups</span>
+          </a>
+        </div>
+      </div>
 
       <!-- System Registries & Assets -->
       <a
@@ -305,6 +386,10 @@ const workOrdersExpanded = ref(true);
 const isFlyoutActive = ref(false);
 let flyoutLeaveTimeout: any = null;
 
+const personnelExpanded = ref(true);
+const isPersonnelFlyoutActive = ref(false);
+let personnelFlyoutLeaveTimeout: any = null;
+
 const handleMouseEnterFlyout = () => {
   if (flyoutLeaveTimeout) {
     clearTimeout(flyoutLeaveTimeout);
@@ -322,6 +407,23 @@ const handleMouseLeaveFlyout = () => {
   }, 260);
 };
 
+const handleMouseEnterPersonnelFlyout = () => {
+  if (personnelFlyoutLeaveTimeout) {
+    clearTimeout(personnelFlyoutLeaveTimeout);
+    personnelFlyoutLeaveTimeout = null;
+  }
+  isPersonnelFlyoutActive.value = true;
+};
+
+const handleMouseLeavePersonnelFlyout = () => {
+  if (personnelFlyoutLeaveTimeout) {
+    clearTimeout(personnelFlyoutLeaveTimeout);
+  }
+  personnelFlyoutLeaveTimeout = setTimeout(() => {
+    isPersonnelFlyoutActive.value = false;
+  }, 260);
+};
+
 const handleWorkOrdersMainClick = () => {
   isFlyoutActive.value = false;
   emit('viewChange', 'workorders');
@@ -332,11 +434,24 @@ const handleFlyoutNav = (view: string) => {
   emit('viewChange', view);
 };
 
+const handlePersonnelMainClick = () => {
+  isPersonnelFlyoutActive.value = false;
+  emit('viewChange', 'personnel');
+};
+
+const handlePersonnelFlyoutNav = (view: string) => {
+  isPersonnelFlyoutActive.value = false;
+  emit('viewChange', view);
+};
+
 watch(
   () => props.activeView,
   (newVal) => {
-    if (newVal === 'workorders' || newVal === 'dailyworklog') {
+    if (newVal === 'workorders' || newVal === 'dailyworklog' || newVal === 'workloghistory') {
       workOrdersExpanded.value = true;
+    }
+    if (newVal === 'personnel' || newVal === 'teams' || newVal === 'quick-onboard') {
+      personnelExpanded.value = true;
     }
   },
   { immediate: true }
@@ -355,6 +470,9 @@ onUnmounted(() => {
   window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   if (flyoutLeaveTimeout) {
     clearTimeout(flyoutLeaveTimeout);
+  }
+  if (personnelFlyoutLeaveTimeout) {
+    clearTimeout(personnelFlyoutLeaveTimeout);
   }
 });
 

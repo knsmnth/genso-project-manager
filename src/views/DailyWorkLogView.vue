@@ -245,7 +245,7 @@
           <!-- Internal Card Table Column Headers -->
           <div v-if="isGroupExpanded(String(groupKey))" class="dwl-card-column-headers">
             <span class="col-hdr col-worktype">ACTIVITY TYPE</span>
-            <span class="col-hdr col-desc">ACTIVITY DESCRIPTION</span>
+            <span class="col-hdr col-desc">DESCRIPTION</span>
             <span class="col-hdr col-actions">REMARKS</span>
             <span class="col-hdr col-date">START DATE</span>
             <span class="col-hdr col-date">COMPLETION</span>
@@ -276,7 +276,7 @@
                 :title="row.isOnHold ? 'Reordering disabled while on hold' : 'Drag to reorder scope item'"
               >::</div>
 
-              <!-- Main Horizontal Row (Activity Type, Activity Description, and Actions) -->
+              <!-- Main Horizontal Row (Activity Type, Description, and Actions) -->
               <div class="dwl-spec-main-row">
                 <!-- Activity Type Display (Read-Only) -->
                 <div class="dwl-spec-worktype-box" @dragstart.stop>
@@ -287,9 +287,9 @@
                   </div>
                 </div>
 
-                <!-- Task Description / Activity Description Display (Read-Only) -->
+                <!-- Task Description / Description Display (Read-Only) -->
                 <div class="dwl-spec-desc-box" @dragstart.stop>
-                  <span class="bento-field-label">ACTIVITY DESCRIPTION</span>
+                  <span class="bento-field-label">DESCRIPTION</span>
                   <div class="dwl-spec-desc-display">
                     <span>{{ row.description && row.description !== '-' ? row.description : '-' }}</span>
                   </div>
@@ -338,7 +338,7 @@
               </div>
 
               <!-- Start Date (Empty by default unless inputted) -->
-              <div class="dwl-spec-date-cell" :class="{ 'disabled-field': row.isOnHold }">
+              <div class="dwl-spec-date-cell dwl-spec-date-start" :class="{ 'disabled-field': row.isOnHold }">
                 <span class="bento-field-label">START DATE</span>
                 <input
                   type="date"
@@ -350,7 +350,7 @@
               </div>
 
               <!-- Completion Date (Empty by default unless inputted) -->
-              <div class="dwl-spec-date-cell" :class="{ 'disabled-field': row.isOnHold }">
+              <div class="dwl-spec-date-cell dwl-spec-date-completion" :class="{ 'disabled-field': row.isOnHold }">
                 <span class="bento-field-label">COMPLETION</span>
                 <input
                   type="date"
@@ -383,7 +383,7 @@
 
               <!-- Personnel Badge (Shows exact live checked count & tooltip preview) -->
               <div
-                class="dwl-spec-badge-cell"
+                class="dwl-spec-badge-cell dwl-spec-badge-personnel"
                 :class="{ 'clickable-badge': !row.isOnHold, 'disabled-badge': row.isOnHold }"
                 @click="!row.isOnHold && handleOpenDrawer('personnel', row.id)"
                 :title="row.isOnHold ? 'Personnel locked while on hold' : (row.assignedPersonnel && row.assignedPersonnel.length > 0 ? `Assigned (${row.assignedPersonnel.length}): ${row.assignedPersonnel.join(', ')}` : 'Click to Assign Personnel in Drawer')"
@@ -394,13 +394,13 @@
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                   </svg>
-                  <span class="dwl-spec-badge-num">👤 {{ (row.assignedPersonnel || []).length }}</span>
+                  <span class="dwl-spec-badge-num">{{ (row.assignedPersonnel || []).length }}</span>
                 </div>
               </div>
 
               <!-- Tools / Equipment Badge -->
               <div
-                :class="['dwl-spec-badge-cell', { 'clickable-badge': !row.isOnHold, 'disabled-badge': row.isOnHold, 'has-data-green': row.equipmentList && row.equipmentList.length > 0 }]"
+                :class="['dwl-spec-badge-cell', 'dwl-spec-badge-tools', { 'clickable-badge': !row.isOnHold, 'disabled-badge': row.isOnHold, 'has-data-green': row.equipmentList && row.equipmentList.length > 0 }]"
                 @click="!row.isOnHold && handleOpenDrawer('equipment', row.id)"
                 :title="row.isOnHold ? 'Equipment locked while on hold' : (row.equipmentList && row.equipmentList.length > 0 ? `${row.equipmentList.length} equipment item(s) logged. Click to view.` : 'Click to log equipment used')"
               >
@@ -685,7 +685,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { DailyWorkLogEntry, Person, WorkOrder, RemarkNote, EquipmentItem, Team, CatalogItem } from '../types';
-import { saveSnapshot } from '../services/workLogHistoryService';
+import { saveSnapshot, formatLocalDate } from '../services/workLogHistoryService';
 
 const props = withDefaults(
   defineProps<{
@@ -1155,11 +1155,22 @@ watch(
   { immediate: true, deep: true }
 );
 
+let autoSaveSnapshotTimer: ReturnType<typeof setTimeout> | null = null;
 const saveLogs = (updated: DailyWorkLogEntry[]) => {
   logs.value = updated;
   localStorage.setItem(LOGS_STORAGE_KEY_V3, JSON.stringify(updated));
   const now = new Date().toLocaleTimeString();
   saveStatusText.value = `Last auto-saved: ${now}`;
+
+  // Automatically sync to today's snapshot so history is continuously up to date
+  if (autoSaveSnapshotTimer) clearTimeout(autoSaveSnapshotTimer);
+  autoSaveSnapshotTimer = setTimeout(() => {
+    const todayStr = formatLocalDate(new Date());
+    const eligibleEntries = updated.filter((l) => !l.isOnHold);
+    if (eligibleEntries.length > 0) {
+      saveSnapshot(todayStr, eligibleEntries, true).catch(() => {});
+    }
+  }, 1200);
 };
 
 const draggedGroupKey = ref<string | null>(null);
@@ -1303,7 +1314,7 @@ const handleToggleOnHold = (id: string) => {
   handleUpdateField(id, 'isOnHold', newOnHoldState);
 
   // Immediately sync snapshot to exclude on-hold entries from Work Log History
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = formatLocalDate(new Date());
   const updatedLogs = logs.value.map((l) => (l.id === id ? { ...l, isOnHold: newOnHoldState } : l));
   const eligibleEntries = updatedLogs.filter((l) => !l.isOnHold);
   saveSnapshot(todayStr, eligibleEntries, true).catch(() => {});
@@ -1447,7 +1458,7 @@ onUnmounted(() => {
 
 const handleSaveAllProgress = async () => {
   saveLogs([...logs.value]);
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = formatLocalDate(new Date());
   const eligibleEntries = logs.value.filter((l) => !l.isOnHold);
   try {
     const res = await saveSnapshot(todayStr, eligibleEntries, false);
@@ -1473,7 +1484,7 @@ const handleExportPDF = () => {
     <html>
     <head>
       <title>Daily Work Log Report</title>
-      <style>
+      <${'style'}>
         body { font-family: Arial, sans-serif; padding: 24px; color: #0B1C30; }
         h1 { color: #006C49; font-size: 24px; }
         .section { margin-bottom: 24px; border: 1px solid #BBCABF; border-radius: 8px; overflow: hidden; }
@@ -1483,7 +1494,7 @@ const handleExportPDF = () => {
         .meta { font-size: 12px; color: #6C7A71; margin-bottom: 8px; }
         .box { background: #F8F9FF; padding: 8px 12px; border-radius: 4px; margin-top: 6px; font-size: 13px; }
         @media print { button { display: none; } }
-      </style>
+      <\/${'style'}>
     </head>
     <body>
       <h1>DAILY WORK LOG REPORT</h1>

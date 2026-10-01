@@ -117,7 +117,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { CatalogItem } from '../types';
+import { CatalogItem } from '../../types';
 
 const props = withDefaults(
   defineProps<{
