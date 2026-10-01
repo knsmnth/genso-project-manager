@@ -11,4 +11,14 @@ class Personnel extends Model
 
     protected $table = 'personnel';
     protected $guarded = [];
+
+    public function attendanceRecords()
+    {
+        return $this->hasMany(PersonnelAttendance::class, 'personnel_code', 'code');
+    }
+
+    public function leaves()
+    {
+        return $this->hasMany(PersonnelLeave::class, 'personnel_code', 'code');
+    }
 }

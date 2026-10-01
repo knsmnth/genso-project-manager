@@ -32,6 +32,13 @@ Route::delete('/work-orders/{code}', [WorkOrderController::class, 'destroy']);
 
 Route::get('/personnel', [PersonnelController::class, 'index']);
 Route::post('/personnel', [PersonnelController::class, 'store']);
+Route::get('/personnel/{code}/records', [PersonnelController::class, 'showRecords']);
+Route::post('/personnel/attendance', [PersonnelController::class, 'saveAttendance']);
+Route::get('/personnel/attendance/history', [PersonnelController::class, 'attendanceHistory']);
+Route::get('/personnel/leaves', [PersonnelController::class, 'getLeaves']);
+Route::post('/personnel/leaves', [PersonnelController::class, 'storeLeave']);
+Route::put('/personnel/leaves/{id}', [PersonnelController::class, 'updateLeave']);
+Route::delete('/personnel/leaves/{id}', [PersonnelController::class, 'destroyLeave']);
 
 Route::get('/daily-work-logs', [DailyWorkLogController::class, 'index']);
 Route::post('/daily-work-logs', [DailyWorkLogController::class, 'store']);
