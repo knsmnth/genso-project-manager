@@ -1,0 +1,864 @@
+/* ==========================================================================
+   Personnel & Teams Module Stylesheet (Dashboard Bento Theme)
+   ========================================================================== */
+
+/* Stable scrollbar gutter to prevent layout shift between pages */
+:root {
+  scrollbar-gutter: stable;
+}
+
+html,
+body {
+  scrollbar-gutter: stable;
+}
+
+/* Common container alignment for both Personnel and Teams views */
+.personnel-view-container,
+.view-section.active {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Header Alignment */
+.view-header-row,
+.personnel-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.personnel-title-group,
+.view-header-row > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.view-main-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-navy-header, #0F172A);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.view-main-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-muted, #64748B);
+  line-height: 1.4;
+}
+
+.view-header-actions,
+.personnel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Bento Summary Tiles (Exact match to DashboardView Bento styles) */
+.personnel-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.bento-tile {
+  background: #FFFFFF;
+  border: 1px solid var(--color-border, #E2E8F0);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.bento-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+  border-color: #CBD5E1;
+}
+
+.bento-tile.glow-emerald {
+  border-left: 4px solid #10B981;
+}
+
+.bento-tile.glow-amber {
+  border-left: 4px solid #F59E0B;
+}
+
+.bento-tile.glow-blue {
+  border-left: 4px solid #3B82F6;
+}
+
+.bento-tile.glow-slate {
+  border-left: 4px solid #64748B;
+}
+
+.bento-compact-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.bento-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #64748B;
+  text-transform: uppercase;
+}
+
+.figure-circle-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.figure-circle-icon.emerald {
+  background: #ECFDF5;
+  color: #047857;
+}
+
+.figure-circle-icon.amber {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+.figure-circle-icon.blue {
+  background: #EFF6FF;
+  color: #1D4ED8;
+}
+
+.figure-circle-icon.slate {
+  background: #F1F5F9;
+  color: #475569;
+}
+
+.bento-stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bento-compact-num {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.bento-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.badge-emerald {
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+}
+
+.badge-amber {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+
+.badge-blue {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* Sub-View Module Navigation Alignment */
+.module-tab-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+/* Inline Interactive Attendance Badge in Table */
+.attend-cell-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.attend-cell-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.attend-cell-btn:hover {
+  background: #F8FAFC;
+  border-color: #94A3B8;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+.attend-cell-btn.only-icon {
+  padding: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attend-cell-btn.only-icon:hover {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+  transform: scale(1.08);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.attend-cell-btn.is-leave-locked {
+  cursor: not-allowed;
+  position: relative;
+}
+
+.attend-cell-btn.only-icon.is-leave-locked:hover {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+  transform: none;
+  box-shadow: none;
+}
+
+.attend-lock-indicator {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0284C7;
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+}
+
+.attend-chevron {
+  opacity: 0.5;
+  transition: transform 0.15s ease;
+}
+
+.attend-cell-btn:hover .attend-chevron {
+  opacity: 1;
+}
+
+/* Quick-Edit Popover for 1-Click Status Correction */
+.attend-quick-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 190px;
+  animation: popoverFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.popover-header {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #64748B;
+  padding: 2px 6px 4px;
+  border-bottom: 1px solid #F1F5F9;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.popover-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0F172A;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.popover-option-btn:hover {
+  background: #F1F5F9;
+}
+
+.popover-option-btn.is-active {
+  background: #ECFDF5;
+  color: #047857;
+}
+
+/* Attendance History Section (Expanded with Full Personnel Lists) */
+.attendance-history-collapse-panel {
+  border: 1px solid var(--color-border, #E2E8F0);
+  border-radius: 14px;
+  background: #FFFFFF;
+  margin-top: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  animation: fadeInDown 0.2s ease forwards;
+}
+
+.attendance-history-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.attendance-history-panel-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* History Rosters Container */
+.history-rosters-wrapper {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-sub-tabs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.h-sub-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.h-sub-tab:hover {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+  color: #0F172A;
+}
+
+.h-sub-tab.active {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+  color: #047857;
+}
+
+.h-tab-count {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+}
+
+.h-sub-tab.active .h-tab-count {
+  background: rgba(4, 120, 87, 0.12);
+  color: #047857;
+}
+
+/* Quick Roster Filter Input */
+.roster-filter-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 170px;
+  height: 32px;
+}
+
+.roster-filter-input-wrap svg {
+  position: absolute;
+  left: 9px;
+  color: #94A3B8;
+  pointer-events: none;
+}
+
+.roster-filter-input {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 22px 0 27px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: #0F172A;
+  background-color: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.18s ease;
+}
+
+.roster-filter-input::placeholder {
+  color: #94A3B8;
+}
+
+.roster-filter-input:focus {
+  border-color: #006C49;
+  box-shadow: 0 0 0 2px rgba(0, 108, 73, 0.12);
+}
+
+.roster-filter-clear {
+  position: absolute;
+  right: 6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #E2E8F0;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748B;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.roster-filter-clear:hover {
+  background: #CBD5E1;
+  color: #0F172A;
+}
+
+/* Attendance History Clean Table (Optimized for 80+ Personnel) */
+.history-table-container {
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.history-table-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.history-table-container::-webkit-scrollbar-track {
+  background: #F8FAFC;
+}
+
+.history-table-container::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+.history-table-container::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+.history-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-family: inherit;
+}
+
+.history-data-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #F8FAFC;
+  box-shadow: 0 1px 0 #E2E8F0;
+}
+
+.history-th {
+  padding: 9px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+  border-bottom: 1px solid #E2E8F0;
+  white-space: nowrap;
+}
+
+.history-th.col-index {
+  width: 44px;
+  text-align: center;
+}
+
+.history-th.col-name {
+  min-width: 220px;
+}
+
+.history-th.col-status {
+  width: 200px;
+}
+
+.history-th.col-order {
+  min-width: 170px;
+}
+
+.history-tr {
+  border-bottom: 1px solid #F1F5F9;
+  transition: background-color 0.12s ease;
+}
+
+.history-tr:last-child {
+  border-bottom: none;
+}
+
+.history-tr:hover {
+  background-color: #F8FAFC;
+}
+
+.history-td {
+  padding: 7px 14px;
+  font-size: 12.5px;
+  vertical-align: middle;
+}
+
+.history-td.col-index {
+  text-align: center;
+  font-family: monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #94A3B8;
+}
+
+.history-name-text {
+  font-weight: 600;
+  color: #0F172A;
+  letter-spacing: -0.01em;
+}
+
+.history-status-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-status-tag {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  line-height: 1.3;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.history-status-tag.tag-present {
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+}
+
+.history-status-tag.tag-absent {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+
+.history-status-tag.tag-half_am,
+.history-status-tag.tag-half_pm {
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+.history-status-tag.tag-on_leave {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+.history-order-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: #006C49;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  padding: 2px 8px;
+  border-radius: 5px;
+  letter-spacing: 0.02em;
+}
+
+.history-order-pill.is-empty {
+  color: #94A3B8;
+  background: transparent;
+  border: none;
+  font-weight: 400;
+  padding: 0;
+}
+
+.history-table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 4px 2px;
+  font-size: 12px;
+  color: #64748B;
+}
+
+.history-table-footer strong {
+  color: #0F172A;
+}
+
+.history-filter-active-note {
+  font-size: 11.5px;
+  color: #006C49;
+  font-style: italic;
+}
+
+.history-table-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: #64748B;
+  font-size: 13px;
+  background: #F8FAFC;
+  border: 1px dashed #CBD5E1;
+  border-radius: 8px;
+}
+
+/* General Attendance History Toggle Button */
+.attendance-history-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  color: #334155;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.attendance-history-toggle svg.clock-icon {
+  color: #006C49;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.attendance-history-toggle svg.chevron-icon {
+  color: #64748B;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.attendance-history-toggle:hover {
+  background: #F8FAFC;
+  border-color: #94A3B8;
+  color: #0F172A;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06);
+}
+
+.attendance-history-toggle:hover svg.clock-icon {
+  transform: rotate(-15deg);
+}
+
+.attendance-history-toggle.is-active {
+  background: #ECFDF5;
+  border-color: #5EAA85;
+  color: #006C49;
+  box-shadow: 0 0 0 2px rgba(94, 170, 133, 0.18), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.attendance-history-toggle.is-active svg.clock-icon {
+  color: #006C49;
+}
+
+.attendance-history-toggle.is-active svg.chevron-icon {
+  color: #006C49;
+}
+
+/* Personnel Table Modern Search Bar */
+.personnel-table-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 250px;
+  height: 36px;
+}
+
+.personnel-table-search .search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94A3B8;
+  pointer-events: none;
+  transition: color 0.18s ease;
+}
+
+.personnel-table-search input {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 30px 0 34px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #0F172A;
+  background-color: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.personnel-table-search input::placeholder {
+  color: #94A3B8;
+  font-size: 12.5px;
+}
+
+.personnel-table-search:hover input {
+  background-color: #FFFFFF;
+  border-color: #94A3B8;
+}
+
+.personnel-table-search:focus-within .search-icon {
+  color: #006C49;
+}
+
+.personnel-table-search:focus-within input {
+  background-color: #FFFFFF;
+  border-color: #006C49;
+  box-shadow: 0 0 0 3px rgba(0, 108, 73, 0.12), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.personnel-table-search .search-clear-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #E2E8F0;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.personnel-table-search .search-clear-btn:hover {
+  background: #CBD5E1;
+  color: #0F172A;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .personnel-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .personnel-bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-history-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
