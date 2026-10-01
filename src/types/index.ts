@@ -38,14 +38,79 @@ export interface WorkOrder {
   inspectionsCount?: number;
 }
 
+export type AttendanceStatusType = 'present' | 'absent' | 'half_am' | 'half_pm' | 'on_leave';
+
 export interface Person {
   name: string;
   role: string;
   code: string;
   status: string;
   id?: string;               // e.g., 'EMP-1024'
-  attendanceStatus?: string;  // e.g., 'Present (08:02)'
+  attendanceStatus?: AttendanceStatusType | string;
   activeOrder?: string;       // e.g., 'WO-9921-A'
+  email?: string;
+  phone?: string;
+  department?: string;
+  team?: string;
+  dateHired?: string;
+  emergencyContact?: string;
+  notes?: string;
+  isOnLeaveToday?: boolean;
+  leaveDetails?: LeaveRecord | null;
+}
+
+export interface LeaveRecord {
+  id?: number | string;
+  personnelCode: string;
+  personnelName?: string;
+  role?: string;
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+  status?: string;
+  createdAt?: string;
+}
+
+export interface PersonnelAttendanceRecord {
+  id?: number;
+  personnelCode: string;
+  date: string;
+  formattedDate?: string;
+  dayOfWeek?: string;
+  status: AttendanceStatusType;
+  notes?: string;
+}
+
+export interface AttendanceRosterPerson {
+  code: string;
+  name: string;
+  role: string;
+  status: AttendanceStatusType;
+  notes?: string;
+  activeOrder?: string;
+}
+
+export interface AttendanceRosterDay {
+  date: string;
+  formattedDate: string;
+  dayOfWeek: string;
+  compliance: number;
+  totalStaff: number;
+  counts: {
+    present: number;
+    absent: number;
+    half_am: number;
+    half_pm: number;
+    on_leave: number;
+  };
+  roster: {
+    present: AttendanceRosterPerson[];
+    absent: AttendanceRosterPerson[];
+    half_am: AttendanceRosterPerson[];
+    half_pm: AttendanceRosterPerson[];
+    on_leave: AttendanceRosterPerson[];
+  };
 }
 
 export interface AttendanceLog {
