@@ -28,32 +28,53 @@ export interface SaveSnapshotResult {
 const LOCAL_SNAPSHOTS_PREFIX = 'infra_dwl_snapshot_';
 const LOCAL_SNAPSHOT_DATES_KEY = 'infra_dwl_snapshot_dates';
 
+export const formatLocalDate = (d: Date = new Date()): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 /**
  * Get the list of all available snapshot summaries / dates
  */
 export async function getSnapshotDates(): Promise<SnapshotSummary[]> {
+  let backendDates: SnapshotSummary[] = [];
   try {
     const res = await apiClient.get('/daily-work-log-snapshots');
     if (Array.isArray(res.data)) {
-      // Also cache dates locally
-      localStorage.setItem(LOCAL_SNAPSHOT_DATES_KEY, JSON.stringify(res.data));
-      return res.data;
+      backendDates = res.data;
     }
   } catch (err) {
     console.warn('Backend unavailable, reading snapshot dates from localStorage:', err);
   }
 
-  // Fallback to localStorage
+  // Read local cached dates
+  let localDates: SnapshotSummary[] = [];
   try {
     const cached = localStorage.getItem(LOCAL_SNAPSHOT_DATES_KEY);
     if (cached) {
-      return JSON.parse(cached);
+      localDates = JSON.parse(cached);
     }
   } catch (e) {
     console.warn('Failed parsing local snapshot dates:', e);
   }
 
-  return [];
+  // Merge unique by snapshot_date (backend takes precedence, but keep local-only dates)
+  const map = new Map<string, SnapshotSummary>();
+  backendDates.forEach((item) => map.set(item.snapshot_date, item));
+  localDates.forEach((item) => {
+    if (!map.has(item.snapshot_date)) {
+      map.set(item.snapshot_date, item);
+    }
+  });
+
+  const merged = Array.from(map.values()).sort((a, b) => b.snapshot_date.localeCompare(a.snapshot_date));
+  try {
+    localStorage.setItem(LOCAL_SNAPSHOT_DATES_KEY, JSON.stringify(merged));
+  } catch {}
+
+  return merged;
 }
 
 /**
@@ -62,23 +83,23 @@ export async function getSnapshotDates(): Promise<SnapshotSummary[]> {
 export async function getSnapshotByDate(date: string): Promise<SnapshotDetail | null> {
   try {
     const res = await apiClient.get(`/daily-work-log-snapshots/${date}`);
-    if (res.data && res.data.snapshot_date) {
+    if (res.data && res.data.snapshot_date && Array.isArray(res.data.entries)) {
       // Cache locally
       localStorage.setItem(`${LOCAL_SNAPSHOTS_PREFIX}${date}`, JSON.stringify(res.data));
       return res.data;
     }
   } catch (err: any) {
-    if (err.response && err.response.status === 404) {
-      return null;
-    }
-    console.warn(`Backend fetch failed for snapshot date ${date}, reading from localStorage:`, err);
+    console.warn(`Backend fetch note for snapshot date ${date}:`, err?.message || err);
   }
 
-  // Fallback to localStorage
+  // Fallback to localStorage (even if backend returned 404 or failed)
   try {
     const cached = localStorage.getItem(`${LOCAL_SNAPSHOTS_PREFIX}${date}`);
     if (cached) {
-      return JSON.parse(cached);
+      const parsed = JSON.parse(cached);
+      if (parsed && Array.isArray(parsed.entries)) {
+        return parsed;
+      }
     }
   } catch (e) {
     console.warn('Failed reading local snapshot:', e);
