@@ -269,7 +269,41 @@
                     </span>
                   </div>
                 </th>
-                <th v-if="activeTab === 'equipment'" style="text-align: center; width: 90px">UNITS</th>
+                <th
+                  v-if="activeTab === 'equipment'"
+                  style="cursor: pointer; user-select: none;"
+                  class="sortable-header"
+                  :class="{ active: sortBy === 'owner-asc' || sortBy === 'owner-desc' }"
+                  @click="toggleSort('owner')"
+                  title="Sort by Owner (Click to toggle)"
+                >
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>OWNER</span>
+                    <span class="sort-indicator">
+                      <template v-if="sortBy === 'owner-asc'">▲</template>
+                      <template v-else-if="sortBy === 'owner-desc'">▼</template>
+                      <template v-else>↕</template>
+                    </span>
+                  </div>
+                </th>
+                <th
+                  v-if="activeTab === 'equipment'"
+                  style="cursor: pointer; user-select: none; width: 130px;"
+                  class="sortable-header"
+                  :class="{ active: sortBy === 'purchased-asc' || sortBy === 'purchased-desc' }"
+                  @click="toggleSort('purchased')"
+                  title="Sort by Date Purchased (Click to toggle)"
+                >
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>PURCHASED</span>
+                    <span class="sort-indicator">
+                      <template v-if="sortBy === 'purchased-asc'">▲</template>
+                      <template v-else-if="sortBy === 'purchased-desc'">▼</template>
+                      <template v-else>↕</template>
+                    </span>
+                  </div>
+                </th>
+                <th v-if="activeTab === 'equipment'" style="text-align: center; width: 80px">UNITS</th>
 
                 <th style="text-align: right; width: 110px">ACTIONS</th>
               </tr>
@@ -416,7 +450,7 @@
                       />
                     </div>
 
-                    <!-- View Mode: Dynamic Color Badge & Quick Change Pen -->
+                    <!-- View Mode: Dynamic Color Badge -->
                     <div v-else class="catalog-color-display-row">
                       <div
                         class="catalog-color-badge-pill"
@@ -430,18 +464,6 @@
                           {{ (item.color || getItemTypeColor(item.name, props.catalogs)).toUpperCase() }}
                         </span>
                       </div>
-
-                      <button
-                        type="button"
-                        class="catalog-quick-color-btn"
-                        title="Choose color with presets & advanced mode"
-                        @click="openQuickColorPicker(item)"
-                      >
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" class="quick-color-pen">
-                          <path d="M12 20h9" />
-                          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                        </svg>
-                      </button>
                     </div>
                   </td>
                 </template>
@@ -471,6 +493,29 @@
                       @keydown.esc="cancelInlineEdit"
                     />
                     <span v-else class="catalog-loc-text">{{ item.location || 'Depot' }}</span>
+                  </td>
+                  <td>
+                    <input
+                      v-if="editingRowId === item.id"
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormOwner"
+                      placeholder="Owner / Office"
+                      @keydown.enter="saveInlineEdit(item)"
+                      @keydown.esc="cancelInlineEdit"
+                    />
+                    <span v-else class="catalog-owner-badge">{{ item.owner || '—' }}</span>
+                  </td>
+                  <td>
+                    <input
+                      v-if="editingRowId === item.id"
+                      type="date"
+                      class="catalog-inline-input"
+                      v-model="inlineFormPurchased"
+                      @keydown.enter="saveInlineEdit(item)"
+                      @keydown.esc="cancelInlineEdit"
+                    />
+                    <span v-else class="catalog-purchased-text">{{ formatPurchasedDate(item.purchased) }}</span>
                   </td>
                   <td style="text-align: center">
                     <input
@@ -644,25 +689,24 @@
                           {{ (item.color || getItemTypeColor(item.name, props.catalogs)).toUpperCase() }}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        class="catalog-quick-color-btn"
-                        title="Choose color"
-                        @click="openQuickColorPicker(item)"
-                      >
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" class="quick-color-pen">
-                          <path d="M12 20h9" />
-                          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                        </svg>
-                      </button>
                     </div>
                   </div>
                 </template>
 
-                <!-- Equipment: Description, Location, Quantity -->
+                <!-- Equipment: Description, Details, Location, Quantity -->
                 <template v-if="activeTab === 'equipment'">
                   <div v-if="item.description" class="catalog-sub-desc">
                     {{ item.description }}
+                  </div>
+                  <div class="catalog-mc-equipment-details">
+                    <div class="catalog-mc-detail-item" v-if="item.owner">
+                      <span class="catalog-mc-detail-label">Owner:</span>
+                      <span class="catalog-owner-badge">{{ item.owner }}</span>
+                    </div>
+                    <div class="catalog-mc-detail-item" v-if="item.purchased">
+                      <span class="catalog-mc-detail-label">Purchased:</span>
+                      <span class="catalog-purchased-text">{{ formatPurchasedDate(item.purchased) }}</span>
+                    </div>
                   </div>
                   <div class="catalog-mc-meta-footer">
                     <div class="catalog-mc-loc">
@@ -800,6 +844,23 @@
                       class="catalog-inline-input"
                       v-model.number="inlineFormQuantity"
                       placeholder="Units"
+                    />
+                  </div>
+                  <div class="catalog-mc-field">
+                    <label class="catalog-mc-field-label">Owner</label>
+                    <input
+                      type="text"
+                      class="catalog-inline-input"
+                      v-model="inlineFormOwner"
+                      placeholder="Owner / Office"
+                    />
+                  </div>
+                  <div class="catalog-mc-field">
+                    <label class="catalog-mc-field-label">Date Purchased</label>
+                    <input
+                      type="date"
+                      class="catalog-inline-input"
+                      v-model="inlineFormPurchased"
                     />
                   </div>
                   <div class="catalog-mc-field">
@@ -1050,6 +1111,32 @@
                   <span class="catalog-pop-hint">Current depot quantity</span>
                 </div>
 
+                <div class="catalog-pop-field half">
+                  <label class="catalog-pop-label">
+                    Owner / Office Custodian
+                  </label>
+                  <input
+                    type="text"
+                    class="catalog-pop-input"
+                    v-model="addFormOwner"
+                    placeholder="e.g. Facilities Management Office"
+                    autocomplete="off"
+                  />
+                  <span class="catalog-pop-hint">Managing department or custodian</span>
+                </div>
+
+                <div class="catalog-pop-field half">
+                  <label class="catalog-pop-label">
+                    Date Purchased / Acquired
+                  </label>
+                  <input
+                    type="date"
+                    class="catalog-pop-input"
+                    v-model="addFormPurchased"
+                  />
+                  <span class="catalog-pop-hint">Acquisition or receipt date</span>
+                </div>
+
                 <div class="catalog-pop-field full">
                   <label class="catalog-pop-label">
                     Additional Notes / Specifications
@@ -1263,11 +1350,15 @@ type SortOption =
   | 'category-asc'
   | 'category-desc'
   | 'location-asc'
-  | 'location-desc';
+  | 'location-desc'
+  | 'owner-asc'
+  | 'owner-desc'
+  | 'purchased-asc'
+  | 'purchased-desc';
 
 const sortBy = ref<SortOption>('code-asc');
 
-const toggleSort = (field: 'code' | 'name' | 'acronym' | 'title' | 'category' | 'location') => {
+const toggleSort = (field: 'code' | 'name' | 'acronym' | 'title' | 'category' | 'location' | 'owner' | 'purchased') => {
   if (field === 'code') {
     sortBy.value = sortBy.value === 'code-asc' ? 'code-desc' : 'code-asc';
   } else if (field === 'name') {
@@ -1280,6 +1371,33 @@ const toggleSort = (field: 'code' | 'name' | 'acronym' | 'title' | 'category' | 
     sortBy.value = sortBy.value === 'category-asc' ? 'category-desc' : 'category-asc';
   } else if (field === 'location') {
     sortBy.value = sortBy.value === 'location-asc' ? 'location-desc' : 'location-asc';
+  } else if (field === 'owner') {
+    sortBy.value = sortBy.value === 'owner-asc' ? 'owner-desc' : 'owner-asc';
+  } else if (field === 'purchased') {
+    sortBy.value = sortBy.value === 'purchased-asc' ? 'purchased-desc' : 'purchased-asc';
+  }
+};
+
+const formatPurchasedDate = (dateStr?: string): string => {
+  if (!dateStr) return '—';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const monthIndex = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const d = new Date(year, monthIndex, day);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+    }
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+    return dateStr;
+  } catch {
+    return dateStr;
   }
 };
 
@@ -1318,6 +1436,8 @@ const filteredList = computed(() => {
         (item.title && item.title.toLowerCase().includes(q)) ||
         (item.category && item.category.toLowerCase().includes(q)) ||
         (item.location && item.location.toLowerCase().includes(q)) ||
+        (item.owner && item.owner.toLowerCase().includes(q)) ||
+        (item.purchased && item.purchased.toLowerCase().includes(q)) ||
         (item.description && item.description.toLowerCase().includes(q))
       );
     });
@@ -1365,6 +1485,18 @@ const filteredList = computed(() => {
     }
     if (sortBy.value === 'location-desc') {
       return (b.location || '').localeCompare(a.location || '', undefined, { sensitivity: 'base' });
+    }
+    if (sortBy.value === 'owner-asc') {
+      return (a.owner || '').localeCompare(b.owner || '', undefined, { sensitivity: 'base' });
+    }
+    if (sortBy.value === 'owner-desc') {
+      return (b.owner || '').localeCompare(a.owner || '', undefined, { sensitivity: 'base' });
+    }
+    if (sortBy.value === 'purchased-asc') {
+      return (a.purchased || '').localeCompare(b.purchased || '');
+    }
+    if (sortBy.value === 'purchased-desc') {
+      return (b.purchased || '').localeCompare(a.purchased || '');
     }
     return 0;
   });
@@ -1419,6 +1551,8 @@ const inlineFormTitle = ref('');
 const inlineFormColor = ref('');
 const inlineFormCategory = ref('');
 const inlineFormLocation = ref('');
+const inlineFormOwner = ref('');
+const inlineFormPurchased = ref('');
 const inlineFormQuantity = ref<number>(1);
 const inlineFormDescription = ref('');
 const inlineNameInputRef = ref<HTMLInputElement | null>(null);
@@ -1432,6 +1566,8 @@ const startInlineEdit = (item: CatalogItem) => {
   inlineFormColor.value = item.color || getItemTypeColor(item.name, props.catalogs);
   inlineFormCategory.value = item.category || '';
   inlineFormLocation.value = item.location || '';
+  inlineFormOwner.value = item.owner || '';
+  inlineFormPurchased.value = item.purchased || '';
   inlineFormQuantity.value = item.quantity ?? 1;
   inlineFormDescription.value = item.description || '';
 
@@ -1451,6 +1587,8 @@ const cancelInlineEdit = () => {
   inlineFormColor.value = '';
   inlineFormCategory.value = '';
   inlineFormLocation.value = '';
+  inlineFormOwner.value = '';
+  inlineFormPurchased.value = '';
   inlineFormQuantity.value = 1;
   inlineFormDescription.value = '';
 };
@@ -1470,6 +1608,8 @@ const saveInlineEdit = (item: CatalogItem) => {
     color: activeTab.value === 'item_type' ? (inlineFormColor.value.trim() || item.color || getItemTypeColor(inlineFormName.value, props.catalogs)) : item.color,
     category: activeTab.value === 'equipment' ? (inlineFormCategory.value.trim() || undefined) : item.category,
     location: activeTab.value === 'equipment' ? (inlineFormLocation.value.trim() || undefined) : undefined,
+    owner: activeTab.value === 'equipment' ? (inlineFormOwner.value.trim() || undefined) : undefined,
+    purchased: activeTab.value === 'equipment' ? (inlineFormPurchased.value.trim() || undefined) : undefined,
     quantity: activeTab.value === 'equipment' ? Math.max(0, Number(inlineFormQuantity.value) || 0) : undefined,
     description: inlineFormDescription.value.trim() || undefined,
     isActive: true
@@ -1533,6 +1673,8 @@ const addFormTitle = ref('');
 const addFormColor = ref('#8BA869');
 const addFormCategory = ref('');
 const addFormLocation = ref('');
+const addFormOwner = ref('');
+const addFormPurchased = ref('');
 const addFormQuantity = ref<number>(1);
 const addFormDescription = ref('');
 const addNameInputRef = ref<HTMLInputElement | null>(null);
@@ -1606,6 +1748,8 @@ const openAddModal = () => {
   }
   addFormCategory.value = '';
   addFormLocation.value = '';
+  addFormOwner.value = '';
+  addFormPurchased.value = '';
   addFormQuantity.value = 1;
   addFormDescription.value = '';
   isAddModalOpen.value = true;
@@ -1657,6 +1801,8 @@ const handleSaveAddForm = () => {
     color: activeTab.value === 'item_type' ? (addFormColor.value.trim() || '#8BA869') : undefined,
     category: activeTab.value === 'equipment' ? (addFormCategory.value.trim() || undefined) : (activeTab.value === 'office' ? 'University Office' : undefined),
     location: activeTab.value === 'equipment' ? (addFormLocation.value.trim() || undefined) : undefined,
+    owner: activeTab.value === 'equipment' ? (addFormOwner.value.trim() || undefined) : undefined,
+    purchased: activeTab.value === 'equipment' ? (addFormPurchased.value.trim() || undefined) : undefined,
     quantity: activeTab.value === 'equipment' ? Math.max(0, Number(addFormQuantity.value) || 1) : 1,
     description: addFormDescription.value.trim() || undefined,
     isActive: true,

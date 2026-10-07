@@ -87,6 +87,8 @@ export const syncLocalStorageToBackend = async (): Promise<SyncResult> => {
                 color: item.color || null,
                 category: item.category || null,
                 location: item.location || null,
+                owner: item.owner || null,
+                purchased: item.purchased || null,
                 contactPerson: item.contactPerson || null,
                 quantity: item.quantity || 1,
                 isActive: item.isActive !== false,

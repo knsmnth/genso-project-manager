@@ -201,6 +201,8 @@ export interface CatalogItem {
   color?: string;
   category?: string;
   location?: string;
+  owner?: string;
+  purchased?: string;
   contactPerson?: string;
   quantity?: number;
   isActive?: boolean;

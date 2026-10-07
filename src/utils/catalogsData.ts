@@ -93,6 +93,8 @@ const defaultEquipment: CatalogItem[] = [
     code: 'EQ-001',
     category: 'Plumbing & Pressure',
     location: 'Facilities Depot Bay 1',
+    owner: 'Physical Plant Office',
+    purchased: '2024-03-15',
     quantity: 4,
     isActive: true,
     description: 'Heavy-duty hydraulic clamp tool for rapid high-pressure line sealing and pipe crimping.',
@@ -105,6 +107,8 @@ const defaultEquipment: CatalogItem[] = [
     code: 'EQ-002',
     category: 'Height & Safety',
     location: 'Tool Depot Rack A',
+    owner: 'General Services Office',
+    purchased: '2023-11-20',
     quantity: 8,
     isActive: true,
     description: '28-foot fiberglass dual-extension ladder with non-conductive rails and anti-slip feet.',
@@ -117,6 +121,8 @@ const defaultEquipment: CatalogItem[] = [
     code: 'EQ-003',
     category: 'Electrical Diagnostic',
     location: 'Electrician Locker',
+    owner: 'Electrical Engineering',
+    purchased: '2024-01-10',
     quantity: 12,
     isActive: true,
     description: 'True-RMS 1000V digital multimeter with non-contact voltage sensor and current clamp.',
@@ -129,6 +135,8 @@ const defaultEquipment: CatalogItem[] = [
     code: 'EQ-004',
     category: 'HVAC Equipment',
     location: 'HVAC Bay 3',
+    owner: 'Mechanical & Climate',
+    purchased: '2023-08-05',
     quantity: 3,
     isActive: true,
     description: 'Refrigerant recovery pump and 2-stage deep vacuum system for HVAC maintenance.',
@@ -141,6 +149,8 @@ const defaultEquipment: CatalogItem[] = [
     code: 'EQ-005',
     category: 'Power Tools',
     location: 'Tool Depot Rack C',
+    owner: 'Civil Works',
+    purchased: '2024-05-18',
     quantity: 6,
     isActive: true,
     description: 'SDS-Plus 1-inch masonry hammer drill with vibration damping and depth gauge.',
@@ -153,6 +163,8 @@ const defaultEquipment: CatalogItem[] = [
     code: 'EQ-006',
     category: 'Inspection & Diagnostic',
     location: 'Supervisor Vault',
+    owner: 'EHS & Safety',
+    purchased: '2025-02-14',
     quantity: 2,
     isActive: true,
     description: 'High-resolution handheld infrared thermal imaging camera for electrical and insulation audits.',
@@ -165,6 +177,8 @@ const defaultEquipment: CatalogItem[] = [
     code: 'EQ-007',
     category: 'Cleaning & Washdown',
     location: 'Facilities Shed',
+    owner: 'Building Repair & Maint.',
+    purchased: '2024-09-08',
     quantity: 5,
     isActive: true,
     description: 'Electric induction motor commercial pressure washer with interchangeable spray nozzles.',
@@ -197,7 +211,16 @@ export const loadStoredCatalogs = (): MasterCatalogsState => {
             color: it.color || ITEM_TYPE_COLOR_PALETTE[idx % ITEM_TYPE_COLOR_PALETTE.length]
           }))
         : DEFAULT_CATALOGS_STATE.itemTypes,
-      equipment: Array.isArray(parsed.equipment) && parsed.equipment.length > 0 ? parsed.equipment : DEFAULT_CATALOGS_STATE.equipment
+      equipment: Array.isArray(parsed.equipment) && parsed.equipment.length > 0
+        ? parsed.equipment.map((eq: any) => {
+            const def = defaultEquipment.find((d) => d.code === eq.code || d.id === eq.id || d.name === eq.name);
+            return {
+              ...eq,
+              owner: eq.owner ?? def?.owner ?? '',
+              purchased: eq.purchased ?? eq.purchasedDate ?? def?.purchased ?? ''
+            };
+          })
+        : DEFAULT_CATALOGS_STATE.equipment
     };
   } catch {
     return DEFAULT_CATALOGS_STATE;
