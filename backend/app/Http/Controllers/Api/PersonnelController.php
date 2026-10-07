@@ -37,23 +37,21 @@ class PersonnelController extends Controller
             $code = $item->code;
 
             // Determine attendance status:
-            // 1. If explicit attendance recorded today, use it
+            // 1. If explicit attendance recorded today, use it (allows updates throughout the day)
             // 2. Otherwise if on scheduled leave today, status is 'on_leave'
-            // 3. Otherwise fallback to stored status or default 'present'
+            // 3. Otherwise every day automatically defaults/resets to 'present'
             $attStatus = 'present';
             if (isset($todayAttendance[$code])) {
                 $attStatus = $todayAttendance[$code]->status;
             } elseif (isset($activeLeaves[$code])) {
                 $attStatus = 'on_leave';
-            } elseif (!empty($item->attendance_status)) {
-                $clean = strtolower($item->attendance_status);
-                if (str_contains($clean, 'leave')) {
-                    $attStatus = 'on_leave';
-                } elseif (str_contains($clean, 'absent')) {
-                    $attStatus = 'absent';
-                } else {
-                    $attStatus = 'present';
-                }
+            } else {
+                $attStatus = 'present';
+            }
+
+            // Keep personnel table in sync with today's status
+            if ($item->attendance_status !== $attStatus) {
+                Personnel::where('code', $code)->update(['attendance_status' => $attStatus]);
             }
 
             return [
@@ -158,13 +156,26 @@ class PersonnelController extends Controller
             ->orderBy('start_date', 'desc')
             ->get();
 
+        $today = Carbon::today()->format('Y-m-d');
+        $todayAtt = PersonnelAttendance::where('personnel_code', $code)->where('date', $today)->first();
+        $activeLeave = PersonnelLeave::where('personnel_code', $code)
+            ->where('start_date', '<=', $today)
+            ->where('end_date', '>=', $today)
+            ->first();
+        $currAttStatus = 'present';
+        if ($todayAtt) {
+            $currAttStatus = $todayAtt->status;
+        } elseif ($activeLeave) {
+            $currAttStatus = 'on_leave';
+        }
+
         return response()->json([
             'profile' => [
                 'code' => $person->code,
                 'name' => $person->name,
                 'role' => $person->role,
                 'status' => $person->status,
-                'attendanceStatus' => $person->attendance_status,
+                'attendanceStatus' => $currAttStatus,
                 'activeOrder' => $person->active_order,
                 'email' => $person->email ?? '',
                 'phone' => $person->phone ?? '',
@@ -215,12 +226,23 @@ class PersonnelController extends Controller
     public function attendanceHistory(Request $request)
     {
         $queryDate = $request->input('date');
+        $queryMonth = $request->input('month');
+        $queryYear = $request->input('year');
 
         // All personnel lookup map
         $allPersonnel = Personnel::all()->keyBy('code');
 
         if ($queryDate) {
             $attendanceDates = [$queryDate];
+        } elseif ($queryMonth && $queryYear) {
+            $datesFromDb = PersonnelAttendance::select('date')
+                ->whereYear('date', $queryYear)
+                ->whereMonth('date', $queryMonth)
+                ->distinct()
+                ->orderBy('date', 'desc')
+                ->pluck('date')
+                ->toArray();
+            $attendanceDates = $datesFromDb;
         } else {
             // Get unique dates from attendance or last 7 days
             $datesFromDb = PersonnelAttendance::select('date')

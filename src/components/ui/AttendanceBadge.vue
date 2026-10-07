@@ -8,10 +8,18 @@
     :title="labelTooltip"
     @click="handleClick"
   >
+    <!-- 0. FUTURE / NOT YET ARRIVED (Turn it gray for the meantime) -->
+    <div
+      v-if="timingVariant === 'future'"
+      class="attend-box attend-future"
+    >
+      <span class="future-dash">—</span>
+    </div>
+
     <!-- 1. PRESENT (Soft Green Rounded Square) -->
     <div
-      v-if="normalizedStatus === 'present'"
-      class="attend-box attend-present"
+      v-else-if="normalizedStatus === 'present'"
+      :class="['attend-box', 'attend-present', { 'is-past': timingVariant === 'past' }]"
     >
       <svg viewBox="0 0 24 24" class="attend-icon" fill="none" stroke="currentColor" stroke-width="2.5">
         <!-- Minimalist dot or subtle check if desired, clean green fill matching sample -->
@@ -21,7 +29,7 @@
     <!-- 2. ABSENT (Soft Red Rounded Square with Centered X) -->
     <div
       v-else-if="normalizedStatus === 'absent'"
-      class="attend-box attend-absent"
+      :class="['attend-box', 'attend-absent', { 'is-past': timingVariant === 'past' }]"
     >
       <svg viewBox="0 0 24 24" class="attend-icon" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
         <line x1="6" y1="6" x2="18" y2="18" />
@@ -32,7 +40,7 @@
     <!-- 3. ABSENT MORNING - PRESENT AFTERNOON (Half Day: Top-Left Pink, Bottom-Right Light) -->
     <div
       v-else-if="normalizedStatus === 'half_am'"
-      class="attend-box attend-half-am"
+      :class="['attend-box', 'attend-half-am', { 'is-past': timingVariant === 'past' }]"
     >
       <svg viewBox="0 0 24 24" class="attend-svg-fill">
         <!-- Top-left polygon is absent (pink) with red edge -->
@@ -45,7 +53,7 @@
     <!-- 4. PRESENT MORNING - ABSENT AFTERNOON (Half Day: Top-Left Light, Bottom-Right Pink) -->
     <div
       v-else-if="normalizedStatus === 'half_pm'"
-      class="attend-box attend-half-pm"
+      :class="['attend-box', 'attend-half-pm', { 'is-past': timingVariant === 'past' }]"
     >
       <svg viewBox="0 0 24 24" class="attend-svg-fill">
         <!-- Top-left polygon is present (green) with green edge -->
@@ -55,13 +63,14 @@
       </svg>
     </div>
 
-    <!-- 5. ON-LEAVE (Soft Blue Rounded Square) -->
+    <!-- 5. ON-LEAVE (Soft Blue Rounded Square with Lock) -->
     <div
       v-else-if="normalizedStatus === 'on_leave'"
-      class="attend-box attend-leave"
+      :class="['attend-box', 'attend-leave', { 'is-past': timingVariant === 'past' }]"
     >
-      <svg viewBox="0 0 24 24" class="attend-icon" fill="none" stroke="currentColor" stroke-width="2.5">
-        <!-- Clean soft blue fill matching sample -->
+      <svg viewBox="0 0 24 24" class="attend-icon" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="11" width="16" height="11" rx="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
     </div>
 
@@ -79,13 +88,15 @@ import { AttendanceStatusType } from '../../types';
 const props = withDefaults(
   defineProps<{
     status?: AttendanceStatusType | string;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'xs' | 'sm' | 'md' | 'lg';
+    timingVariant?: 'current' | 'past' | 'future';
     showLabel?: boolean;
     interactive?: boolean;
   }>(),
   {
     status: 'present',
     size: 'md',
+    timingVariant: 'current',
     showLabel: false,
     interactive: false
   }
@@ -108,6 +119,7 @@ const normalizedStatus = computed<AttendanceStatusType>(() => {
 });
 
 const labelText = computed(() => {
+  if (props.timingVariant === 'future') return 'Pending (Upcoming)';
   switch (normalizedStatus.value) {
     case 'present':
       return 'Present';
@@ -125,19 +137,23 @@ const labelText = computed(() => {
 });
 
 const labelTooltip = computed(() => {
+  if (props.timingVariant === 'future') {
+    return 'Not yet arrived (Pending / Upcoming)';
+  }
+  const suffix = props.timingVariant === 'past' ? ' (Past Record)' : '';
   switch (normalizedStatus.value) {
     case 'present':
-      return 'Present (Full Day)';
+      return `Present (Full Day)${suffix}`;
     case 'absent':
-      return 'Absent';
+      return `Absent${suffix}`;
     case 'half_am':
-      return 'Absent morning - Present afternoon (Half day)';
+      return `Absent morning - Present afternoon (Half day)${suffix}`;
     case 'half_pm':
-      return 'Present morning - Absent afternoon (Half day)';
+      return `Present morning - Absent afternoon (Half day)${suffix}`;
     case 'on_leave':
-      return 'On Leave';
+      return `On Leave${suffix}`;
     default:
-      return 'Present';
+      return `Present${suffix}`;
   }
 });
 
@@ -179,6 +195,13 @@ const handleClick = () => {
 }
 
 /* Sizing Tokens */
+.size-xs .attend-box {
+  width: 17px;
+  height: 17px;
+  border-radius: 4px;
+  border-width: 1.2px;
+}
+
 .size-sm .attend-box {
   width: 20px;
   height: 20px;
@@ -248,11 +271,50 @@ const handleClick = () => {
   border-bottom-color: #DC2626;
 }
 
-/* 5. On-Leave - Soft Blue Fill */
+/* 5. On-Leave - Soft Blue Fill with Lock */
 .attend-leave {
   background-color: #BAE6FD;
-  border-color: #2563EB;
-  color: #2563EB;
+  border-color: #0284C7;
+  color: #0369A1;
+  padding: 3px;
+}
+
+.attend-leave .attend-icon {
+  stroke: #0369A1;
+}
+
+.size-xs .attend-leave,
+.size-xs .attend-absent {
+  padding: 1.5px;
+}
+
+.size-sm .attend-leave,
+.size-sm .attend-absent {
+  padding: 2.5px;
+}
+
+/* 6. Future Day - Gray for the meantime */
+.attend-future {
+  background-color: #E2E8F0;
+  border-color: #94A3B8;
+  color: #64748B;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.future-dash {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: #94A3B8;
+  user-select: none;
+}
+
+/* Past Day - Slightly lighter colors */
+.attend-box.is-past {
+  opacity: 0.62;
+  filter: saturate(0.85) brightness(1.08);
 }
 
 /* Label text beside badge */

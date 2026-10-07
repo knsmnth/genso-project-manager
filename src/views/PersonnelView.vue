@@ -29,32 +29,33 @@
           <span>Schedule Leave</span>
         </button>
 
-        <!-- Action 2: Daily Attendance Check -->
+        <!-- Action 2: Quick Onboard -->
         <button
           type="button"
           class="btn btn-outline"
-          @click="$emit('openAttendanceCheck')"
+          @click="$emit('openQuickOnboard')"
           style="height: 36px; padding: 0 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px"
+          title="Quickly register new staff"
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          <span>Quick Onboard</span>
+        </button>
+
+        <!-- Action 3: Daily Attendance Check -->
+        <button
+          type="button"
+          class="btn btn-primary"
+          @click="$emit('openAttendanceCheck')"
+          style="height: 36px; padding: 0 16px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px"
           title="Perform today's attendance check"
         >
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FFFFFF" stroke-width="2.2">
             <path d="M9 11l3 3L22 4" stroke-linecap="round" stroke-linejoin="round" />
             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           <span>Attendance Check</span>
-        </button>
-
-        <!-- Action 3: Quick Onboard -->
-        <button
-          type="button"
-          class="btn btn-primary"
-          @click="$emit('openQuickOnboard')"
-          style="height: 36px; padding: 0 16px; font-size: 13px"
-        >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#FFFFFF" stroke-width="2.5">
-            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
-          </svg>
-          <span>Quick Onboard</span>
         </button>
       </div>
     </div>
@@ -145,148 +146,123 @@
             <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
           <span>General Attendance History</span>
+          <span class="history-month-badge">{{ selectedMonthName }} {{ selectedHistoryYear }}</span>
         </div>
 
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
-          <!-- Quick name filter for 80+ roster -->
-          <div class="roster-filter-input-wrap">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Filter roster..."
-              v-model="historySearch"
-              class="roster-filter-input"
-            />
-            <button
-              v-if="historySearch"
-              type="button"
-              class="roster-filter-clear"
-              @click="historySearch = ''"
-              title="Clear filter"
+        <!-- Single Filter Bar: Per Month and Year -->
+        <div class="history-month-filter-bar">
+          <div class="filter-select-group">
+            <label>Month:</label>
+            <select
+              v-model="selectedHistoryMonth"
+              @change="handleMonthYearChange"
+              class="history-filter-select"
             >
-              ×
-            </button>
+              <option v-for="(m, idx) in monthNames" :key="idx" :value="idx + 1">{{ m }}</option>
+            </select>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 6px">
-            <label style="font-size: 12px; font-weight: 600; color: #475569">Roster Date:</label>
-            <input
-              type="date"
-              class="form-input"
-              v-model="selectedHistoryDate"
-              @change="handleHistoryDateChange"
-              style="width: 135px; height: 32px; padding: 0 8px; font-size: 12px; border-radius: 6px"
-            />
+          <div class="filter-select-group">
+            <label>Year:</label>
+            <select
+              v-model="selectedHistoryYear"
+              @change="handleMonthYearChange"
+              class="history-filter-select"
+            >
+              <option :value="2024">2024</option>
+              <option :value="2025">2025</option>
+              <option :value="2026">2026</option>
+              <option :value="2027">2027</option>
+              <option :value="2028">2028</option>
+            </select>
           </div>
+
+          <!-- Advance Edit Toggle for History Auditing (Icon-only) -->
+          <button
+            type="button"
+            :class="['btn-advance-edit', { 'is-active': isAdvanceEditActive }]"
+            @click="isAdvanceEditActive = !isAdvanceEditActive"
+            :title="isAdvanceEditActive ? 'Advance Edit: ON (Click to disable)' : 'Advance Edit: OFF (Click to modify records)'"
+            aria-label="Advance Edit"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </button>
 
           <button
-            class="btn btn-outline-sm"
+            type="button"
+            class="history-action-btn"
             @click="handleExportCsv"
-            style="height: 32px; font-size: 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px"
+            title="Export CSV"
+            aria-label="Export CSV"
           >
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
             </svg>
-            <span>Export</span>
           </button>
         </div>
       </div>
 
       <div class="history-rosters-wrapper">
-        <!-- Roster Category Filter Tabs -->
-        <div class="history-sub-tabs">
-          <button
-            type="button"
-            :class="['h-sub-tab', { active: activeHistoryCategory === 'all' }]"
-            @click="activeHistoryCategory = 'all'"
-          >
-            <span>All Staff</span>
-            <span class="h-tab-count">{{ currentDayRosterAll.length }}</span>
-          </button>
-
-          <button
-            type="button"
-            :class="['h-sub-tab', { active: activeHistoryCategory === 'present' }]"
-            @click="activeHistoryCategory = 'present'"
-          >
-            <AttendanceBadge status="present" size="sm" />
-            <span>Present</span>
-            <span class="h-tab-count">{{ currentDayRoster.present.length }}</span>
-          </button>
-
-          <button
-            type="button"
-            :class="['h-sub-tab', { active: activeHistoryCategory === 'absent' }]"
-            @click="activeHistoryCategory = 'absent'"
-          >
-            <AttendanceBadge status="absent" size="sm" />
-            <span>Absent</span>
-            <span class="h-tab-count">{{ currentDayRoster.absent.length }}</span>
-          </button>
-
-          <button
-            type="button"
-            :class="['h-sub-tab', { active: activeHistoryCategory === 'half' }]"
-            @click="activeHistoryCategory = 'half'"
-          >
-            <AttendanceBadge status="half_am" size="sm" />
-            <span>Half-Day</span>
-            <span class="h-tab-count">{{ currentDayRoster.half_am.length + currentDayRoster.half_pm.length }}</span>
-          </button>
-
-          <button
-            type="button"
-            :class="['h-sub-tab', { active: activeHistoryCategory === 'on_leave' }]"
-            @click="activeHistoryCategory = 'on_leave'"
-          >
-            <AttendanceBadge status="on_leave" size="sm" />
-            <span>On Leave</span>
-            <span class="h-tab-count">{{ currentDayRoster.on_leave.length }}</span>
-          </button>
-        </div>
-
-        <!-- Attendance History Table (Optimized for 80+ Staff) -->
-        <div v-if="displayedHistoryPersons.length === 0" class="history-table-empty">
-          No personnel found for this selection.
-        </div>
-
-        <div v-else class="history-table-container">
-          <table class="history-data-table">
+        <!-- Whole Weekdays Attendance Matrix (Clear text-free box label indicators & compact row height) -->
+        <div class="history-matrix-wrapper">
+          <table class="history-matrix-table">
             <thead>
               <tr>
-                <th class="history-th col-index">#</th>
-                <th class="history-th col-name">Personnel Name</th>
-                <th class="history-th col-status">Status</th>
-                <th class="history-th col-order">Active Order</th>
+                <th class="sticky-col-idx">#</th>
+                <th class="sticky-col-name">Personnel</th>
+                <th
+                  v-for="day in currentMonthWorkdays"
+                  :key="day.date"
+                  class="matrix-day-th"
+                  :class="{ 'is-today': day.isToday }"
+                  :title="day.formattedDay"
+                >
+                  <span class="matrix-day-num">{{ day.dayNum }}</span>
+                  <span class="matrix-day-w">{{ day.dayName[0] }}</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               <tr
-                v-for="(person, idx) in displayedHistoryPersons"
-                :key="person.code || person.name"
-                class="history-tr"
+                v-for="(p, idx) in props.personnel"
+                :key="p.code || p.name"
+                class="matrix-tr"
               >
-                <td class="history-td col-index">{{ idx + 1 }}</td>
-                <td class="history-td col-name">
-                  <span class="history-name-text">{{ person.name }}</span>
+                <td class="sticky-col-idx">{{ idx + 1 }}</td>
+                <td class="sticky-col-name">
+                  <span class="matrix-staff-name-text">{{ p.name }}</span>
+                  <span class="matrix-staff-code">{{ p.id || p.code }}</span>
                 </td>
-                <td class="history-td col-status">
-                  <div class="history-status-group">
-                    <AttendanceBadge :status="person.status" size="sm" />
-                    <span :class="['history-status-tag', `tag-${person.status}`]">
-                      {{ formatStatusLabel(person.status) }}
-                    </span>
-                  </div>
-                </td>
-                <td class="history-td col-order">
-                  <span
-                    :class="['history-order-pill', { 'is-empty': getPersonActiveOrder(person) === '—' }]"
+                <td
+                  v-for="day in currentMonthWorkdays"
+                  :key="day.date"
+                  class="matrix-day-td"
+                  :class="{
+                    'is-today': day.isToday,
+                    'is-past': getTimingVariant(day.date) === 'past',
+                    'is-future': getTimingVariant(day.date) === 'future'
+                  }"
+                >
+                  <button
+                    type="button"
+                    class="matrix-box-btn"
+                    :class="{
+                      'is-advance-enabled': isAdvanceEditActive,
+                      'is-readonly': !isAdvanceEditActive
+                    }"
+                    :disabled="!isAdvanceEditActive"
+                    @click.stop="handleHistoryMatrixCycle(p, day.date)"
+                    :title="getHistoryBoxTooltip(p, day)"
                   >
-                    {{ getPersonActiveOrder(person) }}
-                  </span>
+                    <AttendanceBadge
+                      :status="personnelStore.getPersonAttendance(p.code || p.id || p.name, day.date)"
+                      :timing-variant="getTimingVariant(day.date)"
+                      size="xs"
+                    />
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -294,22 +270,26 @@
         </div>
 
         <!-- History Table Summary Footer -->
-        <div v-if="displayedHistoryPersons.length > 0" class="history-table-footer">
-          <span>Showing <strong>{{ displayedHistoryPersons.length }}</strong> of {{ currentDayRosterAll.length }} personnel</span>
-          <span v-if="historySearch" class="history-filter-active-note">Filtered by: "{{ historySearch }}"</span>
+        <div class="history-table-footer" style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px">
+          <span>Showing <strong>{{ props.personnel.length }}</strong> personnel across <strong>{{ currentMonthWorkdays.length }}</strong> weekdays in {{ selectedMonthName }} {{ selectedHistoryYear }}</span>
+          <span v-if="isAdvanceEditActive" class="advance-edit-active-pill">
+            ✏️ Advance Edit Mode Active — Click any attendance indicator to update record
+          </span>
+          <span v-else style="font-size: 11.5px; color: #64748B">
+            Past days appear slightly lighter · Upcoming days are gray · Turn on Advance Edit to edit records
+          </span>
         </div>
       </div>
     </div>
 
     <!-- Section: Personnel Registry Table -->
     <div class="card table-card" style="min-width: 0; margin-top: 4px">
-      <div class="card-header space-between" style="border-bottom: 1px solid #bbcabf">
-        <div>
-          <h3 style="font-size: 18px; font-weight: 600; color: #0b1c30">{{ pageTitle }}</h3>
-          <span style="font-size: 12px; color: #3c4a42">Manage credentials and daily status of site staff.</span>
+      <div class="card-header space-between personnel-table-header" style="border-bottom: 1px solid #bbcabf">
+        <div class="personnel-table-header-title">
+          <h3 class="personnel-table-title" style="font-size: 18px; font-weight: 600; color: #0b1c30; margin: 0">{{ pageTitle }}</h3>
         </div>
 
-        <div style="display: flex; gap: 10px; align-items: center">
+        <div class="personnel-table-header-actions">
           <div class="personnel-table-search">
             <svg class="search-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8" />
@@ -335,36 +315,38 @@
           </div>
 
           <button
-            class="btn btn-primary"
+            class="btn btn-primary btn-table-export"
             @click="handleExportCsv"
-            style="height: 36px; padding: 0 16px; font-size: 13px; font-weight: 600; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px"
+            title="Export CSV"
+            aria-label="Export CSV"
           >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            <span>Export CSV</span>
           </button>
         </div>
       </div>
 
       <div class="card-body no-padding">
         <div class="table-responsive">
-          <table class="data-table">
+          <table class="data-table compact-rows">
             <thead>
               <tr style="background: #eff4ff; border-bottom: 1px solid #bbcabf">
                 <th>PERSONNEL</th>
-                <th>SPECIALIZATION</th>
+                <th class="th-attendance">
+                  <span class="desktop-th-text">ATTENDANCE</span>
+                  <span class="mobile-th-text">WEEK (M-F)</span>
+                </th>
                 <th>AVAILABILITY</th>
-                <th>ATTENDANCE</th>
                 <th>ACTIVE ORDER</th>
                 <th style="text-align: right">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="filtered.length === 0">
-                <td colspan="6" style="text-align: center; padding: 32px; color: var(--color-text-muted)">
+                <td colspan="5" style="text-align: center; padding: 32px; color: var(--color-text-muted)">
                   No staff records match search query.
                 </td>
               </tr>
@@ -382,87 +364,52 @@
                     </div>
                   </div>
                 </td>
-                <td style="font-size: 13px">{{ p.role }}</td>
-                <td>
-                  <span
-                    :class="['status-badge-outline', getAvailabilityClass(p.status)]"
-                    style="text-transform: uppercase; font-size: 11px"
-                  >
-                    {{ p.status }}
-                  </span>
-                </td>
 
-                <!-- ATTENDANCE WITH 1-CLICK EDIT FUNCTION FOR ACCIDENTAL CORRECTION -->
+                <!-- 5-DAY WORKWEEK ATTENDANCE WITH INSTANT 1-CLICK CYCLIC ROTATION -->
                 <td>
-                  <div class="attend-cell-wrap" @click.stop>
-                    <button
-                      type="button"
-                      :class="['attend-cell-btn', 'only-icon', { 'is-leave-locked': isPersonOnLeave(p) }]"
-                      @click="handleAttendButtonClick(p)"
-                      :title="isPersonOnLeave(p) ? 'On Scheduled Leave (Locked) — Attendance cannot be changed directly. Edit or delete the leave in Schedule Leave.' : 'Click to edit status (currently ' + formatStatusLabel(getAttendanceStatus(p)) + ')'"
-                    >
-                      <AttendanceBadge :status="getAttendanceStatus(p)" size="md" />
-                      <span v-if="isPersonOnLeave(p)" class="attend-lock-indicator" title="Scheduled Leave">
-                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
-                      </span>
-                    </button>
-
-                    <!-- Quick Status Edit Popover -->
+                  <div class="week-attendance-row" @click.stop>
                     <div
-                      v-if="activePopoverPersonCode === (p.code || p.id || p.name)"
-                      class="attend-quick-popover"
+                      v-for="day in currentWeekWorkdays"
+                      :key="day.date"
+                      class="week-day-cell-item"
                     >
-                      <div class="popover-header">Quick Edit Attendance</div>
-
+                      <span class="week-day-mini-label" :class="{ 'is-today': day.isToday }">{{ day.dayName[0] }}</span>
                       <button
                         type="button"
-                        :class="['popover-option-btn', { 'is-active': getAttendanceStatus(p) === 'present' }]"
-                        @click="handleInlineStatusChange(p.code || p.id || p.name, 'present')"
+                        class="week-day-box-btn"
+                        :class="{
+                          'is-today': day.isToday,
+                          'is-locked': isPersonOnLeaveForDate(p, day.date),
+                          'is-restricted': getTimingVariant(day.date) !== 'current',
+                          'is-past': getTimingVariant(day.date) === 'past',
+                          'is-future': getTimingVariant(day.date) === 'future'
+                        }"
+                        :disabled="getTimingVariant(day.date) !== 'current'"
+                        @click.stop="handleDirectCycle(p, day.date)"
+                        :title="getDayBoxTooltip(p, day)"
                       >
-                        <AttendanceBadge status="present" size="sm" />
-                        <span>Present</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        :class="['popover-option-btn', { 'is-active': getAttendanceStatus(p) === 'absent' }]"
-                        @click="handleInlineStatusChange(p.code || p.id || p.name, 'absent')"
-                      >
-                        <AttendanceBadge status="absent" size="sm" />
-                        <span>Absent</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        :class="['popover-option-btn', { 'is-active': getAttendanceStatus(p) === 'half_am' }]"
-                        @click="handleInlineStatusChange(p.code || p.id || p.name, 'half_am')"
-                      >
-                        <AttendanceBadge status="half_am" size="sm" />
-                        <span>Absent AM / Present PM</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        :class="['popover-option-btn', { 'is-active': getAttendanceStatus(p) === 'half_pm' }]"
-                        @click="handleInlineStatusChange(p.code || p.id || p.name, 'half_pm')"
-                      >
-                        <AttendanceBadge status="half_pm" size="sm" />
-                        <span>Present AM / Absent PM</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        :class="['popover-option-btn', { 'is-active': getAttendanceStatus(p) === 'on_leave' }]"
-                        @click="handleInlineStatusChange(p.code || p.id || p.name, 'on_leave')"
-                      >
-                        <AttendanceBadge status="on_leave" size="sm" />
-                        <span>On Leave</span>
+                        <AttendanceBadge
+                          :status="personnelStore.getPersonAttendance(p.code || p.id || p.name, day.date)"
+                          :timing-variant="getTimingVariant(day.date)"
+                          size="sm"
+                        />
+                        <span v-if="isPersonOnLeaveForDate(p, day.date)" class="mini-lock-pill" title="Scheduled Leave">
+                          <svg viewBox="0 0 24 24" width="7" height="7" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                        </span>
                       </button>
                     </div>
                   </div>
+                </td>
+
+                <td>
+                  <span
+                    :class="['status-badge-outline', 'personnel-avail-badge', getAvailabilityClass(p.status)]"
+                  >
+                    {{ p.status }}
+                  </span>
                 </td>
 
                 <td
@@ -512,8 +459,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { Person, AttendanceStatusType, AttendanceRosterPerson } from '../types';
-import { usePersonnelStore } from '../stores/personnel';
+import { Person, AttendanceStatusType } from '../types';
+import { usePersonnelStore, getWeekWorkdays, getMonthWorkdays, WorkdayInfo } from '../stores/personnel';
 import AttendanceBadge from '../components/ui/AttendanceBadge.vue';
 import AttendanceGraphCard from '../components/ui/AttendanceGraphCard.vue';
 import LeaveScheduleModal from '../components/modals/LeaveScheduleModal.vue';
@@ -548,12 +495,113 @@ const isLeaveModalOpen = ref(false);
 const isRecordsDrawerOpen = ref(false);
 const selectedPersonnelCode = ref('');
 const showHistoryLog = ref(false);
-const activePopoverPersonCode = ref<string | null>(null);
+const isAdvanceEditActive = ref(false);
 
-// General Attendance History States
-const selectedHistoryDate = ref(new Date().toISOString().split('T')[0]);
-const activeHistoryCategory = ref<'all' | 'present' | 'absent' | 'half' | 'on_leave'>('all');
-const historySearch = ref('');
+// Local Date Helpers for Attendance Restrictions
+const getTodayStr = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getTimingVariant = (dateStr: string): 'current' | 'past' | 'future' => {
+  const today = getTodayStr();
+  if (dateStr < today) return 'past';
+  if (dateStr > today) return 'future';
+  return 'current';
+};
+
+// 5-Day Workweek State for Staff Registry Table
+const currentWeekWorkdays = computed<WorkdayInfo[]>(() => getWeekWorkdays());
+
+// General Attendance History Filter States (Whole Weekdays of Month & Year)
+const currentDate = new Date();
+const selectedHistoryMonth = ref(currentDate.getMonth() + 1);
+const selectedHistoryYear = ref(currentDate.getFullYear());
+
+const monthNames = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+const selectedMonthName = computed(() => monthNames[selectedHistoryMonth.value - 1]);
+
+const currentMonthWorkdays = computed<WorkdayInfo[]>(() => {
+  return getMonthWorkdays(selectedHistoryYear.value, selectedHistoryMonth.value);
+});
+
+const handleMonthYearChange = async () => {
+  await personnelStore.fetchAttendanceHistory({
+    month: selectedHistoryMonth.value,
+    year: selectedHistoryYear.value
+  });
+};
+
+// 1-Click Cyclic Rotation Handler for 5-Day Workweek (Staff Registry Table)
+// RESTRICTION: Only today's box can be edited. Past and future days are locked.
+const handleDirectCycle = async (p: Person, date: string) => {
+  const timing = getTimingVariant(date);
+  if (timing !== 'current') {
+    return;
+  }
+  const code = p.code || p.id || p.name;
+  await personnelStore.cycleAttendance(code, date);
+};
+
+// Advance Edit in History: allows modifying past or future days when Advance Edit is explicitly ON
+const handleHistoryMatrixCycle = async (p: Person, date: string) => {
+  if (!isAdvanceEditActive.value) {
+    return;
+  }
+  const code = p.code || p.id || p.name;
+  await personnelStore.cycleAttendance(code, date);
+};
+
+const isPersonOnLeaveForDate = (p: Person, date: string): boolean => {
+  const code = p.code || p.id || p.name;
+  return personnelStore.leaves.some((l) => {
+    const match = l.personnelCode === code || (l.personnelName && l.personnelName === p.name);
+    return match && l.startDate <= date && l.endDate >= date;
+  });
+};
+
+const getDayBoxTooltip = (p: Person, day: WorkdayInfo): string => {
+  const code = p.code || p.id || p.name;
+  const status = personnelStore.getPersonAttendance(code, day.date);
+  const timing = getTimingVariant(day.date);
+  const onLeave = isPersonOnLeaveForDate(p, day.date);
+
+  if (timing === 'future') {
+    return `${p.name} - ${day.formattedDay}: Upcoming (Date not arrived yet — locked)`;
+  }
+  if (timing === 'past') {
+    return `${p.name} - ${day.formattedDay}: ${formatStatusLabel(status)} (Day already passed — locked)`;
+  }
+  if (onLeave) {
+    return `${p.name} - ${day.formattedDay} (Today): On Scheduled Leave (Click to rotate status)`;
+  }
+  return `${p.name} - ${day.formattedDay} (Today): ${formatStatusLabel(status)} (Click to rotate status)`;
+};
+
+const getHistoryBoxTooltip = (p: Person, day: WorkdayInfo): string => {
+  const code = p.code || p.id || p.name;
+  const status = personnelStore.getPersonAttendance(code, day.date);
+  const timing = getTimingVariant(day.date);
+
+  let statusText = formatStatusLabel(status);
+  if (timing === 'future') {
+    statusText = 'Not yet arrived (Gray)';
+  } else if (timing === 'past') {
+    statusText = `${statusText} (Past record)`;
+  }
+
+  if (isAdvanceEditActive.value) {
+    return `${p.name} - ${day.formattedDay}: ${statusText} · [Advance Edit Active — Click to change]`;
+  }
+  return `${p.name} - ${day.formattedDay}: ${statusText}`;
+};
 
 const tableSearch = ref('');
 const leaves = computed(() => personnelStore.leaves);
@@ -637,48 +685,6 @@ const isPersonOnLeave = (p: Person | string): boolean => {
   return Boolean(p.isOnLeaveToday || getAttendanceStatus(p) === 'on_leave');
 };
 
-const handleAttendButtonClick = (p: Person) => {
-  if (isPersonOnLeave(p)) {
-    window.alert(
-      `Attendance status for "${p.name}" cannot be edited directly because they are on Scheduled Leave.\n\nTo change their status, please edit or delete their scheduled leave under "Schedule Leave".`
-    );
-    return;
-  }
-  togglePopover(p.code || p.id || p.name);
-};
-
-// Inline Quick-Edit for Accidental Attendance Marks
-const togglePopover = (personCode: string) => {
-  if (isPersonOnLeave(personCode)) return;
-  if (activePopoverPersonCode.value === personCode) {
-    activePopoverPersonCode.value = null;
-  } else {
-    activePopoverPersonCode.value = personCode;
-  }
-};
-
-const handleInlineStatusChange = async (personCode: string, newStatus: AttendanceStatusType) => {
-  if (isPersonOnLeave(personCode)) {
-    window.alert('Cannot change status: staff member is on scheduled leave. Please edit or delete the leave under "Schedule Leave".');
-    return;
-  }
-  activePopoverPersonCode.value = null;
-  await personnelStore.updateAttendanceStatus(personCode, newStatus);
-};
-
-// Close popover on outside click
-const handleGlobalClick = () => {
-  activePopoverPersonCode.value = null;
-};
-
-onMounted(() => {
-  window.addEventListener('click', handleGlobalClick);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('click', handleGlobalClick);
-});
-
 // Records Drawer
 const openPersonnelRecords = (code: string) => {
   selectedPersonnelCode.value = code;
@@ -710,67 +716,7 @@ const handleDeleteLeave = async (leaveId: number | string) => {
   await personnelStore.cancelLeave(leaveId);
 };
 
-// General Attendance History Rosters
-const currentDayRoster = computed(() => {
-  const day = personnelStore.attendanceHistory.find((h) => h.date === selectedHistoryDate.value);
-  if (day && day.roster) {
-    return day.roster;
-  }
-  // Fallback to today's active staff
-  return {
-    present: props.personnel.filter((p) => getAttendanceStatus(p) === 'present').map(toRosterItem),
-    absent: props.personnel.filter((p) => getAttendanceStatus(p) === 'absent').map(toRosterItem),
-    half_am: props.personnel.filter((p) => getAttendanceStatus(p) === 'half_am').map(toRosterItem),
-    half_pm: props.personnel.filter((p) => getAttendanceStatus(p) === 'half_pm').map(toRosterItem),
-    on_leave: props.personnel.filter((p) => getAttendanceStatus(p) === 'on_leave').map(toRosterItem),
-  };
-});
-
-function toRosterItem(p: Person): AttendanceRosterPerson {
-  return {
-    code: p.code || p.id || '',
-    name: p.name,
-    role: p.role,
-    status: getAttendanceStatus(p),
-    activeOrder: p.activeOrder || '—'
-  };
-}
-
-const getPersonActiveOrder = (person: AttendanceRosterPerson): string => {
-  if (person.activeOrder && person.activeOrder !== '—') {
-    return person.activeOrder;
-  }
-  const match = props.personnel.find(
-    (p) => (p.code && p.code === person.code) || (p.id && p.id === person.code) || p.name === person.name
-  );
-  return match?.activeOrder || '—';
-};
-
-const currentDayRosterAll = computed<AttendanceRosterPerson[]>(() => {
-  const r = currentDayRoster.value;
-  return [...r.present, ...r.absent, ...r.half_am, ...r.half_pm, ...r.on_leave];
-});
-
-const displayedHistoryPersons = computed<AttendanceRosterPerson[]>(() => {
-  let list: AttendanceRosterPerson[] = [];
-  switch (activeHistoryCategory.value) {
-    case 'present': list = currentDayRoster.value.present; break;
-    case 'absent': list = currentDayRoster.value.absent; break;
-    case 'half': list = [...currentDayRoster.value.half_am, ...currentDayRoster.value.half_pm]; break;
-    case 'on_leave': list = currentDayRoster.value.on_leave; break;
-    default: list = currentDayRosterAll.value; break;
-  }
-  if (historySearch.value.trim()) {
-    const q = historySearch.value.trim().toLowerCase();
-    list = list.filter((p) => p.name.toLowerCase().includes(q));
-  }
-  return list;
-});
-
-const handleHistoryDateChange = async () => {
-  await personnelStore.fetchAttendanceHistory(selectedHistoryDate.value);
-};
-
+// Helper to extract initials for avatar
 const getInitials = (name: string) => {
   return name
     .split(' ')

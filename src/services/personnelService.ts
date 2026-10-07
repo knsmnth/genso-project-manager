@@ -125,10 +125,22 @@ export const saveDailyAttendance = async (
   return true;
 };
 
-export const getAttendanceHistory = async (date?: string): Promise<AttendanceRosterDay[]> => {
+export const getAttendanceHistory = async (
+  query?: string | { date?: string; month?: number; year?: number }
+): Promise<AttendanceRosterDay[]> => {
   if (isBackendConfigured()) {
     try {
-      const url = date ? `/personnel/attendance/history?date=${encodeURIComponent(date)}` : '/personnel/attendance/history';
+      let url = '/personnel/attendance/history';
+      if (typeof query === 'string' && query) {
+        url += `?date=${encodeURIComponent(query)}`;
+      } else if (query && typeof query === 'object') {
+        const params = new URLSearchParams();
+        if (query.date) params.append('date', query.date);
+        if (query.month) params.append('month', String(query.month));
+        if (query.year) params.append('year', String(query.year));
+        const qs = params.toString();
+        if (qs) url += `?${qs}`;
+      }
       const response = await apiClient.get(url);
       if (response.data && Array.isArray(response.data)) {
         localStorage.setItem(ATTENDANCE_HISTORY_STORAGE_KEY, JSON.stringify(response.data));

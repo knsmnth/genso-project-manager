@@ -65,7 +65,7 @@
               { 'is-leave-locked': isLockedLeave(p.code || p.id || p.name) }
             ]"
             @click="handleCardClick(p.code || p.id || p.name)"
-            :title="isLockedLeave(p.code || p.id || p.name) ? 'On Scheduled Leave (Locked) — Cannot change status directly. Edit or delete the leave in Schedule Leave.' : 'Click to toggle Present / Absent'"
+            :title="isLockedLeave(p.code || p.id || p.name) ? 'On Scheduled Leave (Locked)' : 'Click to cycle status'"
           >
             <!-- Left: Avatar & Name (Specialization removed for minimal cleanliness) -->
             <div class="staff-card-left">
@@ -77,73 +77,20 @@
 
             <!-- Right: Status Indicator & On-Demand Half-Day Action -->
             <div class="staff-card-right" @click.stop>
-              <!-- Primary Visual Badge (Disabled/locked if on leave) -->
-              <AttendanceBadge
-                :status="getStatus(p.code || p.id || p.name)"
-                size="md"
-                :interactive="!isLockedLeave(p.code || p.id || p.name)"
-                @click="handleCardClick(p.code || p.id || p.name)"
-              />
-
-              <!-- Half-Day Selector (Hidden unless needed and not on leave) -->
-              <div
-                v-if="!isLockedLeave(p.code || p.id || p.name)"
-                class="half-day-wrapper"
+              <!-- Cyclic attendance box button matching the table -->
+              <button
+                type="button"
+                class="modal-attend-btn"
+                :class="{ 'is-locked': isLockedLeave(p.code || p.id || p.name) }"
+                :disabled="isLockedLeave(p.code || p.id || p.name)"
+                @click.stop="handleCardClick(p.code || p.id || p.name)"
+                :title="isLockedLeave(p.code || p.id || p.name) ? 'On Scheduled Leave (Locked)' : 'Click to cycle status'"
               >
-                <button
-                  type="button"
-                  :class="['btn-half-trigger', { 'is-active': isHalfDay(p.code || p.id || p.name) }]"
-                  @click.stop="toggleHalfDayPopover(p.code || p.id || p.name)"
-                  :title="isHalfDay(p.code || p.id || p.name) ? 'Change or reset half-day' : 'Mark as half-day'"
-                >
-                  ½
-                </button>
-
-                <!-- On-Demand Floating Popover -->
-                <div
-                  v-if="activeHalfDayCode === (p.code || p.id || p.name)"
-                  class="half-day-popover"
-                  @click.stop
-                >
-                  <button
-                    type="button"
-                    :class="['half-popover-item', { 'is-selected': getStatus(p.code || p.id || p.name) === 'half_am' }]"
-                    @click="handleSetStatus(p.code || p.id || p.name, 'half_am')"
-                  >
-                    <AttendanceBadge status="half_am" size="sm" />
-                    <span>Half-Day AM (Absent AM)</span>
-                  </button>
-                  <button
-                    type="button"
-                    :class="['half-popover-item', { 'is-selected': getStatus(p.code || p.id || p.name) === 'half_pm' }]"
-                    @click="handleSetStatus(p.code || p.id || p.name, 'half_pm')"
-                  >
-                    <AttendanceBadge status="half_pm" size="sm" />
-                    <span>Half-Day PM (Absent PM)</span>
-                  </button>
-                  <button
-                    v-if="isHalfDay(p.code || p.id || p.name)"
-                    type="button"
-                    class="half-popover-item clear-item"
-                    @click="handleSetStatus(p.code || p.id || p.name, 'present')"
-                  >
-                    Reset to Present
-                  </button>
-                </div>
-              </div>
-
-              <!-- Scheduled Leave Locked Tag -->
-              <span
-                v-else
-                class="leave-auto-tag is-locked"
-                title="On Scheduled Leave (Locked) — Edit or cancel in Schedule Leave"
-              >
-                <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                <span>On Leave (Locked)</span>
-              </span>
+                <AttendanceBadge
+                  :status="getStatus(p.code || p.id || p.name)"
+                  size="md"
+                />
+              </button>
             </div>
           </div>
         </div>
@@ -164,9 +111,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Person, AttendanceStatusType } from '../../types';
 import AttendanceBadge from '../ui/AttendanceBadge.vue';
+import { usePersonnelStore, getNextAttendanceStatus } from '../../stores/personnel';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -178,10 +126,11 @@ const emit = defineEmits<{
   (e: 'confirm', records: Array<{ personnel_code: string; status: AttendanceStatusType; notes?: string }>): void;
 }>();
 
+const personnelStore = usePersonnelStore();
+
 // Map of personnelCode -> AttendanceStatusType
 const attendanceMap = ref<Record<string, AttendanceStatusType>>({});
 const searchQuery = ref('');
-const activeHalfDayCode = ref<string | null>(null);
 
 const formattedDate = computed(() => {
   return new Date().toLocaleDateString('en-US', {
@@ -192,18 +141,31 @@ const formattedDate = computed(() => {
   });
 });
 
-// Initialize roster: Default everyone to 'present', unless they have pre-scheduled leave or existing state
+// Initialize roster: Default everyone to 'present', unless they have pre-scheduled leave or existing state for today
 watch(
   () => [props.isOpen, props.personnel],
   () => {
     if (props.isOpen) {
+      // Ensure daily reset is applied if date rolled over
+      personnelStore.checkDailyReset();
+
       const map: Record<string, AttendanceStatusType> = {};
+      const today = new Date().toISOString().split('T')[0];
+      const todayRecorded = personnelStore.attendanceByDate[today] || {};
+
       props.personnel.forEach((p) => {
         const key = p.code || p.id || p.name;
-        // Check if pre-flagged as on_leave
+        // Check if pre-flagged as on_leave (official scheduled leave)
         if (p.isOnLeaveToday || (p.attendanceStatus && p.attendanceStatus.toString().includes('leave'))) {
           map[key] = 'on_leave';
-        } else if (p.attendanceStatus) {
+        } else if (todayRecorded[key] || todayRecorded[p.name || ''] || (p.code && todayRecorded[p.code])) {
+          // If explicitly changed/confirmed earlier today, preserve that change throughout the day
+          const s = (todayRecorded[key] || todayRecorded[p.name || ''] || (p.code && todayRecorded[p.code]) || '').toString().toLowerCase();
+          if (s === 'absent') map[key] = 'absent';
+          else if (s === 'half_am') map[key] = 'half_am';
+          else if (s === 'half_pm') map[key] = 'half_pm';
+          else map[key] = 'present';
+        } else if (p.attendanceStatus && p.attendanceStatus !== 'on_leave') {
           const s = p.attendanceStatus.toString().toLowerCase();
           if (s === 'absent') map[key] = 'absent';
           else if (s === 'half_am') map[key] = 'half_am';
@@ -215,7 +177,6 @@ watch(
       });
       attendanceMap.value = map;
       searchQuery.value = '';
-      activeHalfDayCode.value = null;
     }
   },
   { immediate: true, deep: true }
@@ -245,53 +206,12 @@ const isLockedLeave = (code: string): boolean => {
   );
 };
 
-const isHalfDay = (code: string) => {
-  const s = getStatus(code);
-  return s === 'half_am' || s === 'half_pm';
-};
-
-const toggleHalfDayPopover = (code: string) => {
-  if (activeHalfDayCode.value === code) {
-    activeHalfDayCode.value = null;
-  } else {
-    activeHalfDayCode.value = code;
-  }
-};
-
-const handleWindowClick = () => {
-  activeHalfDayCode.value = null;
-};
-
-onMounted(() => {
-  window.addEventListener('click', handleWindowClick);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('click', handleWindowClick);
-});
-
-// Fast click toggle: if present -> absent; if absent -> present
+// 1-Click rotation cycle matching table behavior:
+// Present -> Absent -> Morning Present / Afternoon Absent (half_pm) -> Morning Absent / Afternoon Present (half_am) -> Present
 const handleCardClick = (code: string) => {
   if (isLockedLeave(code)) return;
-  activeHalfDayCode.value = null;
   const current = getStatus(code);
-  if (current === 'present') {
-    attendanceMap.value[code] = 'absent';
-  } else {
-    attendanceMap.value[code] = 'present';
-  }
-};
-
-const handleSetStatus = (code: string, status: AttendanceStatusType) => {
-  if (isLockedLeave(code)) return;
-  activeHalfDayCode.value = null;
-  const current = getStatus(code);
-  // Clicking the same half-day again toggles back to present
-  if (current === status) {
-    attendanceMap.value[code] = 'present';
-  } else {
-    attendanceMap.value[code] = status;
-  }
+  attendanceMap.value[code] = getNextAttendanceStatus(current);
 };
 
 const handleResetAllPresent = () => {
@@ -529,119 +449,31 @@ const getAvatarColorClass = (name: string) => {
   flex-shrink: 0;
 }
 
-/* Half-Day On-Demand Trigger & Popover */
-.half-day-wrapper {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.btn-half-trigger {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: 1px solid #CBD5E1;
-  background: #FFFFFF;
-  color: #475569;
-  font-size: 11px;
-  font-weight: 700;
+/* Cyclic Attendance Button & Locked Leave Indicator */
+.modal-attend-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  outline: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  user-select: none;
+  border-radius: 7px;
+  position: relative;
+  transition: transform 0.12s ease;
 }
 
-.btn-half-trigger:hover {
-  background: #FEF3C7;
-  border-color: #FCD34D;
-  color: #92400E;
+.modal-attend-btn:hover:not(:disabled) {
+  transform: scale(1.12);
 }
 
-.btn-half-trigger.is-active {
-  background: #FEF3C7;
-  border-color: #F59E0B;
-  color: #B45309;
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
+.modal-attend-btn:disabled,
+.modal-attend-btn.is-locked {
+  cursor: not-allowed;
 }
 
-.half-day-popover {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 5px);
-  z-index: 100;
-  background: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  border-radius: 8px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
-  padding: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 190px;
-}
-
-.half-popover-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  font-size: 11.5px;
-  font-weight: 500;
-  color: #334155;
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-  transition: background-color 0.12s ease;
-}
-
-.half-popover-item:hover {
-  background-color: #F1F5F9;
-  color: #0F172A;
-}
-
-.half-popover-item.is-selected {
-  background-color: #FEF3C7;
-  color: #92400E;
-  font-weight: 600;
-}
-
-.half-popover-item.clear-item {
-  color: #64748B;
-  border-top: 1px solid #F1F5F9;
-  margin-top: 2px;
-  padding-top: 6px;
-  font-size: 11px;
-}
-
-.half-popover-item.clear-item:hover {
-  background-color: #FEF2F2;
-  color: #DC2626;
-}
-
-.leave-auto-tag {
-  font-size: 11px;
-  font-weight: 700;
-  color: #0284C7;
-  background: #E0F2FE;
-  padding: 3px 8px;
-  border-radius: 9999px;
-  border: 1px solid #BAE6FD;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  user-select: none;
-}
-
-.leave-auto-tag.is-locked {
-  background: #F0F9FF;
-  color: #0369A1;
-  border-color: #BAE6FD;
-}
 
 .attend-staff-card.is-leave-locked {
   cursor: not-allowed;

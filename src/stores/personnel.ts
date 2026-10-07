@@ -76,7 +76,7 @@ export const DEFAULT_PERSONNEL: Person[] = [
     code: 'EMP-1032',
     status: 'Available',
     id: 'EMP-1032',
-    attendanceStatus: 'absent',
+    attendanceStatus: 'present',
     activeOrder: '—',
     email: 'michael.scott@infrastructure.local',
     phone: '+1 (555) 678-9012',
@@ -132,7 +132,7 @@ export const DEFAULT_PERSONNEL: Person[] = [
     code: 'MP-3341-S',
     status: 'Available',
     id: 'MP-3341-S',
-    attendanceStatus: 'absent',
+    attendanceStatus: 'present',
     activeOrder: '—',
     email: 'alice.williams@infrastructure.local',
     phone: '+1 (555) 012-3456',
@@ -146,7 +146,7 @@ export const DEFAULT_PERSONNEL: Person[] = [
     code: 'MP-6821-M',
     status: 'Available',
     id: 'MP-6821-M',
-    attendanceStatus: 'absent',
+    attendanceStatus: 'present',
     activeOrder: '—',
     email: 'david.kim@infrastructure.local',
     phone: '+1 (555) 123-4567',
@@ -195,12 +195,176 @@ export const normalizeAttendanceStatus = (raw?: string): AttendanceStatusType =>
   return 'present';
 };
 
+// 1-Click rotation cycle: Present -> Absent -> Morning Present/Afternoon Absent (half_pm) -> Morning Absent/Afternoon Present (half_am) -> Present
+export const getNextAttendanceStatus = (current?: AttendanceStatusType | string): AttendanceStatusType => {
+  const norm = normalizeAttendanceStatus(current as string);
+  switch (norm) {
+    case 'present':
+      return 'absent';
+    case 'absent':
+      return 'half_pm'; // Morning present, afternoon absent
+    case 'half_pm':
+      return 'half_am'; // Morning absent, afternoon present
+    case 'half_am':
+      return 'present';
+    case 'on_leave':
+      return 'present';
+    default:
+      return 'present';
+  }
+};
+
+export interface WorkdayInfo {
+  date: string; // YYYY-MM-DD
+  dayName: string; // Mon, Tue, Wed, Thu, Fri
+  dayNum: string; // 01, 02...
+  formattedDay: string; // Mon 28
+  isToday: boolean;
+}
+
+export const getWeekWorkdays = (referenceDateStr?: string): WorkdayInfo[] => {
+  const ref = referenceDateStr ? new Date(referenceDateStr) : new Date();
+  const day = ref.getDay(); // 0 is Sunday, 1 is Monday...
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(ref);
+  monday.setDate(ref.getDate() + diffToMonday);
+
+  const workdays: WorkdayInfo[] = [];
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const dayNum = String(d.getDate()).padStart(2, '0');
+    workdays.push({
+      date: dateStr,
+      dayName,
+      dayNum,
+      formattedDay: `${dayName} ${d.getDate()}`,
+      isToday: dateStr === todayStr
+    });
+  }
+  return workdays;
+};
+
+export const getMonthWorkdays = (year: number, month: number): WorkdayInfo[] => {
+  // month is 1-indexed (1=Jan, 10=Oct)
+  const workdays: WorkdayInfo[] = [];
+  const todayStr = new Date().toISOString().split('T')[0];
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(year, month - 1, d);
+    const dayOfWeek = dateObj.getDay();
+    // Monday (1) to Friday (5)
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayNum = String(d).padStart(2, '0');
+      workdays.push({
+        date: dateStr,
+        dayName,
+        dayNum,
+        formattedDay: `${dayName} ${d}`,
+        isToday: dateStr === todayStr
+      });
+    }
+  }
+  return workdays;
+};
+
+const ATTENDANCE_BY_DATE_KEY = 'infra_attendance_by_date';
+const LAST_ATTENDANCE_DATE_KEY = 'infra_last_attendance_date';
+
 export const usePersonnelStore = defineStore('personnel', () => {
   const personnel = ref<Person[]>([]);
   const teams = ref<Team[]>([]);
   const leaves = ref<LeaveRecord[]>([]);
   const attendanceHistory = ref<AttendanceRosterDay[]>([]);
+  const attendanceByDate = ref<Record<string, Record<string, AttendanceStatusType>>>({});
   const isLoading = ref<boolean>(false);
+
+  const loadAttendanceByDate = () => {
+    const raw = localStorage.getItem(ATTENDANCE_BY_DATE_KEY);
+    if (raw) {
+      try {
+        attendanceByDate.value = JSON.parse(raw);
+      } catch {
+        attendanceByDate.value = {};
+      }
+    }
+  };
+
+  const saveAttendanceByDate = () => {
+    localStorage.setItem(ATTENDANCE_BY_DATE_KEY, JSON.stringify(attendanceByDate.value));
+  };
+
+  /**
+   * Automatically resets daily attendance:
+   * 1. If staff has a scheduled leave spanning today -> status is 'on_leave' (locked)
+   * 2. If staff has an explicit status recorded/modified TODAY -> keep that status throughout the day
+   * 3. Otherwise -> automatically defaults/resets to 'present' (green checkmark)
+   */
+  const applyDailyAttendanceReset = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const leaveMap = new Map<string, LeaveRecord>();
+    leaves.value.forEach((l) => {
+      if (l.startDate <= today && l.endDate >= today) {
+        leaveMap.set(l.personnelCode, l);
+      }
+    });
+
+    const todayRecorded = attendanceByDate.value[today] || {};
+
+    personnel.value = personnel.value.map((p) => {
+      const code = p.code || p.id || '';
+      const matchingLeave = leaveMap.get(code) || leaveMap.get(p.name);
+
+      if (matchingLeave) {
+        return {
+          ...p,
+          attendanceStatus: 'on_leave' as AttendanceStatusType,
+          isOnLeaveToday: true,
+          leaveDetails: matchingLeave
+        };
+      }
+
+      // If user explicitly changed/confirmed status for this person TODAY, preserve that modification
+      const recorded = todayRecorded[code] || todayRecorded[p.name];
+      if (recorded) {
+        return {
+          ...p,
+          attendanceStatus: recorded as AttendanceStatusType,
+          isOnLeaveToday: false,
+          leaveDetails: null
+        };
+      }
+
+      // Default: every new day resets automatically to 'present'
+      return {
+        ...p,
+        attendanceStatus: 'present' as AttendanceStatusType,
+        isOnLeaveToday: false,
+        leaveDetails: null
+      };
+    });
+
+    localStorage.setItem(PERSONNEL_STORAGE_KEY, JSON.stringify(personnel.value));
+    localStorage.setItem(LAST_ATTENDANCE_DATE_KEY, today);
+  };
+
+  /**
+   * Checks if date rolled over (e.g. across midnight or on next day login) and triggers daily reset
+   */
+  const checkDailyReset = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const lastDate = localStorage.getItem(LAST_ATTENDANCE_DATE_KEY);
+    if (!lastDate || lastDate !== today) {
+      applyDailyAttendanceReset();
+    }
+  };
 
   // Central roster getter for work orders and daily work log
   const activeStaffRoster = computed(() => {
@@ -216,6 +380,17 @@ export const usePersonnelStore = defineStore('personnel', () => {
   const fetchPersonnelAndTeams = async () => {
     isLoading.value = true;
     try {
+      loadAttendanceByDate();
+      const today = new Date().toISOString().split('T')[0];
+      const lastDate = localStorage.getItem(LAST_ATTENDANCE_DATE_KEY);
+
+      // If date rolled over to a new day, ensure clean today state
+      if (lastDate && lastDate !== today) {
+        if (!attendanceByDate.value[today]) {
+          attendanceByDate.value[today] = {};
+        }
+      }
+
       const staff = await getPersonnel();
       if (staff.length === 0) {
         personnel.value = DEFAULT_PERSONNEL;
@@ -242,6 +417,9 @@ export const usePersonnelStore = defineStore('personnel', () => {
 
       await fetchLeaves();
       await fetchAttendanceHistory();
+
+      // Apply automatic daily reset to default present status (preserving active leaves and today's modifications)
+      applyDailyAttendanceReset();
     } finally {
       isLoading.value = false;
     }
@@ -251,44 +429,30 @@ export const usePersonnelStore = defineStore('personnel', () => {
     const list = await getScheduledLeaves();
     leaves.value = list;
 
-    // Check if any leave spans today, automatically flag person as on_leave
-    const today = new Date().toISOString().split('T')[0];
-    const leaveMap = new Map<string, LeaveRecord>();
-    list.forEach((l) => {
-      if (l.startDate <= today && l.endDate >= today) {
-        leaveMap.set(l.personnelCode, l);
-      }
-    });
-
-    personnel.value = personnel.value.map((p) => {
-      const code = p.code || p.id || '';
-      const matchingLeave = leaveMap.get(code) || leaveMap.get(p.name);
-      if (matchingLeave) {
-        return {
-          ...p,
-          attendanceStatus: 'on_leave',
-          isOnLeaveToday: true,
-          leaveDetails: matchingLeave
-        };
-      } else if (p.isOnLeaveToday || p.attendanceStatus === 'on_leave') {
-        // If leave was cancelled or dates edited out of today, restore to present
-        return {
-          ...p,
-          attendanceStatus: 'present',
-          isOnLeaveToday: false,
-          leaveDetails: null
-        };
-      }
-      return p;
-    });
-
-    localStorage.setItem(PERSONNEL_STORAGE_KEY, JSON.stringify(personnel.value));
+    // Apply leave flags and default present reset
+    applyDailyAttendanceReset();
   };
 
-  const fetchAttendanceHistory = async (date?: string) => {
-    const history = await getAttendanceHistory(date);
+  const fetchAttendanceHistory = async (query?: string | { date?: string; month?: number; year?: number }) => {
+    const history = await getAttendanceHistory(query);
     if (history.length > 0) {
       attendanceHistory.value = history;
+      // Seed attendanceByDate map from history days
+      history.forEach((day) => {
+        if (!attendanceByDate.value[day.date]) {
+          attendanceByDate.value[day.date] = {};
+        }
+        if (day.roster) {
+          Object.entries(day.roster).forEach(([stKey, list]) => {
+            list.forEach((p) => {
+              const statusVal = stKey as AttendanceStatusType;
+              if (p.code) attendanceByDate.value[day.date][p.code] = statusVal;
+              if (p.name) attendanceByDate.value[day.date][p.name] = statusVal;
+            });
+          });
+        }
+      });
+      saveAttendanceByDate();
     } else {
       // Generate initial rich day roster for today if empty
       const today = new Date().toISOString().split('T')[0];
@@ -327,42 +491,130 @@ export const usePersonnelStore = defineStore('personnel', () => {
     };
   }
 
+  const getPersonAttendance = (personIdentifier: string, date: string): AttendanceStatusType => {
+    // 1. Check if person is on leave on this date
+    const onLeave = leaves.value.some((l) => {
+      const match = l.personnelCode === personIdentifier || (l.personnelName && l.personnelName === personIdentifier);
+      return match && l.startDate <= date && l.endDate >= date;
+    });
+    if (onLeave) return 'on_leave';
+
+    // 2. Check attendanceByDate map
+    const byDate = attendanceByDate.value[date];
+    if (byDate) {
+      if (byDate[personIdentifier]) return byDate[personIdentifier];
+      const p = personnel.value.find(
+        (x) => x.code === personIdentifier || x.id === personIdentifier || x.name === personIdentifier
+      );
+      if (p) {
+        if (p.code && byDate[p.code]) return byDate[p.code];
+        if (p.id && byDate[p.id]) return byDate[p.id];
+        if (p.name && byDate[p.name]) return byDate[p.name];
+      }
+    }
+
+    // 3. If date is today, check person.attendanceStatus
+    const today = new Date().toISOString().split('T')[0];
+    if (date === today) {
+      const person = personnel.value.find(
+        (p) => p.code === personIdentifier || p.id === personIdentifier || p.name === personIdentifier
+      );
+      if (person && person.attendanceStatus) {
+        return normalizeAttendanceStatus(person.attendanceStatus as string);
+      }
+    }
+
+    // 4. Check if date is in attendanceHistory
+    const histDay = attendanceHistory.value.find((h) => h.date === date);
+    if (histDay && histDay.roster) {
+      for (const [statusKey, rosterList] of Object.entries(histDay.roster)) {
+        if (rosterList.some((r) => r.code === personIdentifier || r.name === personIdentifier)) {
+          return statusKey as AttendanceStatusType;
+        }
+      }
+    }
+
+    // Default is present
+    return 'present';
+  };
+
+  const cycleAttendance = async (
+    personIdentifier: string,
+    date: string
+  ): Promise<AttendanceStatusType> => {
+    const current = getPersonAttendance(personIdentifier, date);
+    const nextStatus = getNextAttendanceStatus(current);
+
+    if (!attendanceByDate.value[date]) {
+      attendanceByDate.value[date] = {};
+    }
+    attendanceByDate.value[date][personIdentifier] = nextStatus;
+
+    const targetPerson = personnel.value.find(
+      (p) => p.code === personIdentifier || p.id === personIdentifier || p.name === personIdentifier
+    );
+    if (targetPerson) {
+      if (targetPerson.code) attendanceByDate.value[date][targetPerson.code] = nextStatus;
+      if (targetPerson.id) attendanceByDate.value[date][targetPerson.id] = nextStatus;
+      if (targetPerson.name) attendanceByDate.value[date][targetPerson.name] = nextStatus;
+    }
+
+    saveAttendanceByDate();
+
+    const today = new Date().toISOString().split('T')[0];
+    if (date === today && targetPerson) {
+      targetPerson.attendanceStatus = nextStatus;
+      personnel.value = [...personnel.value];
+      localStorage.setItem(PERSONNEL_STORAGE_KEY, JSON.stringify(personnel.value));
+      await savePersonToDb(targetPerson);
+    }
+
+    const pCode = targetPerson?.code || targetPerson?.id || personIdentifier;
+    await saveDailyAttendance(date, [{ personnel_code: pCode, status: nextStatus }]);
+
+    return nextStatus;
+  };
+
+  const setPersonAttendance = async (
+    personIdentifier: string,
+    date: string,
+    status: AttendanceStatusType
+  ) => {
+    if (!attendanceByDate.value[date]) {
+      attendanceByDate.value[date] = {};
+    }
+    attendanceByDate.value[date][personIdentifier] = status;
+
+    const targetPerson = personnel.value.find(
+      (p) => p.code === personIdentifier || p.id === personIdentifier || p.name === personIdentifier
+    );
+    if (targetPerson) {
+      if (targetPerson.code) attendanceByDate.value[date][targetPerson.code] = status;
+      if (targetPerson.id) attendanceByDate.value[date][targetPerson.id] = status;
+      if (targetPerson.name) attendanceByDate.value[date][targetPerson.name] = status;
+    }
+
+    saveAttendanceByDate();
+
+    const today = new Date().toISOString().split('T')[0];
+    if (date === today && targetPerson) {
+      targetPerson.attendanceStatus = status;
+      personnel.value = [...personnel.value];
+      localStorage.setItem(PERSONNEL_STORAGE_KEY, JSON.stringify(personnel.value));
+      await savePersonToDb(targetPerson);
+    }
+
+    const pCode = targetPerson?.code || targetPerson?.id || personIdentifier;
+    await saveDailyAttendance(date, [{ personnel_code: pCode, status }]);
+  };
+
   // 1-Click inline attendance status edit
   const updateAttendanceStatus = async (
     personIdentifier: string,
     newStatus: AttendanceStatusType
   ) => {
-    // LOCK: Prevent changing status if person is on scheduled leave
-    const targetPerson = personnel.value.find((p) => p.code === personIdentifier || p.id === personIdentifier || p.name === personIdentifier);
-    if (targetPerson && (targetPerson.isOnLeaveToday || targetPerson.attendanceStatus === 'on_leave')) {
-      console.warn('Cannot change status: person is currently on scheduled leave.');
-      return;
-    }
-
     const today = new Date().toISOString().split('T')[0];
-    const updated = personnel.value.map((p) => {
-      if (p.code === personIdentifier || p.id === personIdentifier || p.name === personIdentifier) {
-        return {
-          ...p,
-          attendanceStatus: newStatus
-        };
-      }
-      return p;
-    });
-
-    personnel.value = updated;
-    localStorage.setItem(PERSONNEL_STORAGE_KEY, JSON.stringify(updated));
-
-    // Save single attendance record
-    if (targetPerson) {
-      await saveDailyAttendance(today, [{
-        personnel_code: targetPerson.code || targetPerson.id || '',
-        status: newStatus
-      }]);
-      await savePersonToDb(targetPerson);
-    }
-
-    // Refresh history
+    await setPersonAttendance(personIdentifier, today, newStatus);
     await fetchAttendanceHistory();
   };
 
@@ -390,6 +642,22 @@ export const usePersonnelStore = defineStore('personnel', () => {
 
     personnel.value = updated;
     localStorage.setItem(PERSONNEL_STORAGE_KEY, JSON.stringify(updated));
+
+    if (!attendanceByDate.value[today]) {
+      attendanceByDate.value[today] = {};
+    }
+    records.forEach((r) => {
+      attendanceByDate.value[today][r.personnel_code] = r.status;
+      const targetPerson = personnel.value.find(
+        (p) => p.code === r.personnel_code || p.id === r.personnel_code || p.name === r.personnel_code
+      );
+      if (targetPerson) {
+        if (targetPerson.code) attendanceByDate.value[today][targetPerson.code] = r.status;
+        if (targetPerson.id) attendanceByDate.value[today][targetPerson.id] = r.status;
+        if (targetPerson.name) attendanceByDate.value[today][targetPerson.name] = r.status;
+      }
+    });
+    saveAttendanceByDate();
 
     await saveDailyAttendance(today, records);
     updated.forEach((p) => savePersonToDb(p));
@@ -479,6 +747,12 @@ export const usePersonnelStore = defineStore('personnel', () => {
     cancelLeave,
     updatePersonnelProfile,
     createTeam,
-    completeOnboarding
+    completeOnboarding,
+    attendanceByDate,
+    getPersonAttendance,
+    cycleAttendance,
+    setPersonAttendance,
+    applyDailyAttendanceReset,
+    checkDailyReset
   };
 });

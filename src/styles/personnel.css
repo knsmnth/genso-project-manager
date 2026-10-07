@@ -845,20 +845,730 @@ body {
   color: #0F172A;
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .personnel-header-row {
+.personnel-table-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-table-export {
+  height: 36px;
+  width: 36px;
+  min-width: 36px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-table-export:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 108, 73, 0.2);
+}
+
+/* ==========================================================================
+   Comprehensive Mobile & Tablet Responsive Styles (Uncluttered, Native Feel)
+   ========================================================================== */
+
+/* Desktop defaults */
+.th-attendance {
+  min-width: 175px;
+}
+.desktop-th-text {
+  display: inline;
+}
+.mobile-th-text {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* 1. Container & Spacing (Bottom clearance for mobile nav) */
+  .personnel-view-container,
+  .view-section.active {
+    gap: 12px;
+    padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .view-header-row {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
 
-  .personnel-bento-grid {
-    grid-template-columns: 1fr;
+  .view-main-title {
+    font-size: 22px;
   }
 
+  .view-main-subtitle {
+    font-size: 13px;
+  }
+
+  /* 2. Top Header Action Buttons */
+  .view-header-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .view-header-actions .btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 12px !important;
+    padding: 0 8px !important;
+  }
+
+  .view-header-actions .btn:last-child {
+    grid-column: span 2;
+  }
+
+  /* 3. Module Tab Bar */
+  .module-tab-bar {
+    gap: 8px;
+  }
+
+  .module-tabs {
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .module-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .module-tab-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  /* 4. General Attendance History Panel Header & Toolbar */
   .attendance-history-panel-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .attendance-history-panel-title {
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .history-month-badge {
+    margin-left: 0;
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+
+  /* Clean single-line history filter bar on mobile */
+  .history-month-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+
+  .filter-select-group {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .filter-select-group label {
+    display: none; /* Hide 'Month:' and 'Year:' text on mobile to fit cleanly */
+  }
+
+  .history-filter-select {
+    width: 100%;
+    height: 32px;
+    font-size: 11.5px;
+    padding: 0 6px;
+  }
+
+  .btn-advance-edit,
+  .history-action-btn {
+    flex-shrink: 0;
+  }
+
+  .history-rosters-wrapper {
+    padding: 8px 10px;
+  }
+
+  /* 5. History Matrix Table Sticky & Compact */
+  .sticky-col-idx {
+    display: none; /* Save 38px on mobile screen */
+  }
+
+  .sticky-col-name {
+    left: 0 !important;
+    min-width: 105px !important;
+    max-width: 115px !important;
+    width: 110px !important;
+    padding: 4px 6px !important;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .matrix-staff-name-text {
+    font-size: 11px;
+  }
+
+  .matrix-staff-code {
+    font-size: 9.5px;
+  }
+
+  .matrix-day-th {
+    min-width: 26px;
+    width: 26px;
+    padding: 3px 2px;
+  }
+
+  .matrix-day-num {
+    font-size: 10px;
+  }
+
+  .matrix-day-w {
+    font-size: 9px;
+  }
+
+  .matrix-day-td {
+    padding: 3px 1px;
+  }
+
+  .history-table-footer {
+    font-size: 11px !important;
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 4px !important;
+  }
+
+  /* 6. Personnel Registry Table Card & Header (Uncluttered, No Word-Wrapping) */
+  .personnel-table-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+  }
+
+  .personnel-table-header-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .personnel-table-title {
+    font-size: 15px !important;
+  }
+
+  .personnel-table-subtitle {
+    display: none !important; /* Eliminate vertical squished text */
+  }
+
+  .personnel-table-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .personnel-table-search {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    height: 34px;
+  }
+
+  .personnel-table-search input {
+    font-size: 12px;
+  }
+
+  .btn-table-export {
+    height: 34px !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    padding: 0 !important;
+    flex-shrink: 0;
+  }
+
+  /* 7. Personnel Registry Table Columns & Week Attendance Strip */
+  .card.table-card .data-table.compact-rows th,
+  .card.table-card .data-table.compact-rows td {
+    padding: 6px 8px;
+  }
+
+  .card.table-card .data-table.compact-rows .initials-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .card.table-card .data-table.compact-rows .cell-primary {
+    font-size: 12px !important;
+  }
+
+  .card.table-card .data-table.compact-rows .cell-subtext {
+    font-size: 10px !important;
+  }
+
+  .desktop-th-text {
+    display: none;
+  }
+
+  .mobile-th-text {
+    display: inline;
+  }
+
+  .th-attendance {
+    min-width: 125px !important;
+  }
+
+  .week-attendance-row {
+    gap: 3px;
+  }
+
+  .week-day-cell-item {
+    gap: 1px;
+  }
+
+  .week-day-mini-label {
+    font-size: 9.5px;
+  }
+
+  .status-badge-outline {
+    padding: 2px 6px;
+    font-size: 10px !important;
   }
 }
+
+/* ==========================================================================
+   Compact Staff Registry & 5-Day Week Attendance Tracker Styles
+   ========================================================================== */
+.card.table-card .table-responsive {
+  width: 100%;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #94A3B8 #F1F5F9;
+}
+
+.card.table-card .data-table.compact-rows {
+  width: 100%;
+  min-width: 650px;
+}
+
+.card.table-card .data-table.compact-rows th {
+  padding: 8px 12px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.card.table-card .data-table.compact-rows td {
+  padding: 6px 12px;
+  font-size: 13px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.card.table-card .data-table.compact-rows .initials-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+}
+
+.card.table-card .data-table.compact-rows .name-code-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Compact Availability & Status Badges */
+.personnel-avail-badge,
+.card.table-card .data-table.compact-rows .status-badge-outline {
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
+  padding: 1.5px 6px !important;
+  line-height: 1.25 !important;
+  height: 18px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  letter-spacing: 0.25px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* 5-Day Workweek Attendance Strip in Staff Registry */
+.week-attendance-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.week-day-cell-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.week-day-mini-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+.week-day-mini-label.is-today {
+  color: #006C49;
+  font-weight: 800;
+}
+
+.week-day-box-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  outline: none;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.week-day-box-btn:hover {
+  transform: scale(1.15);
+}
+
+.week-day-box-btn.is-today {
+  box-shadow: 0 0 0 1.5px #006C49, 0 1px 3px rgba(0, 108, 73, 0.2);
+}
+
+.mini-lock-pill {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  background: #0284C7;
+  color: #FFFFFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ==========================================================================
+   General Attendance History - Full Month Weekdays Matrix Styles
+   ========================================================================== */
+.history-month-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: #E8F5E9;
+  border: 1px solid #A5D6A7;
+  color: #1B5E20;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  letter-spacing: 0.2px;
+  margin-left: 8px;
+}
+
+.history-month-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-select-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-select-group label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.history-filter-select {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0F172A;
+  background-color: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.history-filter-select:focus {
+  border-color: #006C49;
+  box-shadow: 0 0 0 2px rgba(0, 108, 73, 0.15);
+}
+
+.history-matrix-wrapper {
+  width: 100%;
+  overflow-x: auto !important;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #FFFFFF;
+  scrollbar-width: thin;
+  scrollbar-color: #94A3B8 #F1F5F9;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Explicit, visible styled horizontal scrollbars for all browsers */
+.card.table-card .table-responsive::-webkit-scrollbar,
+.history-matrix-wrapper::-webkit-scrollbar {
+  height: 8px;
+  display: block;
+}
+
+.card.table-card .table-responsive::-webkit-scrollbar-track,
+.history-matrix-wrapper::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 4px;
+}
+
+.card.table-card .table-responsive::-webkit-scrollbar-thumb,
+.history-matrix-wrapper::-webkit-scrollbar-thumb {
+  background: #94A3B8;
+  border-radius: 4px;
+  border: 2px solid #F1F5F9;
+}
+
+.card.table-card .table-responsive::-webkit-scrollbar-thumb:hover,
+.history-matrix-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #64748B;
+}
+
+.history-matrix-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: center;
+}
+
+.history-matrix-table th,
+.history-matrix-table td {
+  border-bottom: 1px solid #F1F5F9;
+  border-right: 1px solid #F8FAFC;
+  vertical-align: middle;
+}
+
+/* Sticky Left Columns */
+.sticky-col-idx {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #F8FAFC;
+  width: 38px;
+  min-width: 38px;
+  max-width: 38px;
+  text-align: center;
+  font-size: 11px;
+  color: #94A3B8;
+  font-family: monospace;
+  font-weight: 600;
+  padding: 4px 6px;
+  border-right: 1px solid #E2E8F0 !important;
+}
+
+td.sticky-col-idx {
+  background: #FFFFFF;
+}
+
+.sticky-col-name {
+  position: sticky;
+  left: 38px;
+  z-index: 3;
+  background: #F8FAFC;
+  min-width: 160px;
+  max-width: 200px;
+  text-align: left;
+  padding: 4px 10px;
+  border-right: 2px solid #CBD5E1 !important;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.03);
+}
+
+td.sticky-col-name {
+  background: #FFFFFF;
+}
+
+.matrix-staff-name-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.matrix-staff-code {
+  font-size: 10px;
+  color: #64748B;
+  font-family: monospace;
+  display: block;
+}
+
+/* Day Header Columns (Only days!) */
+.matrix-day-th {
+  background: #F8FAFC;
+  padding: 4px 4px;
+  min-width: 30px;
+  width: 30px;
+  text-align: center;
+}
+
+.matrix-day-th.is-today {
+  background: #ECFDF5;
+  border-bottom: 2px solid #10B981;
+}
+
+.matrix-day-num {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+  line-height: 1.1;
+}
+
+.matrix-day-w {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+  color: #64748B;
+  line-height: 1;
+}
+
+.matrix-day-th.is-today .matrix-day-num {
+  color: #047857;
+}
+
+/* Matrix Data Cell */
+.matrix-day-td {
+  padding: 3px 2px;
+  text-align: center;
+}
+
+.matrix-day-td.is-today {
+  background: #F0FDF4;
+}
+
+.matrix-box-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: transform 0.1s ease;
+}
+
+.matrix-box-btn.is-readonly {
+  cursor: default;
+}
+
+.matrix-box-btn.is-advance-enabled {
+  cursor: pointer;
+}
+
+.matrix-box-btn.is-advance-enabled:hover {
+  transform: scale(1.22);
+}
+
+.matrix-tr {
+  height: 30px;
+  transition: background-color 0.1s ease;
+}
+
+.matrix-tr:hover td {
+  background-color: #F8FAFC;
+}
+
+.matrix-tr:hover td.sticky-col-idx,
+.matrix-tr:hover td.sticky-col-name {
+  background-color: #F1F5F9;
+}
+
+/* Advance Edit and Export Icon Buttons in History Filter Bar */
+.btn-advance-edit,
+.history-action-btn {
+  height: 32px;
+  width: 32px;
+  padding: 0;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.btn-advance-edit:hover,
+.history-action-btn:hover {
+  background-color: #F1F5F9;
+  border-color: #94A3B8;
+  color: #0F172A;
+}
+
+.btn-advance-edit.is-active {
+  background-color: #FEF3C7;
+  border-color: #F59E0B;
+  color: #92400E;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.advance-edit-active-pill {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #92400E;
+  background: #FEF3C7;
+  border: 1px solid #FCD34D;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+/* Restrictions for Staff Registry Weekday Buttons */
+.week-day-box-btn.is-restricted {
+  cursor: not-allowed;
+}
+
+.week-day-box-btn.is-restricted:hover {
+  transform: none;
+}
+
+
 

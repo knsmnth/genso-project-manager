@@ -9,8 +9,8 @@
             <span class="leave-header-tag">Pre-Filed</span>
           </div>
           <span class="modal-subtitle">
-            Pre-filed dates automatically display as <strong>On-Leave</strong> in daily attendance checks.
-          </span>
+            <span style="font-size: 14px;">Pre-filed dates automatically display as <strong>On-Leave</strong> in daily attendance checks.</span>
+         </span>
         </div>
         <button class="modal-close-btn" @click="$emit('close')" aria-label="Close modal">
           &times;
