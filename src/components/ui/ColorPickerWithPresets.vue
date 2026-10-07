@@ -199,57 +199,58 @@
         </div>
       </transition>
 
-      <!-- 6 Harmony Cluster Blocks (3 clusters per row x 2 rows, matching user reference image) -->
-      <div class="preset-clusters-grid" role="radiogroup" aria-label="Preset Color Palette">
-        <div
-          v-for="(cluster, cIdx) in presetClusters"
-          :key="cIdx"
-          class="preset-cluster-group"
-          :class="{ 'is-editing': isEditingPalette }"
-        >
-          <button
-            v-for="preset in cluster"
-            :key="preset.id || preset.hex"
-            type="button"
-            class="cluster-swatch-tile"
-            :class="{
-              'is-selected': !isEditingPalette && isColorMatch(preset.hex),
-              'is-editing-target': isEditingPalette && activeEditingSwatch?.id === preset.id,
-              'in-edit-mode': isEditingPalette
-            }"
-            :style="{ backgroundColor: preset.hex }"
-            :title="isEditingPalette ? `Click to edit: ${preset.name} (${preset.hex})` : `${preset.name} (${preset.hex})`"
-            :aria-label="`${preset.name} ${preset.hex}`"
-            @click="handleSwatchClick(preset)"
+      <!-- Single Palette Box with Color Ranges in Lines (No Group Names, Unified Box) -->
+      <div class="preset-single-box" role="radiogroup" aria-label="Preset Color Palette">
+        <div class="preset-color-ranges" :class="{ 'is-editing': isEditingPalette }">
+          <div
+            v-for="(cluster, cIdx) in presetClusters"
+            :key="cluster.id || cIdx"
+            class="preset-range-line"
           >
-            <!-- Normal Mode: Animated High-contrast Checkmark -->
-            <svg
-              v-if="!isEditingPalette && isColorMatch(preset.hex)"
-              class="cluster-check-icon"
-              viewBox="0 0 24 24"
-              width="15"
-              height="15"
-              fill="none"
-              :stroke="getContrastColor(preset.hex)"
-              stroke-width="3"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+            <button
+              v-for="preset in cluster.items"
+              :key="preset.id || preset.hex"
+              type="button"
+              class="cluster-swatch-tile"
+              :class="{
+                'is-selected': !isEditingPalette && isColorMatch(preset.hex),
+                'is-editing-target': isEditingPalette && activeEditingSwatch?.id === preset.id,
+                'in-edit-mode': isEditingPalette
+              }"
+              :style="{ backgroundColor: preset.hex }"
+              :title="isEditingPalette ? `Click to edit: ${preset.name} (${preset.hex})` : `${preset.name} (${preset.hex})`"
+              :aria-label="`${preset.name} ${preset.hex}`"
+              @click="handleSwatchClick(preset)"
             >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-
-            <!-- Edit Mode: Pencil indicator on active or hovered swatch -->
-            <span
-              v-if="isEditingPalette"
-              class="edit-swatch-overlay"
-              :style="{ color: getContrastColor(preset.hex) }"
-            >
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              <!-- Normal Mode: Animated High-contrast Checkmark -->
+              <svg
+                v-if="!isEditingPalette && isColorMatch(preset.hex)"
+                class="cluster-check-icon"
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                :stroke="getContrastColor(preset.hex)"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
               </svg>
-            </span>
-          </button>
+
+              <!-- Edit Mode: Pencil indicator on active or hovered swatch -->
+              <span
+                v-if="isEditingPalette"
+                class="edit-swatch-overlay"
+                :style="{ color: getContrastColor(preset.hex) }"
+              >
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -457,61 +458,91 @@ const copiedHex = ref(false);
 const copiedRgb = ref(false);
 const nativeColorInputRef = ref<HTMLInputElement | null>(null);
 
-const PALETTE_STORAGE_KEY = 'genso_curated_preset_palette_v2';
+const PALETTE_STORAGE_KEY = 'genso_curated_preset_palette_v3';
 
-// 24 Curated Preset Colors in 6 harmony clusters (from user reference image)
-const DEFAULT_PRESET_CLUSTERS: PresetItem[][] = [
-  // Cluster 1 (Top Left): Lime Cream, Soft Mint, Slate Steel, Warm Taupe
-  [
-    { id: 'c1-1', name: 'Lime Cream', hex: '#E6EFB6' },
-    { id: 'c1-2', name: 'Soft Mint', hex: '#B9E9C1' },
-    { id: 'c1-3', name: 'Slate Steel', hex: '#6484B3' },
-    { id: 'c1-4', name: 'Warm Taupe', hex: '#68484B' },
-  ],
-  // Cluster 2 (Top Middle): Cobalt Blue, Azure Blue, Tangerine Orange, Soft Mist
-  [
-    { id: 'c2-1', name: 'Cobalt Blue', hex: '#0649CC' },
-    { id: 'c2-2', name: 'Azure Blue', hex: '#356ED9' },
-    { id: 'c2-3', name: 'Tangerine Orange', hex: '#F3A853' },
-    { id: 'c2-4', name: 'Soft Mist', hex: '#F3F3F3' },
-  ],
-  // Cluster 3 (Top Right): Midnight Navy, Terracotta, Coral Red, Pale Champagne
-  [
-    { id: 'c3-1', name: 'Midnight Navy', hex: '#293462' },
-    { id: 'c3-2', name: 'Terracotta', hex: '#A64942' },
-    { id: 'c3-3', name: 'Coral Red', hex: '#FD5F56' },
-    { id: 'c3-4', name: 'Pale Champagne', hex: '#FFF1C2' },
-  ],
-  // Cluster 4 (Bottom Left): Vivid Violet, Orchid Magenta, Bubblegum Pink, Amber Gold
-  [
-    { id: 'c4-1', name: 'Vivid Violet', hex: '#8A00D4' },
-    { id: 'c4-2', name: 'Orchid Magenta', hex: '#D528B8' },
-    { id: 'c4-3', name: 'Bubblegum Pink', hex: '#FF82C2' },
-    { id: 'c4-4', name: 'Amber Gold', hex: '#FFC46C' },
-  ],
-  // Cluster 5 (Bottom Middle): Deep Purple, Periwinkle Blue, Lavender Mist, Blush Lilac
-  [
-    { id: 'c5-1', name: 'Deep Purple', hex: '#553D8B' },
-    { id: 'c5-2', name: 'Periwinkle Blue', hex: '#9FA9F0' },
-    { id: 'c5-3', name: 'Lavender Mist', hex: '#CCC0FE' },
-    { id: 'c5-4', name: 'Blush Lilac', hex: '#FFEAFF' },
-  ],
-  // Cluster 6 (Bottom Right): Pure Cloud, Seafoam Mint, Sky Cyan, Electric Ultraviolet
-  [
-    { id: 'c6-1', name: 'Pure Cloud', hex: '#F6F6F6' },
-    { id: 'c6-2', name: 'Seafoam Mint', hex: '#BDF1D8' },
-    { id: 'c6-3', name: 'Sky Cyan', hex: '#7BD9F5' },
-    { id: 'c6-4', name: 'Electric Violet', hex: '#5D12E9' },
-  ],
+interface PresetCluster {
+  id: string;
+  label: string;
+  items: PresetItem[];
+}
+
+// 24 Curated Preset Colors arranged into 6 harmonious color ranges (Reds -> Oranges/Yellows -> Greens -> Blues -> Purples -> Pinks/Neutrals)
+const DEFAULT_PRESET_CLUSTERS: PresetCluster[] = [
+  // Range 1: Warm Reds & Earthy
+  {
+    id: 'c-reds',
+    label: 'Reds & Earth',
+    items: [
+      { id: 'c1-1', name: 'Coral Red', hex: '#FD5F56' },
+      { id: 'c1-2', name: 'Terracotta', hex: '#A64942' },
+      { id: 'c1-3', name: 'Crimson Rose', hex: '#C23934' },
+      { id: 'c1-4', name: 'Warm Taupe', hex: '#68484B' },
+    ]
+  },
+  // Range 2: Oranges & Sun Yellows
+  {
+    id: 'c-ambers',
+    label: 'Oranges & Amber',
+    items: [
+      { id: 'c2-1', name: 'Tangerine Orange', hex: '#F3A853' },
+      { id: 'c2-2', name: 'Amber Gold', hex: '#FFC46C' },
+      { id: 'c2-3', name: 'Pale Champagne', hex: '#FFF1C2' },
+      { id: 'c2-4', name: 'Lime Cream', hex: '#E6EFB6' },
+    ]
+  },
+  // Range 3: Greens & Fresh Mints
+  {
+    id: 'c-greens',
+    label: 'Greens & Mints',
+    items: [
+      { id: 'c3-1', name: 'Soft Mint', hex: '#B9E9C1' },
+      { id: 'c3-2', name: 'Seafoam Mint', hex: '#BDF1D8' },
+      { id: 'c3-3', name: 'Sky Cyan', hex: '#7BD9F5' },
+      { id: 'c3-4', name: 'Slate Teal', hex: '#6484B3' },
+    ]
+  },
+  // Range 4: Blues & Deep Indigos
+  {
+    id: 'c-blues',
+    label: 'Blues & Indigo',
+    items: [
+      { id: 'c4-1', name: 'Cobalt Blue', hex: '#0649CC' },
+      { id: 'c4-2', name: 'Azure Blue', hex: '#356ED9' },
+      { id: 'c4-3', name: 'Periwinkle Blue', hex: '#9FA9F0' },
+      { id: 'c4-4', name: 'Midnight Navy', hex: '#293462' },
+    ]
+  },
+  // Range 5: Violets & Royal Purples
+  {
+    id: 'c-purples',
+    label: 'Violets & Purple',
+    items: [
+      { id: 'c5-1', name: 'Electric Violet', hex: '#5D12E9' },
+      { id: 'c5-2', name: 'Vivid Violet', hex: '#8A00D4' },
+      { id: 'c5-3', name: 'Deep Purple', hex: '#553D8B' },
+      { id: 'c5-4', name: 'Lavender Mist', hex: '#CCC0FE' },
+    ]
+  },
+  // Range 6: Magentas, Pinks & Neutrals
+  {
+    id: 'c-pinks',
+    label: 'Pinks & Neutrals',
+    items: [
+      { id: 'c6-1', name: 'Orchid Magenta', hex: '#D528B8' },
+      { id: 'c6-2', name: 'Bubblegum Pink', hex: '#FF82C2' },
+      { id: 'c6-3', name: 'Blush Lilac', hex: '#FFEAFF' },
+      { id: 'c6-4', name: 'Soft Mist', hex: '#F3F3F3' },
+    ]
+  }
 ];
 
 // Initialize clusters from localStorage or defaults
-const loadClusters = (): PresetItem[][] => {
+const loadClusters = (): PresetCluster[] => {
   try {
     const saved = localStorage.getItem(PALETTE_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length === 6) {
+      if (Array.isArray(parsed) && parsed.length === 6 && parsed[0]?.items) {
         return parsed;
       }
     }
@@ -521,10 +552,10 @@ const loadClusters = (): PresetItem[][] => {
   return JSON.parse(JSON.stringify(DEFAULT_PRESET_CLUSTERS));
 };
 
-const presetClusters = ref<PresetItem[][]>(loadClusters());
+const presetClusters = ref<PresetCluster[]>(loadClusters());
 
 const totalPresetCount = computed(() => {
-  return presetClusters.value.reduce((sum, cluster) => sum + cluster.length, 0);
+  return presetClusters.value.reduce((sum, cluster) => sum + (cluster.items?.length || 0), 0);
 });
 
 const saveCustomPalette = () => {
@@ -538,8 +569,8 @@ const saveCustomPalette = () => {
 const startEditingPalette = () => {
   isEditingPalette.value = true;
   // Automatically select the first swatch for editing if none selected
-  if (!activeEditingSwatch.value && presetClusters.value[0]?.[0]) {
-    activeEditingSwatch.value = presetClusters.value[0][0];
+  if (!activeEditingSwatch.value && presetClusters.value[0]?.items?.[0]) {
+    activeEditingSwatch.value = presetClusters.value[0].items[0];
   }
 };
 
@@ -556,7 +587,7 @@ const resetPaletteToDefault = () => {
   } catch {
     // ignore
   }
-  activeEditingSwatch.value = presetClusters.value[0]?.[0] || null;
+  activeEditingSwatch.value = presetClusters.value[0]?.items?.[0] || null;
 };
 
 const handleSwatchClick = (preset: PresetItem) => {

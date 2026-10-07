@@ -8,9 +8,10 @@
       <div class="view-header-actions">
         <button
           type="button"
-          class="btn btn-outline-sm"
-          @click="alert('Filter options are under development.')"
+          class="btn btn-outline"
+          @click="handleFilterClick"
           style="height: 36px; padding: 0 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px"
+          title="Filter work groups"
         >
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
@@ -19,9 +20,10 @@
         </button>
         <button
           type="button"
-          class="btn btn-primary-sm"
-          @click="$emit('newGroup')"
+          class="btn btn-primary"
+          @click="emit('newGroup')"
           style="height: 36px; padding: 0 16px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px"
+          title="Create a new work group"
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#FFFFFF" stroke-width="2.5">
             <path d="M12 5v14M5 12h14" stroke-linecap="round" />
@@ -193,12 +195,12 @@
             </span>
           </div>
           <div style="display: flex; gap: 8px">
-            <button class="icon-btn-border" aria-label="Download Roster" @click="alert('Downloading Roster CSV...')">
+            <button class="icon-btn-border" aria-label="Download Roster" @click="handleDownloadRoster">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
               </svg>
             </button>
-            <button class="icon-btn-border" aria-label="Edit Group" @click="alert('Edit Group options under development.')">
+            <button class="icon-btn-border" aria-label="Edit Group" @click="handleEditGroup">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
               </svg>
@@ -235,8 +237,7 @@
                   <td style="font-weight: 500">{{ member.role }}</td>
                   <td>
                     <span
-                      :class="['status-badge-outline', getStatusClass(member.status)]"
-                      style="font-size: 11px; text-transform: uppercase"
+                      :class="['status-badge-outline', 'personnel-avail-badge', getStatusClass(member.status)]"
                     >
                       {{ member.status }}
                     </span>
@@ -245,7 +246,7 @@
                     <a
                       href="#"
                       class="action-link"
-                      @click.prevent="alert(`Reassign operations for ${member.name}`)"
+                      @click.prevent="handleReassign(member.name)"
                       style="font-size: 12px; font-weight: 600"
                     >
                       Reassign
@@ -295,10 +296,27 @@ const props = defineProps<{
   personnel: Person[];
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'newGroup'): void;
   (e: 'navigatePersonnel'): void;
+  (e: 'toast', message: string, type?: 'success' | 'error' | 'info'): void;
 }>();
+
+const handleFilterClick = () => {
+  emit('toast', 'Filter options are currently under development.', 'info');
+};
+
+const handleDownloadRoster = () => {
+  emit('toast', 'Exporting team roster CSV...', 'info');
+};
+
+const handleEditGroup = () => {
+  emit('toast', 'Edit Group options are currently under development.', 'info');
+};
+
+const handleReassign = (memberName: string) => {
+  emit('toast', `Reassignment modal for ${memberName} under development.`, 'info');
+};
 
 const selectedTeamIndex = ref<number | null>(null);
 
@@ -358,10 +376,6 @@ const activeCount = computed(() => {
 const idleCount = computed(() => {
   return activeMembersData.value.filter((m) => m.status.toLowerCase() === 'available').length;
 });
-
-const alert = (message?: any) => {
-  window.alert(message);
-};
 </script>
 
 <style scoped src="../styles/personnel.css"></style>

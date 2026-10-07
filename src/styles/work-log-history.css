@@ -356,116 +356,287 @@
 }
 
 .wlh-group-accordion-item {
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid #EDF2F7;
+  transition: all 0.2s ease;
 }
 
 .wlh-group-accordion-item:last-child {
   border-bottom: none;
 }
 
-.wlh-group-header-bar {
+/* Modern Structured Group Card Header */
+.wlh-group-header-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #FFFFFF;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 4px solid #CBD5E1;
+  position: relative;
+}
+
+.wlh-group-header-card:hover {
+  background: #F8FAFC;
+  border-left-color: #3B82F6;
+}
+
+.wlh-group-header-card.is-all-completed {
+  border-left-color: #10B981;
+}
+
+.wlh-group-header-card.is-all-completed:hover {
+  border-left-color: #059669;
+  background: #F0FDF4;
+}
+
+.wlh-group-header-card:not(.is-collapsed) {
+  background: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+/* Top Row: Ticket ID, Facility Name, Status Pill & Chevron */
+.wlh-gh-top-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 9px 16px;
-  background: #F8FAFC;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s ease;
-  border-bottom: 1px solid #EDF2F7;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.wlh-group-header-bar:hover {
-  background: #F1F5F9;
-}
-
-.wlh-group-header-bar.is-collapsed {
-  border-bottom: none;
-}
-
-.wlh-gh-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.wlh-collapse-chevron {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  color: #64748B;
-  transition: transform 0.2s ease, color 0.15s ease;
-}
-
-.wlh-collapse-chevron.is-rotated {
-  transform: rotate(90deg);
-  color: #006C49;
-}
-
-.wlh-group-badge {
-  font-size: 9.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  background: #E2E8F0;
-  color: #475569;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.wlh-group-title {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--color-navy-header);
-  margin: 0;
-}
-
-.wlh-group-sub-inline {
-  font-size: 12px;
-  font-weight: 500;
-  color: #64748B;
-}
-
-.wlh-group-count {
-  font-size: 10.5px;
-  background: #E2E8F0;
-  color: #475569;
-  padding: 1px 6px;
-  border-radius: 10px;
-  font-weight: 600;
-}
-
-.wlh-gh-right {
-  display: flex;
-  align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.wlh-group-order-no {
-  font-size: 12px;
-  color: var(--color-text-muted);
+.wlh-gh-main-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
 }
 
-.wlh-group-order-no strong {
-  color: var(--color-navy-header);
-  font-size: 12.5px;
-}
-
-.wlh-group-lead {
+.wlh-wo-ticket-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
+  font-weight: 700;
+  color: #1E293B;
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.wlh-wo-ticket-badge:hover {
+  background: #E2E8F0;
+  border-color: #94A3B8;
+}
+
+.wlh-gh-facility-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.wlh-facility-icon {
+  color: #0284C7;
+  flex-shrink: 0;
+}
+
+.wlh-group-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0F172A;
+  letter-spacing: -0.2px;
+  line-height: 1.3;
+}
+
+.wlh-gh-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.wlh-group-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  line-height: 1.2;
+}
+
+.wlh-group-status-pill.status-all-completed {
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+}
+
+.wlh-group-status-pill.status-in-progress {
+  background: #FFFBEB;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+
+.wlh-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #F59E0B;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 5px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+.wlh-status-count {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.wlh-accordion-trigger-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.wlh-group-header-card:hover .wlh-accordion-trigger-btn {
+  border-color: #94A3B8;
+  color: #0F172A;
+}
+
+.wlh-accordion-trigger-btn.is-rotated {
+  transform: rotate(180deg);
+  background: #F1F5F9;
+  color: #0284C7;
+  border-color: #BAE6FD;
+}
+
+/* Bottom Row: Category Breadcrumbs, Lead Person & Task Count */
+.wlh-gh-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wlh-gh-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.wlh-breadcrumb-trail {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.wlh-crumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.wlh-crumb-sep {
+  color: #94A3B8;
+  font-size: 12px;
+}
+
+.wlh-crumb-default {
+  font-size: 11.5px;
+  color: #64748B;
+  font-style: italic;
+}
+
+.wlh-gh-meta-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wlh-lead-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  padding: 2px 8px 2px 4px;
+  border-radius: 9999px;
+  font-size: 11.5px;
   color: #475569;
 }
 
-.wlh-group-lead strong {
-  color: var(--color-navy-header);
+.wlh-lead-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #0284C7;
+  color: #FFFFFF;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: -0.5px;
+}
+
+.wlh-lead-text strong {
+  color: #0F172A;
+}
+
+.wlh-tasks-total-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
 }
 
 /* Tasks Panel and Table */
@@ -1411,18 +1582,22 @@
     font-size: 12.5px;
   }
 
-  /* Group header & subbar mobile layout */
-  .wlh-group-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-    padding: 10px 12px;
+  /* Group header card mobile layout */
+  .wlh-group-header-card {
+    padding: 12px 14px;
+    gap: 10px;
   }
 
-  .wlh-group-header-left {
+  .wlh-gh-top-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .wlh-gh-main-info {
     width: 100%;
-    justify-content: flex-start;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 8px;
   }
 
   .wlh-group-title {
@@ -1430,27 +1605,31 @@
     line-height: 1.3;
   }
 
-  .wlh-group-header-right {
+  .wlh-gh-actions {
     width: 100%;
-    display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
+    margin-top: 2px;
   }
 
-  .wlh-group-order-no {
-    font-size: 11.5px;
-    background: #F1F5F9;
-    padding: 2px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-  }
-
-  .wlh-group-subbar {
+  .wlh-gh-bottom-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
-    padding: 8px 12px;
-    background: #F8FAFC;
-    font-size: 11px;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #E2E8F0;
+  }
+
+  .wlh-gh-meta-left {
+    width: 100%;
+  }
+
+  .wlh-breadcrumb-trail {
+    width: 100%;
+  }
+
+  .wlh-gh-meta-right {
+    width: 100%;
+    justify-content: space-between;
   }
 
   /* Task row adjustments on phone */

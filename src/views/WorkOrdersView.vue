@@ -86,7 +86,6 @@
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
           </svg>
-          <span>Export CSV</span>
         </button>
 
         <button
@@ -116,7 +115,6 @@
             <line x1="9" y1="8" x2="15" y2="8" />
             <line x1="17" y1="16" x2="23" y2="16" />
           </svg>
-          <span :style="{ color: showFilters ? 'var(--color-primary)' : 'inherit' }">Advanced Filters</span>
         </button>
       </div>
     </div>

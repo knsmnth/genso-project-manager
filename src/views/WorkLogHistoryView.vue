@@ -120,7 +120,6 @@
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
-            <span>{{ isEditMode ? 'Exit Edit' : 'Edit Record' }}</span>
           </button>
 
           <!-- Save History Changes Button (when editing) -->
@@ -149,7 +148,6 @@
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
             </svg>
-            <span>Export Report</span>
           </button>
         </div>
       </div>
@@ -366,38 +364,103 @@
           :key="groupKey"
           class="wlh-group-accordion-item"
         >
-          <!-- Streamlined Clickable Group Bar -->
+          <!-- Modern Structured Clickable Group Card Header -->
           <div
-            class="wlh-group-header-bar"
-            :class="{ 'is-collapsed': isGroupCollapsed(groupKey) }"
+            class="wlh-group-header-card"
+            :class="{
+              'is-collapsed': isGroupCollapsed(groupKey),
+              'is-all-completed': getGroupProgress(items).isAllCompleted
+            }"
             @click="toggleGroup(groupKey)"
             role="button"
             tabindex="0"
             :title="isGroupCollapsed(groupKey) ? 'Click to expand group' : 'Click to collapse group'"
           >
-            <div class="wlh-gh-left">
-              <span class="wlh-collapse-chevron" :class="{ 'is-rotated': !isGroupCollapsed(groupKey) }">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </span>
-              <span class="wlh-group-badge">Office / Facility</span>
-              <span class="wlh-group-title">{{ items[0]?.groupTitle || groupKey }}</span>
-              <span v-if="items[0]?.groupSubTitle" class="wlh-group-sub-inline">• {{ items[0]?.groupSubTitle }}</span>
-              <span class="wlh-group-count">{{ items.length }} {{ items.length === 1 ? 'task' : 'tasks' }}</span>
+            <!-- Top Row: Work Order Badge, Facility Header, Status Badge & Chevron -->
+            <div class="wlh-gh-top-row">
+              <div class="wlh-gh-main-info">
+                <!-- WO Ticket Identifier Badge -->
+                <span class="wlh-wo-ticket-badge" @click.stop title="Work Order Identifier">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <line x1="7" y1="8" x2="17" y2="8" />
+                    <line x1="7" y1="12" x2="13" y2="12" />
+                    <line x1="7" y1="16" x2="10" y2="16" />
+                  </svg>
+                  <span>#{{ items[0]?.workOrderNumber }}</span>
+                </span>
+
+                <!-- Facility Title with Building Icon -->
+                <div class="wlh-gh-facility-header">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" class="wlh-facility-icon">
+                    <path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" />
+                  </svg>
+                  <span class="wlh-group-title">{{ items[0]?.groupTitle || groupKey }}</span>
+                </div>
+              </div>
+
+              <!-- Top Right: Status Badge & Chevron Button -->
+              <div class="wlh-gh-actions">
+                <span
+                  class="wlh-group-status-pill"
+                  :class="getGroupProgress(items).isAllCompleted ? 'status-all-completed' : 'status-in-progress'"
+                >
+                  <svg v-if="getGroupProgress(items).isAllCompleted" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span v-else class="wlh-pulse-dot"></span>
+                  <span>{{ getGroupProgress(items).isAllCompleted ? 'Completed' : 'In Progress' }}</span>
+                  <span class="wlh-status-count">({{ getGroupProgress(items).completed }}/{{ items.length }})</span>
+                </span>
+
+                <button
+                  type="button"
+                  class="wlh-accordion-trigger-btn"
+                  :class="{ 'is-rotated': !isGroupCollapsed(groupKey) }"
+                  aria-label="Toggle group details"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            <div class="wlh-gh-right" @click.stop>
-              <span class="wlh-group-order-no">
-                Work Order #<strong>{{ items[0]?.workOrderNumber }}</strong>
-              </span>
-              <span v-if="items[0]?.assignedLead" class="wlh-group-lead">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                <span>Lead: <strong>{{ items[0].assignedLead }}</strong></span>
-              </span>
+            <!-- Bottom Row: Category Breadcrumbs, Lead Person & Task Count -->
+            <div class="wlh-gh-bottom-row">
+              <div class="wlh-gh-meta-left">
+                <!-- Category Breadcrumbs Trail -->
+                <div v-if="formatSubPathTags(items[0]?.groupSubTitle).length" class="wlh-breadcrumb-trail">
+                  <span
+                    v-for="(tag, tIdx) in formatSubPathTags(items[0]?.groupSubTitle)"
+                    :key="tIdx"
+                    class="wlh-crumb-item"
+                  >
+                    <span class="wlh-crumb-text">{{ tag }}</span>
+                    <span v-if="tIdx < formatSubPathTags(items[0]?.groupSubTitle).length - 1" class="wlh-crumb-sep">›</span>
+                  </span>
+                </div>
+                <span v-else class="wlh-crumb-default">General Maintenance</span>
+              </div>
+
+              <div class="wlh-gh-meta-right" @click.stop>
+                <!-- Assigned Lead Pill -->
+                <div v-if="items[0]?.assignedLead" class="wlh-lead-badge">
+                  <div class="wlh-lead-avatar">
+                    {{ getInitials(items[0].assignedLead) }}
+                  </div>
+                  <span class="wlh-lead-text">Lead: <strong>{{ items[0].assignedLead }}</strong></span>
+                </div>
+
+                <!-- Total Tasks Indicator -->
+                <span class="wlh-tasks-total-pill">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 11 12 14 22 4" />
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                  </svg>
+                  <span>{{ items.length }} {{ items.length === 1 ? 'Task' : 'Tasks' }}</span>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -1185,6 +1248,30 @@ const getInitials = (name?: string): string => {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
   return name.slice(0, 2).toUpperCase();
+};
+
+const formatSubPathTags = (subTitle?: string): string[] => {
+  if (!subTitle) return [];
+  return subTitle
+    .split(/[-•]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => {
+      if (s === s.toUpperCase() && s.length > 2) {
+        return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+      }
+      return s;
+    });
+};
+
+const getGroupProgress = (items: DailyWorkLogEntry[]) => {
+  if (!items || items.length === 0) return { completed: 0, total: 0, isAllCompleted: false };
+  const completed = items.filter((t) => isTaskCompleted(t)).length;
+  return {
+    completed,
+    total: items.length,
+    isAllCompleted: completed === items.length && items.length > 0
+  };
 };
 
 // Export Accomplishment PDF / Print Report

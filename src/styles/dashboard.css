@@ -1122,13 +1122,16 @@
   }
 
   .bento-tile-body {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
   }
 
   .radial-figure-container {
     align-self: center;
-    margin-top: 10px;
+    margin-top: 0;
+    flex-shrink: 0;
   }
 
   .dash-activity-desktop {

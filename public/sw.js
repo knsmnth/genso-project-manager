@@ -45,8 +45,14 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   
   const url = new URL(e.request.url);
-  // Do not intercept backend API calls or cross-origin requests
-  if (url.origin !== self.location.origin || url.pathname.startsWith('/api')) {
+  // Do not intercept backend API calls, cross-origin requests, or Vite dev requests
+  if (
+    url.origin !== self.location.origin ||
+    url.pathname.startsWith('/api') ||
+    url.pathname.startsWith('/@') ||
+    url.pathname.startsWith('/src') ||
+    url.pathname.startsWith('/node_modules')
+  ) {
     return;
   }
 
