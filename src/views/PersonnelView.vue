@@ -334,7 +334,7 @@
           <table class="data-table compact-rows">
             <thead>
               <tr style="background: #eff4ff; border-bottom: 1px solid #bbcabf">
-                <th>PERSONNEL</th>
+                <th class="sticky-col-personnel">PERSONNEL</th>
                 <th class="th-attendance">
                   <span class="desktop-th-text">ATTENDANCE</span>
                   <span class="mobile-th-text">WEEK (M-F)</span>
@@ -351,7 +351,7 @@
                 </td>
               </tr>
               <tr v-else v-for="p in filtered" :key="p.code || p.name">
-                <td>
+                <td class="sticky-col-personnel">
                   <div class="name-code-cell">
                     <div :class="['initials-avatar', getAvatarColorClass(p.name)]">
                       {{ getInitials(p.name) }}
