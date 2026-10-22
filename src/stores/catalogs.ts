@@ -101,12 +101,68 @@ export const useCatalogsStore = defineStore('catalogs', () => {
     }
   };
 
+  const batchAddOrUpdateItems = async (
+    type: CatalogType,
+    toAdd: CatalogItem[],
+    toUpdate: CatalogItem[] = []
+  ) => {
+    const targetKey = getTargetCatalogKey(type);
+    let currentArr = [...(masterCatalogs.value[targetKey] || [])];
+
+    // Apply updates (replacing matching existing items)
+    if (toUpdate.length > 0) {
+      const updateMap = new Map<string, CatalogItem>();
+      toUpdate.forEach((item) => updateMap.set(item.id, item));
+      currentArr = currentArr.map((item) => updateMap.get(item.id) || item);
+    }
+
+    // Append new items
+    if (toAdd.length > 0) {
+      currentArr = [...currentArr, ...toAdd];
+    }
+
+    masterCatalogs.value = {
+      ...masterCatalogs.value,
+      [targetKey]: currentArr
+    };
+    saveStoredCatalogs(masterCatalogs.value);
+
+    // Sync to API in background if online
+    try {
+      if (toAdd.length > 0) {
+        await Promise.allSettled(
+          toAdd.map((item) =>
+            fetch('/api/catalogs', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+              body: JSON.stringify(item)
+            })
+          )
+        );
+      }
+      if (toUpdate.length > 0) {
+        await Promise.allSettled(
+          toUpdate.map((item) =>
+            fetch(`/api/catalogs/${encodeURIComponent(item.id)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+              body: JSON.stringify(item)
+            })
+          )
+        );
+      }
+    } catch {
+      // Graceful offline fallback
+    }
+  };
+
   return {
     masterCatalogs,
     fetchCatalogs,
     addItem,
     updateItem,
     deleteItem,
+    batchAddOrUpdateItems,
     getTargetCatalogKey
   };
 });

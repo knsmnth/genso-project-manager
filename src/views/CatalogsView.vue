@@ -1149,6 +1149,17 @@
                   ></textarea>
                 </div>
               </template>
+
+              <!-- Batch Spreadsheet Upload Feature (Below fields for all categories) -->
+              <div class="catalog-pop-field full">
+                <CatalogExcelDropzone
+                  :catalog-type="activeTab"
+                  :category-label="currentTabMeta.label"
+                  :existing-items="currentList"
+                  @parsed="handleExcelParsed"
+                  @error="handleExcelError"
+                />
+              </div>
             </div>
 
             <!-- Pop Window Footer -->
@@ -1251,6 +1262,18 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Duplicate Conflict Resolution Review Modal -->
+    <Teleport to="body">
+      <CatalogConflictModal
+        :is-open="isConflictModalOpen"
+        :category-label="currentTabMeta.label"
+        :clean-items-count="pendingCleanItems.length"
+        :conflicts="pendingConflicts"
+        @close="isConflictModalOpen = false"
+        @confirm="handleConfirmConflictResolutions"
+      />
+    </Teleport>
   </section>
 </template>
 
@@ -1259,10 +1282,16 @@ import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { CatalogItem, CatalogType, MasterCatalogsState } from '../types';
 import { ITEM_TYPE_COLOR_PALETTE, getItemTypeColor } from '../utils/catalogsData';
 import ColorPickerWithPresets from '../components/ui/ColorPickerWithPresets.vue';
+import CatalogExcelDropzone from '../components/ui/CatalogExcelDropzone.vue';
+import CatalogConflictModal from '../components/modals/CatalogConflictModal.vue';
+import { ParseCatalogExcelResult, ConflictItemPair } from '../services/excelCatalogService';
+import { useCatalogsStore } from '../stores/catalogs';
 
 const props = defineProps<{
   catalogs: MasterCatalogsState;
 }>();
+
+const catalogsStore = useCatalogsStore();
 
 const emit = defineEmits<{
   (e: 'addItem', item: CatalogItem): void;
@@ -1765,10 +1794,64 @@ const closeAddModal = () => {
   isAddModalOpen.value = false;
 };
 
+// ==========================================
+// EXCEL BATCH UPLOAD & CONFLICT RESOLUTION
+// ==========================================
+const isConflictModalOpen = ref(false);
+const pendingCleanItems = ref<CatalogItem[]>([]);
+const pendingConflicts = ref<ConflictItemPair[]>([]);
+
+const handleExcelParsed = async (result: ParseCatalogExcelResult) => {
+  if (result.conflicts.length > 0) {
+    pendingCleanItems.value = result.cleanItems;
+    pendingConflicts.value = result.conflicts;
+    isConflictModalOpen.value = true;
+  } else if (result.cleanItems.length > 0) {
+    await catalogsStore.batchAddOrUpdateItems(activeTab.value, result.cleanItems, []);
+    emit('toast', `Successfully imported ${result.cleanItems.length} new ${currentTabMeta.value.label.toLowerCase()}!`, 'success');
+    closeAddModal();
+  }
+};
+
+const handleConfirmConflictResolutions = async (resolvedConflicts: ConflictItemPair[]) => {
+  const toReplace = resolvedConflicts
+    .filter((c) => c.resolution === 'replace')
+    .map((c) => c.newItem);
+
+  const ignoredCount = resolvedConflicts.filter((c) => c.resolution === 'ignore').length;
+
+  await catalogsStore.batchAddOrUpdateItems(
+    activeTab.value,
+    pendingCleanItems.value,
+    toReplace
+  );
+
+  const totalSaved = pendingCleanItems.value.length + toReplace.length;
+  let msg = `Successfully saved ${totalSaved} ${currentTabMeta.value.label.toLowerCase()}`;
+  if (toReplace.length > 0) {
+    msg += ` (${toReplace.length} updated)`;
+  }
+  if (ignoredCount > 0) {
+    msg += ` • ${ignoredCount} duplicates skipped`;
+  }
+
+  emit('toast', msg, 'success');
+  isConflictModalOpen.value = false;
+  pendingCleanItems.value = [];
+  pendingConflicts.value = [];
+  closeAddModal();
+};
+
+const handleExcelError = (msg: string) => {
+  emit('toast', msg, 'warning');
+};
+
 // Global Esc key support for popup window
 const handleWindowKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
-    if (quickColorTargetItem.value) {
+    if (isConflictModalOpen.value) {
+      isConflictModalOpen.value = false;
+    } else if (quickColorTargetItem.value) {
       closeQuickColorPicker();
     } else if (isAddModalOpen.value) {
       closeAddModal();
