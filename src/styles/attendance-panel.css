@@ -1,0 +1,417 @@
+/* ==========================================================================
+   Daily Attendance Side Panel (Slide-Over Drawer) Stylesheet
+   ========================================================================== */
+
+/* Scrim / Backdrop */
+.attendance-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  animation: attendFadeIn 0.2s ease;
+}
+
+@keyframes attendFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Side Panel Container */
+.attendance-side-panel {
+  width: 560px;
+  max-width: 92vw;
+  height: 100%;
+  background: #FFFFFF;
+  box-shadow: -6px 0 32px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  animation: attendSlideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes attendSlideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Header */
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 22px;
+  border-bottom: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.panel-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.panel-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0F172A;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.live-date-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: #006C49;
+  background-color: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.panel-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  color: #64748B;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.panel-close-btn:hover {
+  background: #F1F5F9;
+  color: #0F172A;
+}
+
+/* Toolbar & Filters */
+.attend-panel-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 22px;
+  background: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
+  flex-shrink: 0;
+}
+
+.attend-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  padding: 0 12px;
+  height: 38px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.attend-search-wrap:focus-within {
+  border-color: #006C49;
+  box-shadow: 0 0 0 2px rgba(0, 108, 73, 0.15);
+}
+
+.attend-search-wrap svg {
+  color: #64748B;
+  flex-shrink: 0;
+}
+
+.attend-search-wrap input {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  width: 100%;
+  background: transparent;
+  color: #0F172A;
+}
+
+.attend-summary-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.attend-summary-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.attend-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.chip-absent {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+
+.chip-half {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+
+.chip-leave {
+  background: #E0F2FE;
+  color: #0369A1;
+  border: 1px solid #BAE6FD;
+}
+
+.btn-reset-roster {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #0F172A;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 12px;
+  min-height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-reset-roster:hover {
+  background: #EFF6FF;
+  border-color: #93C5FD;
+  color: #1D4ED8;
+}
+
+/* Staff Roster Scrollable Body */
+.panel-body.attend-roster-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px 22px 20px;
+}
+
+.attend-empty-state {
+  text-align: center;
+  padding: 40px 16px;
+  color: #64748B;
+  font-size: 13px;
+}
+
+.attend-roster-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* Individual Staff Row Card */
+.attend-staff-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  background: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 48px;
+}
+
+.attend-staff-card:hover {
+  border-color: #94A3B8;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+  transform: translateY(-1px);
+}
+
+.attend-staff-card.status-present {
+  border-color: #BBF7D0;
+  background-color: #F0FDF4;
+}
+
+.attend-staff-card.status-present:hover {
+  border-color: #86EFAC;
+}
+
+.attend-staff-card.status-absent {
+  border-color: #FECACA;
+  background-color: #FEF2F2;
+}
+
+.attend-staff-card.status-absent:hover {
+  border-color: #FCA5A5;
+}
+
+.attend-staff-card.status-half_am,
+.attend-staff-card.status-half_pm {
+  border-color: #FED7AA;
+  background-color: #FFFBEB;
+}
+
+.attend-staff-card.status-on_leave {
+  border-color: #BAE6FD;
+  background-color: #F0F9FF;
+  cursor: default;
+}
+
+.attend-staff-card.is-leave-locked {
+  cursor: not-allowed;
+  opacity: 0.92;
+}
+
+.staff-card-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.staff-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.staff-card-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.staff-card-role {
+  font-size: 11px;
+  color: #64748B;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.staff-card-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Cyclic Attendance Button & Locked Leave Indicator */
+.modal-attend-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  min-width: 38px;
+  min-height: 38px;
+  position: relative;
+  transition: transform 0.12s ease;
+}
+
+.modal-attend-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.modal-attend-btn:disabled,
+.modal-attend-btn.is-locked {
+  cursor: not-allowed;
+}
+
+/* Sticky Footer */
+.panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 14px 22px;
+  background: #FFFFFF;
+  border-top: 1px solid #E2E8F0;
+  box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.03);
+  flex-shrink: 0;
+}
+
+.btn-confirm-attend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.btn-counter-badge {
+  background: rgba(255, 255, 255, 0.25);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Mobile & Small Tablet Adaptability */
+@media (max-width: 640px) {
+  .attendance-side-panel {
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  .panel-header {
+    padding: 14px 16px;
+  }
+
+  .attend-panel-toolbar {
+    padding: 10px 16px;
+  }
+
+  .panel-body.attend-roster-body {
+    padding: 12px 16px 16px;
+  }
+
+  .panel-footer {
+    padding: 12px 16px;
+  }
+
+  .panel-footer .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

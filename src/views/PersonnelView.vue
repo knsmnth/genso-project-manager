@@ -339,14 +339,13 @@
                   <span class="desktop-th-text">ATTENDANCE</span>
                   <span class="mobile-th-text">WEEK (M-F)</span>
                 </th>
-                <th>AVAILABILITY</th>
                 <th>ACTIVE ORDER</th>
                 <th style="text-align: right">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="filtered.length === 0">
-                <td colspan="5" style="text-align: center; padding: 32px; color: var(--color-text-muted)">
+                <td colspan="4" style="text-align: center; padding: 32px; color: var(--color-text-muted)">
                   No staff records match search query.
                 </td>
               </tr>
@@ -404,13 +403,6 @@
                   </div>
                 </td>
 
-                <td>
-                  <span
-                    :class="['status-badge-outline', 'personnel-avail-badge', getAvailabilityClass(p.status)]"
-                  >
-                    {{ p.status }}
-                  </span>
-                </td>
 
                 <td
                   style="font-size: 13px; font-weight: 600; font-family: monospace"
@@ -735,19 +727,6 @@ const getAvatarColorClass = (name: string) => {
   return 'jd';
 };
 
-const getAvailabilityClass = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'on-site':
-    case 'on site':
-    case 'busy':
-      return 'maintenance';
-    case 'off-site':
-    case 'off site':
-      return 'onsite';
-    default:
-      return 'available';
-  }
-};
 
 const handleExportCsv = () => {
   window.alert('Attendance and personnel roster exported successfully.');

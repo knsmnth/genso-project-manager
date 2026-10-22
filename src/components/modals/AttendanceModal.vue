@@ -1,23 +1,36 @@
 <template>
-  <div v-if="isOpen" class="modal-backdrop open" id="attendance-modal" @click="$emit('close')">
-    <div class="modal-card attendance-check-modal" @click.stop>
+  <div
+    v-if="isOpen"
+    class="attendance-drawer-backdrop"
+    id="attendance-side-panel"
+    @click="$emit('close')"
+  >
+    <aside
+      class="attendance-side-panel"
+      @click.stop
+      aria-label="Daily Attendance Side Panel"
+    >
       <!-- Header (Focused & Minimal Text) -->
-      <div class="modal-header">
-        <div class="modal-title-wrapper">
-          <div style="display: flex; align-items: center; gap: 8px">
-            <h2 class="modal-title">Daily Attendance</h2>
+      <div class="panel-header">
+        <div class="panel-title-wrapper">
+          <div class="panel-title-group">
+            <h2 class="panel-title">Daily Attendance</h2>
             <span class="live-date-pill">{{ formattedDate }}</span>
           </div>
         </div>
-        <button class="modal-close-btn" @click="$emit('close')" aria-label="Close modal">
+        <button
+          class="panel-close-btn"
+          @click="$emit('close')"
+          aria-label="Close attendance panel"
+        >
           &times;
         </button>
       </div>
 
       <!-- Filter & Quick Action Strip -->
-      <div class="attend-modal-toolbar">
+      <div class="attend-panel-toolbar">
         <div class="attend-search-wrap">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
@@ -28,16 +41,18 @@
           />
         </div>
 
-        <div class="attend-summary-chips">
-          <span class="attend-chip chip-absent">
-            {{ absentCount }} Absent
-          </span>
-          <span v-if="halfDayCount > 0" class="attend-chip chip-half">
-            {{ halfDayCount }} Half-Day
-          </span>
-          <span v-if="leaveCount > 0" class="attend-chip chip-leave">
-            {{ leaveCount }} On-Leave
-          </span>
+        <div class="attend-summary-bar">
+          <div class="attend-summary-chips">
+            <span class="attend-chip chip-absent">
+              {{ absentCount }} Absent
+            </span>
+            <span v-if="halfDayCount > 0" class="attend-chip chip-half">
+              {{ halfDayCount }} Half-Day
+            </span>
+            <span v-if="leaveCount > 0" class="attend-chip chip-leave">
+              {{ leaveCount }} On-Leave
+            </span>
+          </div>
           <button
             type="button"
             class="btn-reset-roster"
@@ -50,7 +65,7 @@
       </div>
 
       <!-- Staff Roster Body -->
-      <div class="modal-body attend-roster-body">
+      <div class="panel-body attend-roster-body">
         <div v-if="filteredPersonnel.length === 0" class="attend-empty-state">
           No personnel match search query.
         </div>
@@ -67,17 +82,19 @@
             @click="handleCardClick(p.code || p.id || p.name)"
             :title="isLockedLeave(p.code || p.id || p.name) ? 'On Scheduled Leave (Locked)' : 'Click to cycle status'"
           >
-            <!-- Left: Avatar & Name (Specialization removed for minimal cleanliness) -->
+            <!-- Left: Avatar, Name & Role -->
             <div class="staff-card-left">
               <div :class="['initials-avatar', getAvatarColorClass(p.name)]">
                 {{ getInitials(p.name) }}
               </div>
-              <span class="staff-card-name">{{ p.name }}</span>
+              <div class="staff-card-info">
+                <span class="staff-card-name">{{ p.name }}</span>
+                <span v-if="p.role" class="staff-card-role">{{ p.role }}</span>
+              </div>
             </div>
 
-            <!-- Right: Status Indicator & On-Demand Half-Day Action -->
+            <!-- Right: Status Indicator & Cyclic Action -->
             <div class="staff-card-right" @click.stop>
-              <!-- Cyclic attendance box button matching the table -->
               <button
                 type="button"
                 class="modal-attend-btn"
@@ -96,8 +113,8 @@
         </div>
       </div>
 
-      <!-- Footer -->
-      <div class="modal-footer">
+      <!-- Sticky Footer -->
+      <div class="panel-footer">
         <button class="btn btn-outline" @click="$emit('close')">
           Cancel
         </button>
@@ -106,12 +123,12 @@
           <span v-if="absentCount > 0" class="btn-counter-badge">{{ absentCount }} Absent</span>
         </button>
       </div>
-    </div>
+    </aside>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Person, AttendanceStatusType } from '../../types';
 import AttendanceBadge from '../ui/AttendanceBadge.vue';
 import { usePersonnelStore, getNextAttendanceStatus } from '../../stores/personnel';
@@ -139,6 +156,21 @@ const formattedDate = computed(() => {
     day: 'numeric',
     year: 'numeric'
   });
+});
+
+// Escape key listener for side drawer
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && props.isOpen) {
+    emit('close');
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
 });
 
 // Initialize roster: Default everyone to 'present', unless they have pre-scheduled leave or existing state for today
@@ -267,230 +299,4 @@ const getAvatarColorClass = (name: string) => {
 };
 </script>
 
-<style scoped>
-.attendance-check-modal {
-  max-width: 600px;
-  width: 95%;
-  border-radius: 14px;
-}
-
-.live-date-pill {
-  font-size: 11px;
-  font-weight: 700;
-  color: #006C49;
-  background-color: #ECFDF5;
-  border: 1px solid #A7F3D0;
-  padding: 3px 9px;
-  border-radius: 9999px;
-}
-
-/* Toolbar */
-.attend-modal-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 20px 8px;
-  border-bottom: 1px solid #F1F5F9;
-  flex-wrap: wrap;
-}
-
-.attend-search-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  border-radius: 8px;
-  padding: 0 10px;
-  height: 34px;
-  flex: 1;
-  min-width: 180px;
-}
-
-.attend-search-wrap input {
-  border: none;
-  outline: none;
-  font-size: 12px;
-  width: 100%;
-  background: transparent;
-  color: #0F172A;
-}
-
-.attend-summary-chips {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.attend-chip {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 9999px;
-}
-
-.chip-absent {
-  background: #FEE2E2;
-  color: #B91C1C;
-  border: 1px solid #FECACA;
-}
-
-.chip-half {
-  background: #FEF3C7;
-  color: #92400E;
-  border: 1px solid #FDE68A;
-}
-
-.chip-leave {
-  background: #E0F2FE;
-  color: #0369A1;
-  border: 1px solid #BAE6FD;
-}
-
-.btn-reset-roster {
-  background: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  color: #0F172A;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-reset-roster:hover {
-  background: #EFF6FF;
-  border-color: #93C5FD;
-  color: #1D4ED8;
-}
-
-/* Roster body */
-.attend-roster-body {
-  max-height: 420px;
-  overflow-y: auto;
-  padding: 10px 20px 16px;
-}
-
-.attend-empty-state {
-  text-align: center;
-  padding: 32px;
-  color: #64748B;
-  font-size: 13px;
-}
-
-.attend-roster-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.attend-staff-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 12px;
-  border: 1.5px solid #E2E8F0;
-  border-radius: 8px;
-  background: #FFFFFF;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  min-height: 42px;
-}
-
-.attend-staff-card:hover {
-  border-color: #94A3B8;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
-}
-
-.attend-staff-card.status-present {
-  border-color: #BBF7D0;
-  background-color: #F0FDF4;
-}
-
-.attend-staff-card.status-absent {
-  border-color: #FECACA;
-  background-color: #FEF2F2;
-}
-
-.attend-staff-card.status-half_am,
-.attend-staff-card.status-half_pm {
-  border-color: #FED7AA;
-  background-color: #FFFBEB;
-}
-
-.attend-staff-card.status-on_leave {
-  border-color: #BAE6FD;
-  background-color: #F0F9FF;
-  cursor: default;
-}
-
-.staff-card-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.staff-card-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #0F172A;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.staff-card-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-/* Cyclic Attendance Button & Locked Leave Indicator */
-.modal-attend-btn {
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-  outline: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 7px;
-  position: relative;
-  transition: transform 0.12s ease;
-}
-
-.modal-attend-btn:hover:not(:disabled) {
-  transform: scale(1.12);
-}
-
-.modal-attend-btn:disabled,
-.modal-attend-btn.is-locked {
-  cursor: not-allowed;
-}
-
-
-.attend-staff-card.is-leave-locked {
-  cursor: not-allowed;
-  opacity: 0.92;
-}
-
-.btn-confirm-attend {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-counter-badge {
-  background: rgba(255, 255, 255, 0.25);
-  padding: 2px 8px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 700;
-}
-</style>
+<style scoped src="../../styles/attendance-panel.css"></style>
