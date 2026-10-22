@@ -1,5 +1,5 @@
 import { apiClient } from './api';
-import { DailyWorkLogEntry } from '../types';
+import { DailyWorkLogEntry, DateHoldRecord } from '../types';
 
 export interface SnapshotSummary {
   id?: number;
@@ -27,12 +27,73 @@ export interface SaveSnapshotResult {
 
 const LOCAL_SNAPSHOTS_PREFIX = 'infra_dwl_snapshot_';
 const LOCAL_SNAPSHOT_DATES_KEY = 'infra_dwl_snapshot_dates';
+const LOCAL_HELD_DATES_KEY = 'infra_dwl_held_dates';
 
 export const formatLocalDate = (d: Date = new Date()): string => {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+};
+
+/**
+ * Checks if a given date string or Date object is a weekday (Monday - Friday)
+ */
+export const isWeekday = (d: Date | string = new Date()): boolean => {
+  let dateObj: Date;
+  if (typeof d === 'string') {
+    const parts = d.split('-');
+    if (parts.length === 3) {
+      dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    } else {
+      dateObj = new Date(d);
+    }
+  } else {
+    dateObj = d;
+  }
+  const day = dateObj.getDay();
+  // 0 is Sunday, 6 is Saturday
+  return day >= 1 && day <= 5;
+};
+
+/**
+ * Get all held dates dictionary from storage
+ */
+export const getHeldDates = (): Record<string, DateHoldRecord> => {
+  try {
+    const raw = localStorage.getItem(LOCAL_HELD_DATES_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+/**
+ * Check if a date is currently marked on Hold
+ */
+export const isDateHeld = (date: string): { isHeld: boolean; reason: string; record?: DateHoldRecord } => {
+  const held = getHeldDates();
+  const record = held[date];
+  if (record && record.isHeld) {
+    return { isHeld: true, reason: record.reason || 'General Hold', record };
+  }
+  return { isHeld: false, reason: '', record };
+};
+
+/**
+ * Save or toggle Hold state for a specific date
+ */
+export const saveDateHold = async (record: DateHoldRecord): Promise<void> => {
+  const held = getHeldDates();
+  held[record.date] = {
+    ...record,
+    updatedAt: new Date().toISOString()
+  };
+  localStorage.setItem(LOCAL_HELD_DATES_KEY, JSON.stringify(held));
+
+  try {
+    await apiClient.post('/daily-work-log-snapshots/hold', record);
+  } catch {}
 };
 
 /**
@@ -117,6 +178,25 @@ export async function saveSnapshot(
   isAutoSaved = false,
   savedBy = 'Lead Foreman'
 ): Promise<SaveSnapshotResult> {
+  // If auto-saving, strictly enforce Monday to Friday and skip if date is on hold
+  if (isAutoSaved) {
+    if (!isWeekday(date)) {
+      return {
+        success: false,
+        unchanged: true,
+        message: 'Auto-save skipped: weekend date (Monday to Friday only)'
+      };
+    }
+    const holdCheck = isDateHeld(date);
+    if (holdCheck.isHeld) {
+      return {
+        success: false,
+        unchanged: true,
+        message: `Auto-save skipped: date is on hold (${holdCheck.reason})`
+      };
+    }
+  }
+
   const payload = {
     snapshot_date: date,
     entries,

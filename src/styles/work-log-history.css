@@ -1059,9 +1059,43 @@
   color: #006C49;
 }
 
-.wlh-cal-day-cell.other-month, .wlh-cal-day-cell.is-future {
+.wlh-cal-day-cell.other-month, .wlh-cal-day-cell.is-future:not(.is-held-cell) {
   opacity: 0.25;
   cursor: not-allowed;
+}
+
+/* Held Date in Calendar */
+.wlh-cal-day-cell.is-held-cell:not(.is-selected) {
+  background: #FFFBEB !important;
+  border-color: #FCD34D !important;
+  color: #B45309 !important;
+  font-weight: 700;
+  opacity: 1 !important;
+  cursor: pointer !important;
+}
+
+.wlh-cal-day-cell.is-held-cell:hover:not(.is-selected) {
+  background: #FEF3C7 !important;
+  border-color: #F59E0B !important;
+}
+
+.wlh-cal-hold-badge {
+  position: absolute;
+  bottom: 2px;
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  background: #D97706;
+  color: #FFFFFF;
+  padding: 0 3px;
+  border-radius: 3px;
+  line-height: 1.2;
+}
+
+.wlh-cal-day-cell.is-selected .wlh-cal-hold-badge {
+  background: #FFFFFF;
+  color: #D97706;
 }
 
 .wlh-cal-dot {

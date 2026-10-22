@@ -2642,3 +2642,66 @@
   box-shadow: 0 1px 3px rgba(0, 108, 73, 0.08);
 }
 
+.dwl-auto-sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #006c49;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.dwl-auto-sync-pill.is-weekend {
+  color: #64748b;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.dwl-auto-sync-pill.is-held {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.wlh-hold-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  color: #92400e;
+  font-size: 13.5px;
+}
+
+.wlh-hold-banner-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wlh-hold-banner-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-right: 6px;
+}
+
+.wlh-hold-banner-reason {
+  font-weight: 500;
+  color: #78350f;
+}
+
+

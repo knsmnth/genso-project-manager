@@ -139,6 +139,21 @@
             <span>Save Changes</span>
           </button>
 
+          <!-- General Hold Date Button -->
+          <button
+            type="button"
+            :class="['btn', selectedDateHold.isHeld ? 'btn-warning-sm' : 'btn-outline-sm', 'wlh-btn-action']"
+            @click="openHoldModal"
+            :title="selectedDateHold.isHeld ? `On Hold: ${selectedDateHold.reason}` : 'Set Hold for holiday or memo'"
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="10" y1="15" x2="10" y2="9" />
+              <line x1="14" y1="15" x2="14" y2="9" />
+            </svg>
+            <span>{{ selectedDateHold.isHeld ? 'On Hold' : 'General Hold' }}</span>
+          </button>
+
           <!-- Export PDF Accomplishment Report -->
           <button
             class="btn btn-outline-sm wlh-btn-action"
@@ -150,6 +165,21 @@
             </svg>
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Date On Hold Alert Banner -->
+    <div v-if="selectedDateHold.isHeld" class="wlh-hold-banner" style="margin-top: 14px;">
+      <div class="wlh-hold-banner-icon">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="10" y1="15" x2="10" y2="9" />
+          <line x1="14" y1="15" x2="14" y2="9" />
+        </svg>
+      </div>
+      <div>
+        <span class="wlh-hold-banner-title">DATE ON HOLD:</span>
+        <span class="wlh-hold-banner-reason">{{ selectedDateHold.reason }}. Daily work log recording is suspended for this date.</span>
       </div>
     </div>
 
@@ -643,21 +673,24 @@
             <button
               v-for="(cell, cIdx) in calendarDays"
               :key="cIdx"
-              :disabled="cell.isFuture || !cell.isCurrentMonth"
+              :disabled="!cell.isCurrentMonth || (cell.isFuture && !cell.isHeld)"
               :class="[
                 'wlh-cal-day-cell',
                 {
                   'is-selected': cell.dateString === selectedDate,
                   'is-today': cell.dateString === todayDateString,
+                  'is-held-cell': cell.isHeld,
                   'has-snapshot': cell.hasSnapshot,
                   'other-month': !cell.isCurrentMonth,
                   'is-future': cell.isFuture
                 }
               ]"
+              :title="cell.isHeld ? `On Hold: ${cell.holdReason}` : (cell.hasSnapshot ? 'Has saved log' : cell.dateString)"
               @click="handleSelectCalendarDay(cell.dateString)"
             >
               <span>{{ cell.dayNumber }}</span>
-              <span v-if="cell.hasSnapshot" class="wlh-cal-dot" title="Has saved log"></span>
+              <span v-if="cell.isHeld" class="wlh-cal-hold-badge">HOLD</span>
+              <span v-else-if="cell.hasSnapshot" class="wlh-cal-dot" title="Has saved log"></span>
             </button>
           </div>
 
@@ -812,20 +845,33 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- General Hold Modal -->
+    <HoldDateModal
+      :is-open="isHoldModalOpen"
+      :target-date="selectedDate"
+      :initial-reason="selectedDateHold.reason"
+      :initial-is-held="selectedDateHold.isHeld"
+      @close="isHoldModalOpen = false"
+      @save="handleSaveDateHold"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { WorkOrder, Person, Team, CatalogItem, DailyWorkLogEntry, InspectionPhoto } from '../types';
+import { WorkOrder, Person, Team, CatalogItem, DailyWorkLogEntry, InspectionPhoto, DateHoldRecord } from '../types';
 import {
   getSnapshotDates,
   getSnapshotByDate,
   updateSnapshot,
   saveSnapshot,
   formatLocalDate,
+  isDateHeld,
+  saveDateHold,
   SnapshotSummary
 } from '../services/workLogHistoryService';
+import HoldDateModal from '../components/modals/HoldDateModal.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -849,11 +895,37 @@ const emit = defineEmits<{
   (e: 'toast', message: string, type?: 'info' | 'success' | 'warning'): void;
 }>();
 
+// Hold Modal State & Logic
+const isHoldModalOpen = ref<boolean>(false);
+const holdDatesVersion = ref<number>(0);
+
+const openHoldModal = () => {
+  isHoldModalOpen.value = true;
+};
+
 // Dates setup
 const todayDateString = formatLocalDate(new Date());
 const yesterdayDateString = formatLocalDate(new Date(Date.now() - 86400000));
 
 const selectedDate = ref<string>(todayDateString);
+
+const selectedDateHold = computed(() => {
+  holdDatesVersion.value;
+  return isDateHeld(selectedDate.value);
+});
+
+const handleSaveDateHold = async (record: DateHoldRecord) => {
+  await saveDateHold(record);
+  holdDatesVersion.value++;
+  emit(
+    'toast',
+    record.isHeld
+      ? `✓ Date hold recorded for ${record.date} (${record.reason})`
+      : `✓ Date hold removed for ${record.date}`,
+    'success'
+  );
+};
+
 const availableSnapshots = ref<SnapshotSummary[]>([]);
 const currentEntries = ref<DailyWorkLogEntry[]>([]);
 const isEditMode = ref<boolean>(false);
@@ -1057,6 +1129,11 @@ const handleSaveHistoricalChanges = async () => {
 };
 
 const archiveTodayFromActiveLog = async () => {
+  const holdInfo = isDateHeld(todayDateString);
+  if (holdInfo.isHeld) {
+    emit('toast', `Today is marked on Hold (${holdInfo.reason}). Daily work log archiving is suspended.`, 'warning');
+    return;
+  }
   try {
     const cached = localStorage.getItem('infra_daily_work_logs_v3');
     if (cached) {
@@ -1125,9 +1202,10 @@ const currentCalendarMonthLabel = computed(() => {
 });
 
 const isCalendarNextMonthDisabled = computed(() => {
-  const now = new Date();
+  const maxFuture = new Date();
+  maxFuture.setMonth(maxFuture.getMonth() + 6);
   const v = calendarViewDate.value;
-  return v.getFullYear() >= now.getFullYear() && v.getMonth() >= now.getMonth();
+  return v.getFullYear() > maxFuture.getFullYear() || (v.getFullYear() === maxFuture.getFullYear() && v.getMonth() >= maxFuture.getMonth());
 });
 
 const changeCalendarMonth = (delta: number) => {
@@ -1137,6 +1215,7 @@ const changeCalendarMonth = (delta: number) => {
 };
 
 const calendarDays = computed(() => {
+  holdDatesVersion.value; // reactive dependency on hold updates
   const viewYear = calendarViewDate.value.getFullYear();
   const viewMonth = calendarViewDate.value.getMonth();
 
@@ -1153,11 +1232,14 @@ const calendarDays = computed(() => {
     const day = daysInPrevMonth - i;
     const prevDate = new Date(viewYear, viewMonth - 1, day);
     const dateStr = formatLocalDate(prevDate);
+    const holdInfo = isDateHeld(dateStr);
     cells.push({
       dayNumber: day,
       dateString: dateStr,
       isCurrentMonth: false,
       isFuture: dateStr > todayDateString,
+      isHeld: holdInfo.isHeld,
+      holdReason: holdInfo.reason,
       hasSnapshot: snapshotDatesSet.has(dateStr)
     });
   }
@@ -1166,11 +1248,14 @@ const calendarDays = computed(() => {
   for (let d = 1; d <= daysInMonth; d++) {
     const curDate = new Date(viewYear, viewMonth, d);
     const dateStr = formatLocalDate(curDate);
+    const holdInfo = isDateHeld(dateStr);
     cells.push({
       dayNumber: d,
       dateString: dateStr,
       isCurrentMonth: true,
       isFuture: dateStr > todayDateString,
+      isHeld: holdInfo.isHeld,
+      holdReason: holdInfo.reason,
       hasSnapshot: snapshotDatesSet.has(dateStr)
     });
   }
@@ -1180,11 +1265,14 @@ const calendarDays = computed(() => {
   for (let n = 1; n <= remaining; n++) {
     const nextDate = new Date(viewYear, viewMonth + 1, n);
     const dateStr = formatLocalDate(nextDate);
+    const holdInfo = isDateHeld(dateStr);
     cells.push({
       dayNumber: n,
       dateString: dateStr,
       isCurrentMonth: false,
       isFuture: dateStr > todayDateString,
+      isHeld: holdInfo.isHeld,
+      holdReason: holdInfo.reason,
       hasSnapshot: snapshotDatesSet.has(dateStr)
     });
   }
@@ -1383,9 +1471,9 @@ const handleExportPDF = () => {
 
       ${itemsHtml || '<p>No records for this date.</p>'}
 
-      <script>
+      <${'script'}>
         window.onload = function() { window.print(); }
-      <\/script>
+      <${'/script'}>
     </body>
     </html>
   `;

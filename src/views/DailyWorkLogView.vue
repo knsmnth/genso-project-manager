@@ -81,19 +81,45 @@
           </svg>
         </button>
 
-        <button
-          class="btn btn-primary-sm"
-          @click="handleSaveAllProgress"
-          style="height: 36px"
-          :title="saveStatusText"
+        <!-- Automated Background Sync Status Pill (Mon-Fri) -->
+        <div
+          class="dwl-auto-sync-pill"
+          :class="{
+            'is-weekend': isWeekendToday,
+            'is-held': todayHoldStatus.isHeld
+          }"
+          :title="isWeekendToday ? 'Auto-saving is inactive during weekends (Saturday and Sunday)' : (todayHoldStatus.isHeld ? `Auto-save suspended: ${todayHoldStatus.reason}` : saveStatusText)"
         >
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-            <polyline points="17 21 17 13 7 13 7 21" />
-            <polyline points="7 3 7 8 15 8" />
+          <svg v-if="isWeekendToday" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <span>Save All Progress</span>
-        </button>
+          <svg v-else-if="todayHoldStatus.isHeld" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="10" y1="15" x2="10" y2="9" />
+            <line x1="14" y1="15" x2="14" y2="9" />
+          </svg>
+          <svg v-else viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>{{ autoSyncLabel }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Today On Hold Alert Banner -->
+    <div v-if="todayHoldStatus.isHeld" class="wlh-hold-banner" style="margin-bottom: 16px;">
+      <div class="wlh-hold-banner-icon">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="10" y1="15" x2="10" y2="9" />
+          <line x1="14" y1="15" x2="14" y2="9" />
+        </svg>
+      </div>
+      <div>
+        <span class="wlh-hold-banner-title">TODAY'S WORK LOG IS ON HOLD:</span>
+        <span class="wlh-hold-banner-reason">{{ todayHoldStatus.reason }}. Automatic daily saving is suspended for today.</span>
       </div>
     </div>
 
@@ -684,7 +710,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { DailyWorkLogEntry, Person, WorkOrder, RemarkNote, EquipmentItem, Team, CatalogItem } from '../types';
-import { saveSnapshot, formatLocalDate } from '../services/workLogHistoryService';
+import { saveSnapshot, formatLocalDate, isWeekday, isDateHeld } from '../services/workLogHistoryService';
+import { useWorkOrdersStore } from '../stores/workOrders';
 
 const props = withDefaults(
   defineProps<{
@@ -827,6 +854,7 @@ const currentDateFormatted = computed(() => {
 });
 
 const logs = ref<DailyWorkLogEntry[]>([]);
+const workOrdersStore = useWorkOrdersStore();
 const searchQuery = ref('');
 const selectedDate = ref(getTodayDateStr());
 const expandedGroups = ref<Record<string, boolean>>({});
@@ -835,7 +863,16 @@ const isGroupExpanded = (groupKey: string): boolean => {
   return Boolean(expandedGroups.value[groupKey]);
 };
 
-const saveStatusText = ref('Last auto-saved: 14:32:05 PM');
+const saveStatusText = ref('Auto-saved (Mon–Fri)');
+
+const isWeekendToday = computed(() => !isWeekday(new Date()));
+const todayHoldStatus = computed(() => isDateHeld(formatLocalDate(new Date())));
+
+const autoSyncLabel = computed(() => {
+  if (isWeekendToday.value) return 'Weekend (Auto-Save Off)';
+  if (todayHoldStatus.value.isHeld) return 'On Hold (Auto-Save Off)';
+  return saveStatusText.value;
+});
 
 const activeDrawer = ref<'remarks' | 'personnel' | 'equipment' | null>(null);
 const selectedRowId = ref<string | null>(null);
@@ -1012,8 +1049,15 @@ const computeLogsFromWorkOrders = (orders: WorkOrder[]): DailyWorkLogEntry[] => 
     return DEFAULT_IMAGE_SPEC_LOGS;
   }
 
-  // Filter ONLY active orders - inactive orders will not reflect on Daily Work Log
-  const activeOrders = orders.filter((order) => order.isActive !== false);
+  const todayStr = formatLocalDate(new Date());
+  // Filter active orders OR orders completed today (so they stay for 1 more day to be recorded in history)
+  const activeOrders = orders.filter((order) => {
+    if (order.isActive !== false) return true;
+    if (order.status === 'Completed' && order.completedDate === todayStr) {
+      return true;
+    }
+    return false;
+  });
   if (activeOrders.length === 0) {
     return [];
   }
@@ -1158,18 +1202,21 @@ let autoSaveSnapshotTimer: ReturnType<typeof setTimeout> | null = null;
 const saveLogs = (updated: DailyWorkLogEntry[]) => {
   logs.value = updated;
   localStorage.setItem(LOGS_STORAGE_KEY_V3, JSON.stringify(updated));
-  const now = new Date().toLocaleTimeString();
-  saveStatusText.value = `Last auto-saved: ${now}`;
+  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  saveStatusText.value = `Auto-saved at ${now}`;
 
-  // Automatically sync to today's snapshot so history is continuously up to date
+  // Automatically sync to today's snapshot so history is continuously up to date (Mon-Fri only, skip if on hold)
   if (autoSaveSnapshotTimer) clearTimeout(autoSaveSnapshotTimer);
   autoSaveSnapshotTimer = setTimeout(() => {
     const todayStr = formatLocalDate(new Date());
+    if (!isWeekday(todayStr) || isDateHeld(todayStr).isHeld) {
+      return;
+    }
     const eligibleEntries = updated.filter((l) => !l.isOnHold);
     if (eligibleEntries.length > 0) {
       saveSnapshot(todayStr, eligibleEntries, true).catch(() => {});
     }
-  }, 1200);
+  }, 1000);
 };
 
 const draggedGroupKey = ref<string | null>(null);
@@ -1293,7 +1340,10 @@ const handleToggleGroup = (title: string) => {
   expandedGroups.value[title] = !isGroupExpanded(title);
 };
 
-const handleUpdateField = (id: string, field: keyof DailyWorkLogEntry, value: any) => {
+const handleUpdateField = async (id: string, field: keyof DailyWorkLogEntry, value: any) => {
+  const targetEntry = logs.value.find((l) => l.id === id);
+  const woNumber = targetEntry?.workOrderNumber;
+
   const updated = logs.value.map((l) => {
     if (l.id === id) {
       const extra: Partial<DailyWorkLogEntry> = {};
@@ -1304,6 +1354,13 @@ const handleUpdateField = (id: string, field: keyof DailyWorkLogEntry, value: an
     return l;
   });
   saveLogs(updated);
+
+  if (woNumber && (field === 'startDate' || field === 'completionDate')) {
+    const res = await workOrdersStore.syncOrderAutoStatus(woNumber, updated);
+    if (res.becameCompleted) {
+      emit('toast', `✓ Work order ${woNumber} completed! Saved to Daily Work Log History.`, 'success');
+    }
+  }
 };
 
 const handleToggleOnHold = (id: string) => {
@@ -1409,6 +1466,15 @@ const handleTogglePersonnelStaff = (staffName: string) => {
       : l
   );
   saveLogs(updatedLogs);
+
+  const woNumber = selectedRow.value?.workOrderNumber;
+  if (woNumber) {
+    workOrdersStore.syncOrderAutoStatus(woNumber, updatedLogs).then((res) => {
+      if (res.becameCompleted) {
+        emit('toast', `✓ Work order ${woNumber} completed! Saved to Daily Work Log History.`, 'success');
+      }
+    });
+  }
 };
 
 const handleToggleEquipmentChecked = (eqId: string) => {
@@ -1449,6 +1515,14 @@ const handleConfirmAddEquipment = () => {
 
 onMounted(() => {
   window.addEventListener('dragend', handleGroupDragEnd);
+  // Initial background auto-save check on weekdays if not on hold
+  const todayStr = formatLocalDate(new Date());
+  if (isWeekday(todayStr) && !isDateHeld(todayStr).isHeld) {
+    const eligible = logs.value.filter((l) => !l.isOnHold);
+    if (eligible.length > 0) {
+      saveSnapshot(todayStr, eligible, true).catch(() => {});
+    }
+  }
 });
 
 onUnmounted(() => {
