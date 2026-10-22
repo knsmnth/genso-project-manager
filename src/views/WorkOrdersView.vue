@@ -428,17 +428,12 @@
                   <span v-else style="color: var(--color-text-placeholder, #94a3b8); font-size: 13px">-</span>
                 </td>
                 <td style="white-space: nowrap">
-                  <button
-                    type="button"
-                    :class="['badge-status-pill', 'status-clickable-pill', getStatusClass(o.status), { 'is-open': statusDropdownCode === o.code }]"
-                    @click.stop="toggleStatusDropdown($event, o.code)"
-                    title="Click to change status"
+                  <span
+                    :class="['badge-status-pill', getStatusClass(o.status)]"
+                    :title="`Status: ${displayStatus(o.status)} (auto-calculated from scopes)`"
                   >
                     <span>{{ displayStatus(o.status) }}</span>
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" class="status-caret-icon">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
+                  </span>
                 </td>
                 <td style="white-space: nowrap">
                   <button
@@ -529,17 +524,12 @@
                 </span>
               </div>
               <div class="wo-mc-status">
-                <button
-                  type="button"
-                  :class="['badge-status-pill', 'status-clickable-pill', getStatusClass(o.status), { 'is-open': statusDropdownCode === o.code }]"
-                  @click.stop="toggleStatusDropdown($event, o.code)"
-                  title="Click to change status"
+                <span
+                  :class="['badge-status-pill', getStatusClass(o.status)]"
+                  :title="`Status: ${displayStatus(o.status)}`"
                 >
                   <span>{{ displayStatus(o.status) }}</span>
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" class="status-caret-icon">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
+                </span>
               </div>
             </div>
 
@@ -655,38 +645,7 @@
       </div>
     </div>
 
-    <!-- Dedicated Status Picker Popover (Teleported to Body) -->
     <Teleport to="body">
-      <div
-        v-if="statusDropdownCode && activeStatusOrder"
-        class="floating-actions-popover status-picker-popover"
-        :style="{
-          top: `${statusDropdownPosition.top}px`,
-          left: `${statusDropdownPosition.left}px`
-        }"
-        @click.stop
-      >
-        <div class="status-picker-header">Change Status</div>
-        <div class="fap-status-group" style="padding: 4px">
-          <button
-            v-for="st in ['Not Scheduled', 'Scheduled', 'On-going', 'Completed']"
-            :key="st"
-            type="button"
-            class="fap-item fap-status-item"
-            :class="{ 'is-active-status': displayStatus(activeStatusOrder.status).toLowerCase() === st.toLowerCase() }"
-            @click.stop="handleSelectStatusFromPill(st)"
-          >
-            <div class="fap-status-label-group">
-              <span
-                class="fap-status-dot"
-                :style="{ backgroundColor: getStatusDotColor(st) }"
-              ></span>
-              <span style="font-weight: 600">{{ st }}</span>
-            </div>
-            <span v-if="displayStatus(activeStatusOrder.status).toLowerCase() === st.toLowerCase()" class="fap-check-icon">✓</span>
-          </button>
-        </div>
-      </div>
 
       <!-- Slide-Over Inspection Drawer & Backdrop -->
       <div
@@ -1053,73 +1012,11 @@ const resetFilters = () => {
   workgroupFilter.value = 'all';
   activeFilter.value = 'all';
 };
-
-const statusDropdownCode = ref<string | null>(null);
-const statusDropdownPosition = ref<{ top: number; left: number }>({
-  top: 0,
-  left: 0
-});
-
-const activeStatusOrder = computed(() => {
-  if (!statusDropdownCode.value) return null;
-  return props.workOrders.find((o) => o.code === statusDropdownCode.value) || null;
-});
-
-let lastStatusDropdownOpenTime = 0;
-
-const toggleStatusDropdown = (e: MouseEvent, code: string) => {
-  e.stopPropagation();
-
-  if (statusDropdownCode.value === code) {
-    statusDropdownCode.value = null;
-    return;
-  }
-
-  const target = (e.currentTarget as HTMLElement) || (e.target as HTMLElement);
-  const rect = target.getBoundingClientRect();
-  const menuWidth = 185;
-  const menuHeight = 175;
-
-  const spaceBelow = window.innerHeight - rect.bottom;
-  let top = rect.bottom + 6;
-
-  if (spaceBelow < menuHeight && rect.top > menuHeight) {
-    top = rect.top - menuHeight - 6;
-  }
-
-  let left = Math.max(10, rect.left);
-  if (left + menuWidth > window.innerWidth - 10) {
-    left = window.innerWidth - menuWidth - 10;
-  }
-
-  statusDropdownPosition.value = { top, left };
-  statusDropdownCode.value = code;
-  lastStatusDropdownOpenTime = Date.now();
-};
-
-const handleSelectStatusFromPill = (st: string) => {
-  if (statusDropdownCode.value) {
-    emit('updateStatus', statusDropdownCode.value, st);
-    statusDropdownCode.value = null;
-  }
-};
-
-const closeAllPopovers = () => {
-  if (Date.now() - lastStatusDropdownOpenTime < 150) return;
-  statusDropdownCode.value = null;
-};
-
 onMounted(() => {
-  window.addEventListener('click', closeAllPopovers);
-  window.addEventListener('scroll', closeAllPopovers, true);
-  window.addEventListener('resize', closeAllPopovers);
   window.addEventListener('keydown', handleLightboxKeyDown);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('click', closeAllPopovers);
-  window.removeEventListener('scroll', closeAllPopovers, true);
-  window.removeEventListener('resize', closeAllPopovers);
   window.removeEventListener('keydown', handleLightboxKeyDown);
 });
 
@@ -1159,25 +1056,7 @@ const getStatusClass = (status: string) => {
   }
 };
 
-const getStatusDotColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'not scheduled':
-    case 'notscheduled':
-    case 'unscheduled':
-    case 'pending':
-      return '#D97706';
-    case 'scheduled':
-      return '#0284C7';
-    case 'on-going':
-    case 'ongoing':
-    case 'in progress':
-      return '#16A34A';
-    case 'completed':
-      return '#475569';
-    default:
-      return '#94A3B8';
-  }
-};
+
 
 const handleActiveFilterClick = (statusOpt: string) => {
   if (activeFilter.value === statusOpt) {
@@ -1725,96 +1604,4 @@ const handleDeleteInspection = (inspId: string) => {
 }
 </style>
 
-<style>
-/* Global styles for Teleported Status Picker Popover */
-.floating-actions-popover.status-picker-popover {
-  position: fixed !important;
-  width: 185px !important;
-  background: #FFFFFF !important;
-  border: 1px solid rgba(226, 232, 240, 0.95) !important;
-  box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.2), 0 6px 14px -2px rgba(15, 23, 42, 0.08) !important;
-  border-radius: 12px !important;
-  z-index: 999999 !important;
-  padding: 6px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  animation: fapPopoverIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-  transform-origin: top left !important;
-}
 
-@keyframes fapPopoverIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.status-picker-header {
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  color: #64748B !important;
-  padding: 4px 8px 6px 8px !important;
-  letter-spacing: 0.5px !important;
-  border-bottom: 1px solid #F1F5F9 !important;
-  margin-bottom: 3px !important;
-}
-
-.fap-status-group {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 2px !important;
-}
-
-.fap-item.fap-status-item {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  width: 100% !important;
-  border: none !important;
-  background: transparent !important;
-  padding: 7px 10px !important;
-  border-radius: 7px !important;
-  font-family: inherit !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  color: #334155 !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease !important;
-  text-align: left !important;
-}
-
-.fap-item.fap-status-item:hover {
-  background: #F8FAFC !important;
-  color: #0F172A !important;
-}
-
-.fap-item.fap-status-item.is-active-status {
-  background: #F0FDF4 !important;
-  color: #006C49 !important;
-  font-weight: 600 !important;
-}
-
-.fap-status-label-group {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-}
-
-.fap-status-dot {
-  width: 7px !important;
-  height: 7px !important;
-  border-radius: 50% !important;
-  flex-shrink: 0 !important;
-}
-
-.fap-check-icon {
-  font-size: 12px !important;
-  font-weight: 800 !important;
-  color: #006C49 !important;
-}
-</style>

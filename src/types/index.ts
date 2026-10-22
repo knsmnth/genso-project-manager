@@ -36,6 +36,15 @@ export interface WorkOrder {
   itemTypes?: string[];
   inspectionList?: InspectionItem[];
   inspectionsCount?: number;
+  completedDate?: string;
+}
+
+export interface DateHoldRecord {
+  date: string;
+  isHeld: boolean;
+  reason: string;
+  updatedAt?: string;
+  declaredBy?: string;
 }
 
 export type AttendanceStatusType = 'present' | 'absent' | 'half_am' | 'half_pm' | 'on_leave';

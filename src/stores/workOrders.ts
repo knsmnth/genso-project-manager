@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { WorkOrder, InspectionItem } from '../types';
+import { WorkOrder, InspectionItem, DailyWorkLogEntry } from '../types';
 import { getWorkOrders, saveWorkOrderToDb, deleteWorkOrderFromDb } from '../services/workOrderService';
+import { evaluateOrderStatus, archiveCompletedOrderSnapshot } from '../services/workOrderStatusService';
+import { formatLocalDate } from '../services/workLogHistoryService';
 
 export const DEFAULT_WORK_ORDERS: WorkOrder[] = [
   {
@@ -187,11 +189,30 @@ export const useWorkOrdersStore = defineStore('workOrders', () => {
       }
     } catch {}
 
+    // Evaluate automatic status for all normalized orders
+    normalized.forEach((order) => {
+      const autoSt = evaluateOrderStatus(order);
+      order.status = autoSt;
+      if (autoSt === 'Completed' && order.isActive === undefined) {
+        order.isActive = false;
+      }
+    });
+
     saveToStorage(normalized);
     return normalized;
   };
 
   const saveOrder = async (data: WorkOrder, isEditing: boolean = false) => {
+    const autoStatus = evaluateOrderStatus(data);
+    data.status = autoStatus;
+    if (autoStatus === 'Completed') {
+      if (!data.completedDate) data.completedDate = formatLocalDate(new Date());
+      if (data.isActive !== false) {
+        await archiveCompletedOrderSnapshot(data);
+        data.isActive = false;
+      }
+    }
+
     let updated: WorkOrder[] = [];
     if (isEditing) {
       updated = workOrders.value.map((o) => (o.code === data.code ? data : o));
@@ -200,6 +221,70 @@ export const useWorkOrdersStore = defineStore('workOrders', () => {
     }
     saveToStorage(updated);
     await saveWorkOrderToDb(data);
+  };
+
+  const syncOrderAutoStatus = async (
+    code: string,
+    currentLogs?: DailyWorkLogEntry[]
+  ): Promise<{ status: string; becameCompleted: boolean }> => {
+    const target = workOrders.value.find((o) => o.code === code);
+    if (!target) return { status: 'Not Scheduled', becameCompleted: false };
+
+    const newStatus = evaluateOrderStatus(target, currentLogs);
+    let changed = false;
+    let becameCompleted = false;
+
+    if (target.status !== newStatus) {
+      target.status = newStatus;
+      changed = true;
+    }
+
+    if (newStatus === 'Completed') {
+      if (!target.completedDate) {
+        target.completedDate = formatLocalDate(new Date());
+        changed = true;
+      }
+      if (target.isActive !== false) {
+        await archiveCompletedOrderSnapshot(target, currentLogs);
+        target.isActive = false;
+        changed = true;
+        becameCompleted = true;
+      }
+    }
+
+    if (changed) {
+      const updated = [...workOrders.value];
+      saveToStorage(updated);
+      await saveWorkOrderToDb(target);
+    }
+
+    return { status: newStatus, becameCompleted };
+  };
+
+  const evaluateAllOrders = async (currentLogs?: DailyWorkLogEntry[]) => {
+    let anyChanged = false;
+    for (const order of workOrders.value) {
+      const autoSt = evaluateOrderStatus(order, currentLogs);
+      if (order.status !== autoSt) {
+        order.status = autoSt;
+        anyChanged = true;
+      }
+      if (autoSt === 'Completed') {
+        if (!order.completedDate) {
+          order.completedDate = formatLocalDate(new Date());
+          anyChanged = true;
+        }
+        if (order.isActive !== false) {
+          await archiveCompletedOrderSnapshot(order, currentLogs);
+          order.isActive = false;
+          anyChanged = true;
+        }
+      }
+    }
+    if (anyChanged) {
+      const updated = [...workOrders.value];
+      saveToStorage(updated);
+    }
   };
 
   const updateStatus = async (code: string, newStatus: string) => {
@@ -256,6 +341,8 @@ export const useWorkOrdersStore = defineStore('workOrders', () => {
     saveToStorage,
     fetchOrders,
     saveOrder,
+    syncOrderAutoStatus,
+    evaluateAllOrders,
     updateStatus,
     toggleActive,
     updateInspections,

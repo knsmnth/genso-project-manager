@@ -705,6 +705,7 @@ import { WorkOrder, Task, Person, RemarkNote, MasterCatalogsState, CatalogItem }
 import { getItemTypeColor, ITEM_TYPE_COLOR_PALETTE } from '../utils/catalogsData';
 import SearchableCombobox from '../components/ui/SearchableCombobox.vue';
 import RemarksDrawer from '../components/modals/RemarksDrawer.vue';
+import { evaluateOrderStatus } from '../services/workOrderStatusService';
 
 const props = defineProps<{
   editingOrderCode: string | null;
@@ -1642,7 +1643,7 @@ const handleSubmit = () => {
     space: roomNo.value.trim() || (existing ? existing.space : '-'),
     scope: effectiveScope,
     workgroup: existing?.workgroup || '',
-    status: existing ? existing.status : 'Pending',
+    status: 'Not Scheduled',
     priority: existing ? existing.priority : 'Medium',
     worktype: effectiveWorkType,
     startDate: primaryTask.startDate || (existing ? existing.startDate : ''),
@@ -1665,6 +1666,12 @@ const handleSubmit = () => {
     isLocked: Boolean(isLocked.value),
     itemTypes: [...selectedItemTypes.value]
   };
+
+  const autoStatus = evaluateOrderStatus(payload);
+  payload.status = autoStatus;
+  if (autoStatus === 'Completed' && payload.isActive === undefined) {
+    payload.isActive = false;
+  }
 
   emit('saveOrder', payload);
 };
