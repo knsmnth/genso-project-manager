@@ -1,9 +1,7 @@
-const CACHE_NAME = 'genso-cache-v1';
+const CACHE_NAME = 'genso-cache-v2';
 const ASSETS = [
   '/',
   '/index.html',
-  '/style.css',
-  '/main.js',
   '/manifest.json',
   '/logo.svg',
   '/logo-192.png',

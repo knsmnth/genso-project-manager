@@ -22,7 +22,12 @@ const PATH_MAP: Record<string, string> = Object.fromEntries(
 );
 
 export const useUIStore = defineStore('ui', () => {
-  const initialPath = window.location.hash.replace(/^#/, '') || '/dashboard';
+  const getHashPath = () => {
+    const raw = window.location.hash.replace(/^#/, '');
+    const clean = raw.split('?')[0];
+    return clean && clean !== '/' ? clean : '/dashboard';
+  };
+  const initialPath = getHashPath();
   const activeView = ref<string>(PATH_MAP[initialPath] || 'dashboard');
   const searchQuery = ref<string>('');
   const sidebarOpen = ref<boolean>(false);
@@ -43,8 +48,8 @@ export const useUIStore = defineStore('ui', () => {
 
   // Sync route changes to activeView
   router.afterEach((to) => {
-    const matched = PATH_MAP[to.path];
-    if (matched && activeView.value !== matched) {
+    const matched = PATH_MAP[to.path] || 'dashboard';
+    if (activeView.value !== matched) {
       activeView.value = matched;
     }
   });

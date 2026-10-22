@@ -15,6 +15,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Immediate Hash Routing Fallback & Root Redirect -->
+  <script>
+    (function () {
+      var hash = window.location.hash;
+      if (!hash || hash === '#' || hash === '#/') {
+        window.location.replace(window.location.pathname + window.location.search + '#/dashboard');
+      }
+    })();
+  </script>
 </head>
 <body>
   <!-- React Mount Point -->
