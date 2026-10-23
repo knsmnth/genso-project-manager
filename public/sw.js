@@ -1,4 +1,4 @@
-const CACHE_NAME = 'genso-cache-v2';
+const CACHE_NAME = 'genso-cache-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -54,21 +54,29 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  e.respondWith(
-    caches.match(e.request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse; // Return from cache
-        }
-        
-        // Fetch from network as fallback
-        return fetch(e.request).catch(() => {
-          // If offline and request is for page navigation, return cached index
-          if (e.request.mode === 'navigate') {
-            return caches.match('/index.html');
+  // Network-first for navigation requests (HTML page loads) so updates are always seen
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
           }
-          return new Response('Network error occurred', { status: 503, statusText: 'Service Unavailable' });
-        });
-      })
+          return networkResponse;
+        })
+        .catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // Cache-first with network fallback for static assets
+  e.respondWith(
+    caches.match(e.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(e.request);
+    })
   );
 });
