@@ -1,0 +1,761 @@
+/* ==========================================================================
+   WORK ORDER MONITORING - VSU GENERAL SERVICES OFFICE
+   Floating Capsule Glassmorphism Navigation (Emerald & White Active Pill)
+   ========================================================================== */
+
+:root {
+  --sidebar-capsule-width: 236px;
+  --sidebar-capsule-collapsed: 66px;
+}
+
+/* --- Floating Capsule Sidebar Shell --- */
+.sidebar {
+  width: var(--sidebar-capsule-width);
+  height: calc(100vh - 28px);
+  position: fixed;
+  top: 14px;
+  bottom: 14px;
+  left: 14px;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, #135d38 0%, #0c3e25 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  color: #FFFFFF;
+  transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), padding 0.28s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+/* --- Brand Header Area --- */
+.sidebar-brand-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 16px;
+  padding: 6px 8px 12px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  border-radius: 12px;
+  user-select: none;
+  transition: background 0.18s ease, transform 0.15s ease;
+}
+
+.sidebar-brand-wrapper:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-brand-wrapper:active {
+  transform: scale(0.98);
+}
+
+.sidebar-brand-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* Frosted Circular Glass Bubble for Logo */
+.brand-logo-mark {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4), 0 4px 10px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  padding: 2px;
+  box-sizing: border-box;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.sidebar-brand-wrapper:hover .brand-logo-mark {
+  transform: scale(1.05);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5), 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.brand-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.brand-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #FFFFFF;
+  line-height: 1.25;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.brand-subtitle {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+/* --- Navigation List --- */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-grow: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+/* Section Header Labels */
+.nav-section-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  padding: 10px 12px 3px 12px;
+  pointer-events: none;
+}
+
+.sidebar-nav > .nav-section-label:first-child {
+  padding-top: 2px;
+}
+
+/* Base Nav Item */
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  color: rgba(255, 255, 255, 0.88);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  min-height: 42px;
+  box-sizing: border-box;
+}
+
+.nav-item-left {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  flex-grow: 1;
+}
+
+.nav-item-icon-box {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: inherit;
+  transition: color 0.18s ease;
+}
+
+.nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-item:hover {
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* --- Active Item Design (Signature White Pill from Reference) --- */
+.nav-item.active {
+  background: #FFFFFF !important;
+  color: #0c3e25 !important;
+  font-weight: 700 !important;
+  border-radius: 22px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  border-color: transparent;
+}
+
+.nav-item.active .nav-item-icon-box {
+  color: #0c3e25 !important;
+}
+
+/* --- Parent Group & Hierarchical Sub-Menu --- */
+.nav-parent-group {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.nav-sub-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 2px 0 6px 18px;
+  position: relative;
+}
+
+.nav-sub-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 18px;
+  border: 1px solid transparent;
+  transition: all 0.18s ease;
+  position: relative;
+}
+
+.nav-sub-item svg {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.78);
+  transition: color 0.18s ease;
+}
+
+.nav-sub-item:hover {
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.nav-sub-item:hover svg {
+  color: #FFFFFF;
+}
+
+.nav-sub-item.active {
+  background: #FFFFFF !important;
+  color: #0c3e25 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  border-color: transparent;
+}
+
+.nav-sub-item.active svg {
+  color: #0c3e25 !important;
+}
+
+/* --- Sidebar Footer & Actions --- */
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 14px;
+  margin-top: auto;
+}
+
+/* PWA Install Button */
+.install-app-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.install-app-btn:hover {
+  background-color: rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+}
+
+.install-badge {
+  background: rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Primary Action Button (Create Work Order) */
+.btn-sidebar-action {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  background: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  color: #0c3e25;
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+  border-radius: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-sidebar-action:hover {
+  background: #f0fdf4;
+  color: #092e1b;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
+  transform: translateY(-1px);
+}
+
+.btn-sidebar-action:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Institutional Footer Hallmark */
+.sidebar-institution-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 0;
+}
+
+.inst-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inst-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.8);
+  flex-shrink: 0;
+}
+
+.inst-text {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
+   COLLAPSED / MINIMIZED CAPSULE STATE (Slim Pill from Reference Image)
+   ========================================================================== */
+.sidebar-collapsed {
+  --sidebar-width: 90px !important;
+}
+
+.sidebar-collapsed .sidebar,
+.sidebar.collapsed {
+  width: var(--sidebar-capsule-collapsed) !important;
+  padding: 16px 8px !important;
+  border-radius: 34px !important;
+  overflow: visible !important;
+}
+
+.sidebar-collapsed .sidebar-nav,
+.sidebar.collapsed .sidebar-nav {
+  overflow: visible !important;
+  align-items: center;
+  gap: 10px !important;
+}
+
+.sidebar-collapsed .sidebar-brand-wrapper,
+.sidebar.collapsed .sidebar-brand-wrapper {
+  justify-content: center !important;
+  padding: 0 0 14px 0 !important;
+  margin-bottom: 12px !important;
+}
+
+.sidebar-collapsed .sidebar-brand-left,
+.sidebar.collapsed .sidebar-brand-left {
+  justify-content: center !important;
+  width: 100% !important;
+  gap: 0 !important;
+  cursor: pointer !important;
+}
+
+.sidebar-collapsed .brand-logo-mark,
+.sidebar.collapsed .brand-logo-mark {
+  margin: 0 auto;
+  cursor: pointer !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.sidebar-collapsed .sidebar-brand-left:hover .brand-logo-mark,
+.sidebar.collapsed .sidebar-brand-left:hover .brand-logo-mark {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-collapsed .sidebar-brand-left:active .brand-logo-mark,
+.sidebar.collapsed .sidebar-brand-left:active .brand-logo-mark {
+  transform: scale(0.96);
+}
+
+.sidebar-collapsed .brand-info,
+.sidebar.collapsed .brand-info,
+.sidebar-collapsed .sidebar-toggle-btn,
+.sidebar.collapsed .sidebar-toggle-btn,
+.sidebar-collapsed .nav-section-label,
+.sidebar.collapsed .nav-section-label,
+.sidebar-collapsed .nav-label,
+.sidebar.collapsed .nav-label,
+.sidebar-collapsed .nav-expand-btn,
+.sidebar.collapsed .nav-expand-btn,
+.sidebar-collapsed .nav-sub-menu,
+.sidebar.collapsed .nav-sub-menu,
+.sidebar-collapsed .install-app-btn,
+.sidebar.collapsed .install-app-btn,
+.sidebar-collapsed .btn-sidebar-action span,
+.sidebar.collapsed .btn-sidebar-action span,
+.sidebar-collapsed .sidebar-institution-footer,
+.sidebar.collapsed .sidebar-institution-footer {
+  display: none !important;
+}
+
+/* Collapsed Nav Item (Round Circle / Pill) */
+.sidebar-collapsed .nav-item,
+.sidebar.collapsed .nav-item {
+  width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  justify-content: center !important;
+  margin: 0 auto !important;
+}
+
+.sidebar-collapsed .nav-item-left,
+.sidebar.collapsed .nav-item-left {
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+/* Signature White Circle for Active Collapsed Item */
+.sidebar-collapsed .nav-item.active,
+.sidebar.collapsed .nav-item.active {
+  background: #FFFFFF !important;
+  color: #0c3e25 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+  border-radius: 50% !important;
+}
+
+.sidebar-collapsed .nav-item.active .nav-item-icon-box,
+.sidebar.collapsed .nav-item.active .nav-item-icon-box {
+  color: #0c3e25 !important;
+}
+
+/* Collapsed Create Action (+) Button */
+.sidebar-collapsed .btn-sidebar-action,
+.sidebar.collapsed .btn-sidebar-action {
+  width: 44px !important;
+  height: 44px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  justify-content: center !important;
+  margin: 0 auto !important;
+}
+
+/* Floating Flyout Popover for Collapsed State - 100% Uniform Emerald Capsule */
+.nav-flyout-popover {
+  display: none;
+  position: absolute;
+  left: calc(100% + 10px);
+  top: -4px;
+  min-width: 208px;
+  background: linear-gradient(180deg, #135d38 0%, #0c3e25 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 8px 6px !important;
+  z-index: 9999;
+  flex-direction: column;
+  gap: 3px;
+  pointer-events: auto;
+  animation: flyoutPopIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes flyoutPopIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Invisible Bridge to prevent mouseleave during hover transit */
+.nav-flyout-popover::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+  left: -20px;
+  width: 24px;
+  background: transparent;
+  pointer-events: auto;
+}
+
+/* Trigger Popover on Active state or Group Hover */
+.sidebar-collapsed .nav-parent-group.flyout-active .nav-flyout-popover,
+.sidebar-collapsed .nav-parent-group:hover .nav-flyout-popover,
+.sidebar.collapsed .nav-parent-group.flyout-active .nav-flyout-popover,
+.sidebar.collapsed .nav-parent-group:hover .nav-flyout-popover,
+.app-container.sidebar-pinned-collapsed .nav-parent-group:hover .nav-flyout-popover {
+  display: flex !important;
+}
+
+.flyout-header {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  padding: 6px 12px 6px 12px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  margin-bottom: 4px !important;
+}
+
+.flyout-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 9px 12px !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-decoration: none !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  border-radius: 14px !important;
+  transition: all 0.15s ease !important;
+}
+
+.flyout-item:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
+}
+
+.flyout-item.active {
+  background: #FFFFFF !important;
+  color: #0c3e25 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22) !important;
+}
+
+.flyout-item.active svg {
+  color: #0c3e25 !important;
+}
+
+/* ==========================================================================
+   INTENTIONAL COLLAPSED SIDEBAR HOVER INDICATOR (SPEECH BUBBLE TOOLTIP)
+   Design Inspiration: Floating pure white card with pointer beak on the left
+   ========================================================================== */
+
+/* Hidden by default in expanded sidebar */
+.sidebar-collapsed-tooltip {
+  display: none !important;
+}
+
+/* Position relative for parent items in collapsed states */
+.sidebar-collapsed .nav-item,
+.sidebar.collapsed .nav-item,
+.app-container.sidebar-pinned-collapsed .nav-item,
+.sidebar-collapsed .btn-sidebar-action,
+.sidebar.collapsed .btn-sidebar-action,
+.app-container.sidebar-pinned-collapsed .btn-sidebar-action,
+.sidebar-collapsed .sidebar-brand-wrapper,
+.sidebar.collapsed .sidebar-brand-wrapper,
+.app-container.sidebar-pinned-collapsed .sidebar-brand-wrapper {
+  position: relative !important;
+}
+
+/* Tooltip appearance strictly when sidebar is collapsed */
+.sidebar-collapsed .nav-item .sidebar-collapsed-tooltip,
+.sidebar.collapsed .nav-item .sidebar-collapsed-tooltip,
+.app-container.sidebar-pinned-collapsed .nav-item .sidebar-collapsed-tooltip,
+.sidebar-collapsed .btn-sidebar-action .sidebar-collapsed-tooltip,
+.sidebar.collapsed .btn-sidebar-action .sidebar-collapsed-tooltip,
+.app-container.sidebar-pinned-collapsed .btn-sidebar-action .sidebar-collapsed-tooltip,
+.sidebar-collapsed .sidebar-brand-wrapper .sidebar-collapsed-tooltip,
+.sidebar.collapsed .sidebar-brand-wrapper .sidebar-collapsed-tooltip,
+.app-container.sidebar-pinned-collapsed .sidebar-brand-wrapper .sidebar-collapsed-tooltip {
+  display: flex !important;
+  align-items: center;
+  position: absolute;
+  left: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+  background: #FFFFFF !important;
+  color: #111827 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.01em !important;
+  padding: 8px 14px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.04) !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.16s !important;
+  z-index: 999999 !important;
+}
+
+/* Triangle speech bubble pointer on the left side pointing to the icon */
+.sidebar-collapsed .nav-item .sidebar-collapsed-tooltip::before,
+.sidebar.collapsed .nav-item .sidebar-collapsed-tooltip::before,
+.app-container.sidebar-pinned-collapsed .nav-item .sidebar-collapsed-tooltip::before,
+.sidebar-collapsed .btn-sidebar-action .sidebar-collapsed-tooltip::before,
+.sidebar.collapsed .btn-sidebar-action .sidebar-collapsed-tooltip::before,
+.app-container.sidebar-pinned-collapsed .btn-sidebar-action .sidebar-collapsed-tooltip::before,
+.sidebar-collapsed .sidebar-brand-wrapper .sidebar-collapsed-tooltip::before,
+.sidebar.collapsed .sidebar-brand-wrapper .sidebar-collapsed-tooltip::before,
+.app-container.sidebar-pinned-collapsed .sidebar-brand-wrapper .sidebar-collapsed-tooltip::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 6px 7px 6px 0;
+  border-style: solid;
+  border-color: transparent #FFFFFF transparent transparent;
+  filter: drop-shadow(-1px 0px 1px rgba(0, 0, 0, 0.04));
+}
+
+/* Smooth reveal on hover in collapsed mode */
+.sidebar-collapsed .nav-item:hover .sidebar-collapsed-tooltip,
+.sidebar.collapsed .nav-item:hover .sidebar-collapsed-tooltip,
+.app-container.sidebar-pinned-collapsed .nav-item:hover .sidebar-collapsed-tooltip,
+.sidebar-collapsed .btn-sidebar-action:hover .sidebar-collapsed-tooltip,
+.sidebar.collapsed .btn-sidebar-action:hover .sidebar-collapsed-tooltip,
+.app-container.sidebar-pinned-collapsed .btn-sidebar-action:hover .sidebar-collapsed-tooltip,
+.sidebar-collapsed .sidebar-brand-wrapper:hover .sidebar-collapsed-tooltip,
+.sidebar.collapsed .sidebar-brand-wrapper:hover .sidebar-collapsed-tooltip,
+.app-container.sidebar-pinned-collapsed .sidebar-brand-wrapper:hover .sidebar-collapsed-tooltip {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(-50%) translateX(0) !important;
+}
+
+/* For parent groups with active flyouts (Work Orders / Personnel), suppress tooltip so they don't collide */
+.sidebar-collapsed .nav-parent-group.flyout-active .nav-item .sidebar-collapsed-tooltip,
+.sidebar-collapsed .nav-parent-group:hover .nav-item .sidebar-collapsed-tooltip,
+.sidebar.collapsed .nav-parent-group.flyout-active .nav-item .sidebar-collapsed-tooltip,
+.sidebar.collapsed .nav-parent-group:hover .nav-item .sidebar-collapsed-tooltip,
+.app-container.sidebar-pinned-collapsed .nav-parent-group:hover .nav-item .sidebar-collapsed-tooltip {
+  display: none !important;
+}
+
+/* Speech bubble pointer on flyout popover for visual consistency */
+.nav-flyout-popover::after {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 18px;
+  border-width: 6px 7px 6px 0;
+  border-style: solid;
+  border-color: transparent #135d38 transparent transparent;
+}
+
+/* ==========================================================================
+   MAIN CONTENT OFFSETS TO MATCH FLOATING CAPSULE
+   ========================================================================== */
+.main-content {
+  margin-left: 270px !important;
+  transition: margin-left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-container.sidebar-pinned-collapsed .main-content,
+.app-container.sidebar-collapsed .main-content {
+  margin-left: 96px !important;
+}
+
+.global-header {
+  left: 270px !important;
+  transition: left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-container.sidebar-pinned-collapsed .global-header,
+.app-container.sidebar-collapsed .global-header {
+  left: 96px !important;
+}
+
+/* Responsive adjustment for Mobile */
+@media (max-width: 1024px) {
+  .sidebar {
+    height: calc(100vh - 20px);
+    top: 10px;
+    bottom: 10px;
+    left: 10px;
+    transform: translateX(-120%);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .main-content {
+    margin-left: 0 !important;
+  }
+  .global-header {
+    left: 0 !important;
+  }
+}

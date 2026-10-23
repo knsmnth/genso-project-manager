@@ -24,18 +24,20 @@
         @sync="handleManualSync"
         @menu-toggle="handleMenuToggle"
         @create-order="handleCreateOrder"
-      />
+      >
+        <template #left>
+          <!-- Global Breadcrumb Navigation Bar in Header Top -->
+          <Breadcrumbs
+            :active-view="activeView"
+            :editing-order-code="editingOrderCode"
+            :origin-view="previousViewBeforeOrderForm"
+            @navigate="handleViewChange"
+          />
+        </template>
+      </Header>
 
       <!-- View Routing Switcher -->
       <div class="main-content-inner">
-        <!-- Global Breadcrumb Navigation Bar -->
-        <Breadcrumbs
-          :active-view="activeView"
-          :editing-order-code="editingOrderCode"
-          :origin-view="previousViewBeforeOrderForm"
-          @navigate="handleViewChange"
-        />
-
         <DashboardView
           v-if="activeView === 'dashboard'"
           :work-orders="workOrders"
@@ -105,7 +107,7 @@
           :personnel="personnel"
           :search-query="searchQuery"
           :teams-count="teams.length"
-          :breadcrumb-title="'Staff Registry'"
+          :breadcrumb-title="'Personnel'"
           @navigate-teams="activeView = 'teams'"
           @open-attendance-check="isAttendanceModalOpen = true"
           @open-quick-onboard="activeView = 'quick-onboard'"

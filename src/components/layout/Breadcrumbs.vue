@@ -122,8 +122,7 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
     case 'personnel':
       return [
         root,
-        { label: 'Personnel', view: 'personnel' },
-        { label: 'Staff Registry' }
+        { label: 'Personnel' }
       ];
     case 'catalogs':
       return [root, { label: 'System Registries & Assets' }];
@@ -131,7 +130,6 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
       return [
         root,
         { label: 'Personnel', view: 'personnel' },
-        { label: 'Staff Registry', view: 'personnel' },
         { label: 'Quick Onboard' }
       ];
     default:
@@ -144,14 +142,14 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
 .breadcrumbs-nav {
   display: flex;
   align-items: center;
-  padding: 2px 0 6px;
-  width: 100%;
+  padding: 0;
+  width: auto;
 }
 
 .breadcrumbs-list {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   list-style: none;
   padding: 0;
   margin: 0;

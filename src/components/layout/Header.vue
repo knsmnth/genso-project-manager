@@ -1,18 +1,9 @@
 <template>
   <header class="global-header">
     <div class="header-left">
-      <button
-        id="menu-toggle"
-        class="hamburger-btn"
-        @click="$emit('menuToggle')"
-        aria-label="Toggle Menu"
-      >
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
+      <slot name="left">
+        <slot />
+      </slot>
     </div>
 
     <div class="header-right">

@@ -41,13 +41,13 @@
           type="button"
           class="module-tab-btn"
           @click="$emit('navigatePersonnel')"
-          title="Switch to Staff Registry"
+          title="Switch to Personnel"
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="7" r="4" />
             <path d="M5.5 21a8.5 8.5 0 0 1 13 0" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
-          <span>Staff Registry</span>
+          <span>Personnel</span>
           <span v-if="personnel" class="module-tab-count">{{ personnel.length }}</span>
         </button>
 

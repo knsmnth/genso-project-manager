@@ -1,12 +1,12 @@
 {
-  "short_name": "GenSO Manager",
-  "name": "GenSO Work Order Manager",
+  "short_name": "Work Order Monitoring",
+  "name": "Work Order Monitoring - General Services Office (VSU)",
   "icons": [
     {
-      "src": "/logo.svg",
-      "type": "image/svg+xml",
+      "src": "/genso-app-logo.png",
+      "type": "image/png",
       "sizes": "any",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/logo-192.png",
@@ -23,7 +23,7 @@
   ],
   "start_url": "/",
   "background_color": "#F8F9FF",
-  "theme_color": "#006C49",
+  "theme_color": "#145A32",
   "display": "standalone",
   "orientation": "portrait-primary"
 }
