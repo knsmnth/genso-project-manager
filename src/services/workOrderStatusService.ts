@@ -165,3 +165,127 @@ export async function archiveCompletedOrderSnapshot(
   }
   return false;
 }
+
+/**
+ * Checks if a work order is completed today (highlighted on current day)
+ */
+export function isOrderCompletedToday(order: WorkOrder): boolean {
+  if (order.status !== 'Completed') return false;
+  const todayStr = formatLocalDate(new Date());
+  return !order.completedDate || order.completedDate === todayStr;
+}
+
+/**
+ * Checks if a work order was completed on a previous day (expired from active view)
+ */
+export function isOrderExpiredCompleted(order: WorkOrder): boolean {
+  if (order.status !== 'Completed') return false;
+  const todayStr = formatLocalDate(new Date());
+  return Boolean(order.completedDate && order.completedDate < todayStr);
+}
+
+export interface AssignmentStatus {
+  isFullyAssigned: boolean;
+  missingStartDate: boolean;
+  missingPersonnel: boolean;
+  missingLead: boolean;
+  missingCategory: boolean;
+  badgeText: string;
+  badgeTooltip: string;
+}
+
+/**
+ * Evaluates whether an individual daily work log row is fully scheduled and assigned.
+ */
+export function evaluateLogAssignmentStatus(row: DailyWorkLogEntry): AssignmentStatus {
+  const missingStartDate = !hasValidDate(row.startDate);
+  const missingPersonnel = !hasPersonnel(row.assignedPersonnel);
+  const missingLead = !row.assignedLead || row.assignedLead.trim() === '' || row.assignedLead === '-';
+  const missingCategory = !row.category || row.category.trim() === '' || row.category === '-' || row.category === '__ADD_NEW__';
+
+  const isFullyAssigned = !missingStartDate && !missingPersonnel && !missingLead && !missingCategory;
+
+  let badgeText = '';
+  let badgeTooltip = '';
+
+  if (missingStartDate && missingPersonnel) {
+    badgeText = 'Unassigned';
+    badgeTooltip = 'Starting date and personnel have not been assigned yet';
+  } else if (missingStartDate) {
+    badgeText = 'Unscheduled';
+    badgeTooltip = 'Starting date has not been set yet';
+  } else if (missingPersonnel) {
+    badgeText = 'Needs Staff';
+    badgeTooltip = 'No personnel assigned to this scope of work';
+  } else if (missingLead) {
+    badgeText = 'Needs Lead';
+    badgeTooltip = 'No assigned lead/foreman selected';
+  } else if (missingCategory) {
+    badgeText = 'Needs Group';
+    badgeTooltip = 'Work group category is unassigned';
+  }
+
+  return {
+    isFullyAssigned,
+    missingStartDate,
+    missingPersonnel,
+    missingLead,
+    missingCategory,
+    badgeText,
+    badgeTooltip
+  };
+}
+
+/**
+ * Evaluates whether a group of daily work log rows (a work order card) is fully scheduled and assigned.
+ */
+export function evaluateGroupAssignmentStatus(items: DailyWorkLogEntry[]): AssignmentStatus {
+  if (!items || items.length === 0) {
+    return {
+      isFullyAssigned: false,
+      missingStartDate: true,
+      missingPersonnel: true,
+      missingLead: true,
+      missingCategory: true,
+      badgeText: 'Unassigned',
+      badgeTooltip: 'No tasks or scopes defined'
+    };
+  }
+
+  const anyMissingStartDate = items.some((r) => !hasValidDate(r.startDate));
+  const anyMissingPersonnel = items.some((r) => !hasPersonnel(r.assignedPersonnel));
+  const anyMissingLead = items.some((r) => !r.assignedLead || r.assignedLead.trim() === '' || r.assignedLead === '-');
+  const missingCategory = !items[0]?.category || items[0].category.trim() === '' || items[0].category === '-' || items[0].category === '__ADD_NEW__';
+
+  const isFullyAssigned = !anyMissingStartDate && !anyMissingPersonnel && !anyMissingLead && !missingCategory;
+
+  let badgeText = '';
+  let badgeTooltip = '';
+
+  if (anyMissingStartDate && anyMissingPersonnel) {
+    badgeText = 'Unassigned';
+    badgeTooltip = 'Starting date and personnel have not been assigned yet';
+  } else if (anyMissingStartDate) {
+    badgeText = 'Unscheduled';
+    badgeTooltip = 'Starting date has not been set yet on one or more scopes';
+  } else if (anyMissingPersonnel) {
+    badgeText = 'Needs Staff';
+    badgeTooltip = 'Personnel need to be assigned to one or more scopes';
+  } else if (missingCategory) {
+    badgeText = 'Needs Group';
+    badgeTooltip = 'Work group registry has not been assigned to this card';
+  } else if (anyMissingLead) {
+    badgeText = 'Needs Lead';
+    badgeTooltip = 'Lead/foreman has not been designated';
+  }
+
+  return {
+    isFullyAssigned,
+    missingStartDate: anyMissingStartDate,
+    missingPersonnel: anyMissingPersonnel,
+    missingLead: anyMissingLead,
+    missingCategory,
+    badgeText,
+    badgeTooltip
+  };
+}

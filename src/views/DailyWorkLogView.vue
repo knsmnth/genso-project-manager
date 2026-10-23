@@ -29,7 +29,6 @@
             <line x1="16" y1="17" x2="8" y2="17" stroke-linecap="round" />
           </svg>
           <span>All Orders</span>
-          <span class="module-tab-count">{{ (workOrders || []).length }}</span>
         </button>
 
         <button
@@ -60,20 +59,30 @@
         </button>
       </div>
 
-      <!-- Right: Action Buttons (Date Badge, Save Progress, Export PDF) -->
+      <!-- Right: Action Buttons (Search, Date Badge, Export PDF, Auto-sync status) -->
       <div class="module-utility-actions">
-        <!-- Standard Date Badge -->
-        <div class="date-badge" title="Current Date">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
+        <!-- Search Bar -->
+        <div class="module-search-box">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <span class="date-badge-label">Today</span>
-          <span class="date-badge-separator">•</span>
-          <span class="date-badge-value">{{ currentDateFormatted }}</span>
+          <input
+            type="text"
+            v-model="searchQuery"
+            placeholder="Search daily work log..."
+            class="module-search-input"
+            aria-label="Search daily work log"
+          />
+          <button
+            v-if="searchQuery"
+            type="button"
+            @click="searchQuery = ''"
+            class="module-search-clear"
+            title="Clear search"
+          >×</button>
         </div>
+
 
         <button class="btn btn-outline-sm" @click="handleExportPDF" style="height: 36px">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -127,15 +136,17 @@
     <div v-if="orderedGroups.length === 0" class="dwl-spec-empty">
       <p>No matching daily work log entries found.</p>
     </div>
-    <template v-else>
-        <div
-          v-for="{ items, groupKey } in orderedGroups"
+    <div v-else class="dwl-spec-cards-container">
+      <div
+        v-for="{ items, groupKey } in orderedGroups"
           :key="groupKey"
           :data-group-key="groupKey"
           class="dwl-spec-group-card"
           :class="{
             'group-dragging': draggedGroupKey === groupKey,
-            'group-drag-over': dragOverGroupKey === groupKey && draggedGroupKey !== groupKey
+            'group-drag-over': dragOverGroupKey === groupKey && draggedGroupKey !== groupKey,
+            'group-completed-today': isGroupCompleted(items),
+            'group-needs-assignment': isGroupNeedsAssignment(items)
           }"
           @dragover.prevent="handleGroupDragOver($event, String(groupKey))"
           @drop.prevent="handleGroupDrop($event, String(groupKey))"
@@ -158,8 +169,27 @@
                   title="Drag to reorder card"
                 >:::</div>
                 <div class="dwl-spec-gh-text">
-                  <div class="dwl-gh-title-row">
+                  <div class="dwl-gh-title-row" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
                     <h3 class="dwl-spec-gh-title">{{ items[0]?.requestingOffice || items[0]?.groupTitle || 'REQUESTING OFFICE' }}</h3>
+                    <span v-if="isGroupCompleted(items)" class="badge-completed-today-notice" title="Completed today: will automatically be archived tomorrow">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      <span>Archives Tomorrow</span>
+                    </span>
+                    <span
+                      v-else-if="isGroupNeedsAssignment(items)"
+                      class="badge-needs-assignment"
+                      :title="getGroupAssignmentInfo(items).badgeTooltip"
+                    >
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      <span>{{ getGroupAssignmentInfo(items).badgeText }}</span>
+                    </span>
                     <!-- Edit Button: Redirects to Work Order Edit Page -->
                     <button
                       class="dwl-spec-gh-edit-btn"
@@ -288,7 +318,9 @@
               :class="{
                 'row-dragging': draggedRowId === row.id,
                 'row-drag-over': dragOverRowId === row.id,
-                'is-row-on-hold': row.isOnHold
+                'is-row-on-hold': row.isOnHold,
+                'row-completed-today': isRowCompleted(row) || isGroupCompleted(items),
+                'row-needs-assignment': !isGroupCompleted(items) && isRowNeedsAssignment(row)
               }"
               @dragover.prevent="!row.isOnHold && handleRowDragOver($event, row.id)"
               @drop.prevent="!row.isOnHold && handleRowDrop($event, row.id)"
@@ -368,6 +400,7 @@
                 <input
                   type="date"
                   class="dwl-spec-date-pill-input"
+                  :class="{ 'is-date-empty': !row.startDate }"
                   :value="row.startDate || ''"
                   :disabled="row.isOnHold"
                   @change="handleUpdateField(row.id, 'startDate', ($event.target as HTMLInputElement).value)"
@@ -380,6 +413,7 @@
                 <input
                   type="date"
                   class="dwl-spec-date-pill-input"
+                  :class="{ 'is-date-empty': !row.completionDate }"
                   :value="row.completionDate || ''"
                   :disabled="row.isOnHold"
                   @change="handleUpdateField(row.id, 'completionDate', ($event.target as HTMLInputElement).value)"
@@ -447,7 +481,7 @@
             </div>
           </div>
         </div>
-      </template>
+      </div>
 
     <!-- SIDE DRAWER 1: REMARKS AND NOTES -->
     <aside v-if="activeDrawer === 'remarks' && selectedRow" class="dwl-drawer dwl-remarks-drawer">
@@ -456,51 +490,107 @@
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#006C49" stroke-width="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
-          <h3>Remarks and Notes</h3>
+          <div>
+            <h3>Remarks and Notes</h3>
+            <span class="dwl-dh-sub-row-title" style="font-size: 11.5px; color: #6C7A71; font-weight: 500; display: block; margin-top: 2px;">
+              {{ selectedRow.requestingOffice || selectedRow.scope || 'Task Scope' }}
+            </span>
+          </div>
         </div>
         <button class="dwl-drawer-close" @click="handleCloseDrawer">&times;</button>
       </div>
 
       <div class="dwl-drawer-body">
-        <div v-for="note in (selectedRow.remarksList || [])" :key="note.id" class="dwl-note-card">
+        <!-- Empty remarks state -->
+        <div v-if="!selectedRow.remarksList || selectedRow.remarksList.length === 0" class="dwl-remarks-empty">
+          <p>No remarks or accomplishment notes recorded yet.</p>
+          <span>Click below to add a remark or site note for today.</span>
+        </div>
+
+        <div
+          v-for="note in (selectedRow.remarksList || [])"
+          :key="note.id"
+          class="dwl-note-card"
+          :class="{ 'is-editing': editingNoteId === note.id }"
+        >
           <div class="dwl-nc-header">
             <span class="dwl-nc-time">{{ note.timestamp }}</span>
             <div class="dwl-nc-actions">
+              <!-- Done Button (active editing) -->
               <button
-                class="dwl-nc-btn"
-                :class="{ active: editingNoteId === note.id }"
-                @click="editingNoteId = editingNoteId === note.id ? null : note.id"
-                title="Edit Note"
+                v-if="editingNoteId === note.id"
+                class="dwl-nc-btn dwl-nc-done-btn"
+                @click="handleToggleEditNote(note.id)"
+                title="Save & Done Editing"
               >
-                ✏️
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Done</span>
               </button>
-              <button class="dwl-nc-btn" @click="handleDeleteRemarkNote(note.id)" title="Delete Note">
-                🗑️
+
+              <!-- Edit Button (read-only view) -->
+              <button
+                v-else
+                class="dwl-nc-btn dwl-nc-edit-btn"
+                @click="handleToggleEditNote(note.id)"
+                title="Edit this remark"
+              >
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+                <span>Edit</span>
+              </button>
+
+              <!-- Delete Button -->
+              <button
+                class="dwl-nc-btn dwl-nc-delete-btn"
+                @click="handleDeleteRemarkNote(note.id)"
+                title="Delete this remark"
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
               </button>
             </div>
           </div>
 
-          <div class="dwl-nc-textarea-wrapper">
+          <!-- Active Editing Textarea -->
+          <div v-if="editingNoteId === note.id" class="dwl-nc-textarea-wrapper is-editing-wrapper">
             <textarea
-              class="dwl-nc-textarea"
+              :id="`remark-textarea-${note.id}`"
+              class="dwl-nc-textarea is-editing-textarea"
               :value="note.text"
-              :readonly="editingNoteId !== null && editingNoteId !== note.id"
               @input="handleAutoResize($event); handleUpdateRemarkNoteText(note.id, ($event.target as HTMLTextAreaElement).value)"
               maxlength="500"
               placeholder="Type in remarks and notes..."
             />
-            <span class="dwl-nc-counter">{{ note.text.length }}/500</span>
+            <div class="dwl-nc-bottom-bar">
+              <span class="dwl-nc-counter">{{ note.text.length }}/500</span>
+            </div>
+          </div>
+
+          <!-- Static Clean Read-only View -->
+          <div
+            v-else
+            class="dwl-nc-view-display"
+            @click="handleToggleEditNote(note.id)"
+            title="Click to edit remark"
+          >
+            <p v-if="note.text && note.text.trim()" class="dwl-nc-view-text">{{ note.text }}</p>
+            <p v-else class="dwl-nc-view-placeholder">(Empty remark - click Edit to add text)</p>
           </div>
         </div>
 
         <button class="dwl-btn-add-more" @click="handleAddRemarkNote">
-          + Add more Remarks and Notes
+          + Add Remark Note
         </button>
       </div>
 
       <div class="dwl-drawer-footer">
         <button class="dwl-btn-drawer-confirm" @click="handleCloseDrawer">
-          💾 Save Remarks and Notes
+          ✓ Done with Remarks
         </button>
       </div>
     </aside>
@@ -708,9 +798,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { DailyWorkLogEntry, Person, WorkOrder, RemarkNote, EquipmentItem, Team, CatalogItem } from '../types';
 import { saveSnapshot, formatLocalDate, isWeekday, isDateHeld } from '../services/workLogHistoryService';
+import {
+  hasValidDate,
+  evaluateGroupAssignmentStatus,
+  evaluateLogAssignmentStatus
+} from '../services/workOrderStatusService';
 import { useWorkOrdersStore } from '../stores/workOrders';
 
 const props = withDefaults(
@@ -869,9 +964,9 @@ const isWeekendToday = computed(() => !isWeekday(new Date()));
 const todayHoldStatus = computed(() => isDateHeld(formatLocalDate(new Date())));
 
 const autoSyncLabel = computed(() => {
-  if (isWeekendToday.value) return 'Weekend (Auto-Save Off)';
-  if (todayHoldStatus.value.isHeld) return 'On Hold (Auto-Save Off)';
-  return saveStatusText.value;
+  if (isWeekendToday.value) return 'Weekend';
+  if (todayHoldStatus.value.isHeld) return 'On Hold';
+  return 'Auto-saved';
 });
 
 const activeDrawer = ref<'remarks' | 'personnel' | 'equipment' | null>(null);
@@ -1009,6 +1104,36 @@ const saveEditGroup = (originalKey: string) => {
 
 const cancelEditGroup = () => {
   editingGroupKey.value = null;
+};
+
+const isRowCompleted = (row: DailyWorkLogEntry): boolean => {
+  return hasValidDate(row.completionDate);
+};
+
+const isGroupCompleted = (items: DailyWorkLogEntry[]): boolean => {
+  if (!items || items.length === 0) return false;
+  const woNumber = items[0]?.workOrderNumber;
+  if (woNumber && props.workOrders) {
+    const parentOrder = props.workOrders.find((o) => o.code === woNumber);
+    if (parentOrder && parentOrder.status === 'Completed') {
+      return true;
+    }
+  }
+  return items.every((r) => hasValidDate(r.completionDate));
+};
+
+const isGroupNeedsAssignment = (items: DailyWorkLogEntry[]): boolean => {
+  if (isGroupCompleted(items)) return false;
+  return !evaluateGroupAssignmentStatus(items).isFullyAssigned;
+};
+
+const getGroupAssignmentInfo = (items: DailyWorkLogEntry[]) => {
+  return evaluateGroupAssignmentStatus(items);
+};
+
+const isRowNeedsAssignment = (row: DailyWorkLogEntry): boolean => {
+  if (hasValidDate(row.completionDate)) return false;
+  return !evaluateLogAssignmentStatus(row).isFullyAssigned;
 };
 
 const handleAutoResize = (e: Event) => {
@@ -1403,6 +1528,22 @@ const handleCloseDrawer = () => {
 
 const selectedRow = computed(() => logs.value.find((l) => l.id === selectedRowId.value));
 
+const handleToggleEditNote = (noteId: string) => {
+  if (editingNoteId.value === noteId) {
+    editingNoteId.value = null;
+  } else {
+    editingNoteId.value = noteId;
+    nextTick(() => {
+      const el = document.getElementById(`remark-textarea-${noteId}`) as HTMLTextAreaElement | null;
+      if (el) {
+        el.focus();
+        const len = el.value.length;
+        el.setSelectionRange(len, len);
+      }
+    });
+  }
+};
+
 const handleAddRemarkNote = () => {
   if (!selectedRowId.value || !selectedRow.value) return;
   const now = new Date();
@@ -1420,6 +1561,10 @@ const handleAddRemarkNote = () => {
   );
   saveLogs(updatedLogs);
   editingNoteId.value = newNote.id;
+  nextTick(() => {
+    const el = document.getElementById(`remark-textarea-${newNote.id}`) as HTMLTextAreaElement | null;
+    if (el) el.focus();
+  });
 };
 
 const handleUpdateRemarkNoteText = (noteId: string, text: string) => {
