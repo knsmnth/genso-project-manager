@@ -21,7 +21,6 @@
           type="button"
           class="hdm-close-btn"
           @click="handleClose"
-          title="Close modal"
           aria-label="Close"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -48,7 +47,6 @@
               type="button"
               class="hdm-quick-btn"
               @click="setQuickDate('today')"
-              title="Set to today's date"
             >
               Today
             </button>
@@ -56,7 +54,6 @@
               type="button"
               class="hdm-quick-btn"
               @click="setQuickDate('tomorrow')"
-              title="Set to tomorrow's date"
             >
               Tomorrow
             </button>
@@ -76,10 +73,38 @@
               {{ isHeld ? 'Hold Active (No Work Logged)' : 'Normal Operations (Logs Allowed)' }}
             </span>
             <span class="hdm-toggle-desc">
-              {{ isHeld ? 'Daily work log auto-saving is halted for this date' : 'Work logs will be recorded normally on weekdays' }}
+              {{ isHeld ? 'Work log recording suspended for this date' : 'Work logs will be recorded normally on weekdays' }}
             </span>
           </div>
           <div class="hdm-switch" :class="{ 'is-on': isHeld }">
+            <div class="hdm-switch-slider"></div>
+          </div>
+        </div>
+
+        <!-- Attendance Also On Hold Toggle -->
+        <div
+          v-if="isHeld"
+          class="hdm-toggle-card hdm-sub-toggle-card"
+          :class="{ 'is-attendance-held': holdAttendance }"
+          @click="holdAttendance = !holdAttendance"
+          role="switch"
+          :aria-checked="holdAttendance"
+        >
+          <div class="hdm-toggle-info">
+            <span class="hdm-toggle-title hdm-sub-title">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="hdm-sub-icon">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              {{ holdAttendance ? 'Attendance Also On Hold' : 'Attendance Kept Normal' }}
+            </span>
+            <span class="hdm-toggle-desc">
+              {{ holdAttendance ? 'Exempts staff from absence & marks holiday on roster' : 'Staff attendance recorded normally' }}
+            </span>
+          </div>
+          <div class="hdm-switch hdm-sub-switch" :class="{ 'is-on': holdAttendance }">
             <div class="hdm-switch-slider"></div>
           </div>
         </div>
@@ -130,7 +155,6 @@
               class="hdm-list-item"
               :class="{ 'is-selected': item.date === selectedDate }"
               @click="selectHeldItem(item)"
-              :title="'Click to edit hold for ' + item.date"
             >
               <div class="hdm-item-info">
                 <div class="hdm-item-header-row">
@@ -145,8 +169,14 @@
                   >
                     {{ item.date > todayDateStr ? 'Advance' : (item.date === todayDateStr ? 'Today' : 'Past') }}
                   </span>
+                  <span
+                    class="hdm-item-badge hdm-item-attendance-badge"
+                    :class="item.holdAttendance !== false ? 'hdm-badge-attend-held' : 'hdm-badge-attend-normal'"
+                  >
+                    {{ item.holdAttendance !== false ? 'Attendance Held' : 'Logs Only' }}
+                  </span>
                 </div>
-                <div class="hdm-item-reason" :title="item.reason">
+                <div class="hdm-item-reason">
                   {{ item.reason || 'General Hold' }}
                 </div>
               </div>
@@ -156,7 +186,6 @@
                   type="button"
                   class="hdm-item-remove-btn"
                   @click.stop="handleDirectRemoveHold(item.date)"
-                  title="Remove this hold"
                   aria-label="Remove hold"
                 >
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -206,6 +235,7 @@ const props = defineProps<{
   targetDate?: string;
   initialReason?: string;
   initialIsHeld?: boolean;
+  initialHoldAttendance?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -224,6 +254,7 @@ const PRESETS = [
 const todayDateStr = formatLocalDate(new Date());
 const selectedDate = ref<string>(props.targetDate || todayDateStr);
 const isHeld = ref<boolean>(props.initialIsHeld ?? true);
+const holdAttendance = ref<boolean>(props.initialHoldAttendance ?? true);
 const reason = ref<string>(props.initialReason || '');
 const heldMapVersion = ref<number>(0);
 
@@ -245,6 +276,7 @@ watch(
       selectedDate.value = target;
       const status = isDateHeld(target);
       isHeld.value = status.isHeld;
+      holdAttendance.value = status.record ? (status.record.holdAttendance !== false) : true;
       reason.value = status.reason || '';
     }
   },
@@ -254,6 +286,7 @@ watch(
 const handleDateChanged = () => {
   const status = isDateHeld(selectedDate.value);
   isHeld.value = status.isHeld;
+  holdAttendance.value = status.record ? (status.record.holdAttendance !== false) : true;
   reason.value = status.reason || '';
 };
 
@@ -269,6 +302,7 @@ const setQuickDate = (type: 'today' | 'tomorrow') => {
 const selectHeldItem = (item: DateHoldRecord) => {
   selectedDate.value = item.date;
   isHeld.value = true;
+  holdAttendance.value = item.holdAttendance !== false;
   reason.value = item.reason || '';
 };
 
@@ -277,13 +311,15 @@ const handleDirectRemoveHold = async (date: string) => {
     date,
     isHeld: false,
     reason: '',
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    holdAttendance: false
   };
   await saveDateHold(record);
   heldMapVersion.value++;
   if (selectedDate.value === date) {
     isHeld.value = false;
     reason.value = '';
+    holdAttendance.value = true;
   }
   emit('save', record);
 };
@@ -297,7 +333,8 @@ const handleSave = () => {
     date: selectedDate.value,
     isHeld: isHeld.value,
     reason: isHeld.value ? (reason.value.trim() || 'General Date Hold') : '',
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    holdAttendance: isHeld.value ? holdAttendance.value : false
   });
   emit('close');
 };

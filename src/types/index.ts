@@ -45,9 +45,10 @@ export interface DateHoldRecord {
   reason: string;
   updatedAt?: string;
   declaredBy?: string;
+  holdAttendance?: boolean;
 }
 
-export type AttendanceStatusType = 'present' | 'absent' | 'half_am' | 'half_pm' | 'on_leave';
+export type AttendanceStatusType = 'present' | 'absent' | 'half_am' | 'half_pm' | 'on_leave' | 'holiday';
 
 export interface Person {
   name: string;

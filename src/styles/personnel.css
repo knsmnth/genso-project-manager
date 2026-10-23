@@ -1488,6 +1488,19 @@ td.sticky-col-name {
   border-bottom: 2px solid #10B981;
 }
 
+.matrix-day-th.is-held-date {
+  background: #FFFBEB;
+  border-bottom: 2px solid #F59E0B;
+}
+
+.matrix-day-th.is-held-date .matrix-day-num {
+  color: #B45309;
+}
+
+.matrix-day-th.is-held-date .matrix-day-w {
+  color: #D97706;
+}
+
 .matrix-day-num {
   display: block;
   font-size: 11px;
@@ -1516,6 +1529,10 @@ td.sticky-col-name {
 
 .matrix-day-td.is-today {
   background: #F0FDF4;
+}
+
+.matrix-day-td.is-held-date {
+  background: #FFFDF5;
 }
 
 .matrix-box-btn {

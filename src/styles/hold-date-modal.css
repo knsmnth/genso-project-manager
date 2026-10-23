@@ -1,15 +1,15 @@
-/* Hold Date Modal Stylesheet */
+/* Hold Date Side Panel Stylesheet */
 .hdm-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.6);
+  background-color: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 99999;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0;
   animation: hdmFadeIn 0.2s ease-out;
 }
 
@@ -24,24 +24,25 @@
 
 .hdm-modal {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 20px 0 0 20px;
   width: 100%;
-  max-width: 520px;
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  max-width: 480px;
+  height: 100vh;
+  max-height: 100vh;
+  box-shadow: -10px 0 35px rgba(0, 0, 0, 0.18);
+  border-left: 1px solid #CBD5E1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: hdmScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: hdmSlideInRight 0.26s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes hdmScaleIn {
+@keyframes hdmSlideInRight {
   from {
-    opacity: 0;
-    transform: scale(0.95) translateY(8px);
+    transform: translateX(100%);
   }
   to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translateX(0);
   }
 }
 
@@ -113,7 +114,8 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-height: 75vh;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -179,13 +181,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
-  border-radius: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
   background: #f8fafc;
   cursor: pointer;
   user-select: none;
-  transition: all 0.2s;
+  transition: all 0.15s ease;
 }
 
 .hdm-toggle-card.is-held {
@@ -196,27 +198,35 @@
 .hdm-toggle-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  padding-right: 12px;
 }
 
 .hdm-toggle-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: #0f172a;
+  line-height: 1.25;
 }
 
 .hdm-toggle-desc {
-  font-size: 12px;
+  font-size: 11px;
   color: #64748b;
+  line-height: 1.3;
 }
 
 .hdm-switch {
   position: relative;
-  width: 48px;
-  height: 28px;
+  width: 36px;
+  min-width: 36px;
+  height: 20px;
   background: #cbd5e1;
-  border-radius: 14px;
-  transition: background-color 0.2s;
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .hdm-switch.is-on {
@@ -225,18 +235,52 @@
 
 .hdm-switch-slider {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 22px;
-  height: 22px;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
   background: #ffffff;
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
 }
 
 .hdm-switch.is-on .hdm-switch-slider {
-  transform: translateX(20px);
+  transform: translateX(16px);
+}
+
+/* Secondary Attendance Hold Toggle Card */
+.hdm-sub-toggle-card {
+  margin-top: 6px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  padding: 7px 12px;
+}
+
+.hdm-sub-toggle-card.is-attendance-held {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+}
+
+.hdm-sub-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+}
+
+.hdm-sub-icon {
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
+.hdm-sub-toggle-card.is-attendance-held .hdm-sub-icon {
+  color: #15803d;
+}
+
+.hdm-sub-switch.is-on {
+  background: #15803d;
 }
 
 /* Preset Reason Chips */
@@ -472,6 +516,18 @@
   border: 1px solid #e2e8f0;
 }
 
+.hdm-badge-attend-held {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.hdm-badge-attend-normal {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
 .hdm-item-reason {
   font-size: 12px;
   color: #64748b;
@@ -540,4 +596,11 @@
 .wlh-hold-banner-reason {
   font-weight: 500;
   color: #78350f;
+}
+
+@media (max-width: 640px) {
+  .hdm-modal {
+    max-width: 100%;
+    border-radius: 0;
+  }
 }

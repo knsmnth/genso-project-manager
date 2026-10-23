@@ -11,6 +11,7 @@ import {
   updateScheduledLeave,
   deleteScheduledLeave
 } from '../services/personnelService';
+import { isDateHeld } from '../services/workLogHistoryService';
 
 export const DEFAULT_PERSONNEL: Person[] = [
   {
@@ -187,6 +188,7 @@ const TEAMS_STORAGE_KEY = 'infra_teams';
 export const normalizeAttendanceStatus = (raw?: string): AttendanceStatusType => {
   if (!raw) return 'present';
   const s = raw.toLowerCase().trim();
+  if (s === 'holiday' || s.includes('hold') || s.includes('holiday')) return 'holiday';
   if (s === 'present' || s.startsWith('present')) return 'present';
   if (s.includes('leave') || s === 'on_leave') return 'on_leave';
   if (s.includes('half') && s.includes('am')) return 'half_am';
@@ -199,6 +201,8 @@ export const normalizeAttendanceStatus = (raw?: string): AttendanceStatusType =>
 export const getNextAttendanceStatus = (current?: AttendanceStatusType | string): AttendanceStatusType => {
   const norm = normalizeAttendanceStatus(current as string);
   switch (norm) {
+    case 'holiday':
+      return 'present';
     case 'present':
       return 'absent';
     case 'absent':
@@ -492,6 +496,24 @@ export const usePersonnelStore = defineStore('personnel', () => {
   }
 
   const getPersonAttendance = (personIdentifier: string, date: string): AttendanceStatusType => {
+    // 0. Check if date is on hold and attendance is also on hold
+    const holdStatus = isDateHeld(date);
+    if (holdStatus.isHeld && holdStatus.isAttendanceHeld) {
+      const byDate = attendanceByDate.value[date];
+      if (byDate) {
+        if (byDate[personIdentifier]) return byDate[personIdentifier];
+        const p = personnel.value.find(
+          (x) => x.code === personIdentifier || x.id === personIdentifier || x.name === personIdentifier
+        );
+        if (p) {
+          if (p.code && byDate[p.code]) return byDate[p.code];
+          if (p.id && byDate[p.id]) return byDate[p.id];
+          if (p.name && byDate[p.name]) return byDate[p.name];
+        }
+      }
+      return 'holiday';
+    }
+
     // 1. Check if person is on leave on this date
     const onLeave = leaves.value.some((l) => {
       const match = l.personnelCode === personIdentifier || (l.personnelName && l.personnelName === personIdentifier);

@@ -816,6 +816,16 @@
   border-radius: 4px;
   font-size: 11px;
   padding: 2px 4px;
+  transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.wlh-edit-date-input.is-date-empty {
+  opacity: 0.38;
+}
+
+.wlh-edit-date-input.is-date-empty:hover,
+.wlh-edit-date-input.is-date-empty:focus {
+  opacity: 1;
 }
 
 .wlh-task-meta-cell {

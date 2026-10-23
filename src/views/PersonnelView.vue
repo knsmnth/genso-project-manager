@@ -67,13 +67,13 @@
         <button
           type="button"
           class="module-tab-btn active"
-          title="Staff Registry"
+          title="Personnel"
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="7" r="4" />
             <path d="M5.5 21a8.5 8.5 0 0 1 13 0" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
-          <span>Staff Registry</span>
+          <span>Personnel</span>
           <span class="module-tab-count">{{ personnel.length }}</span>
         </button>
 
@@ -217,8 +217,11 @@
                   v-for="day in currentMonthWorkdays"
                   :key="day.date"
                   class="matrix-day-th"
-                  :class="{ 'is-today': day.isToday }"
-                  :title="day.formattedDay"
+                  :class="{
+                    'is-today': day.isToday,
+                    'is-held-date': isDateHeld(day.date).isHeld && isDateHeld(day.date).isAttendanceHeld
+                  }"
+                  :title="getDayHeaderTitle(day)"
                 >
                   <span class="matrix-day-num">{{ day.dayNum }}</span>
                   <span class="matrix-day-w">{{ day.dayName[0] }}</span>
@@ -242,6 +245,7 @@
                   class="matrix-day-td"
                   :class="{
                     'is-today': day.isToday,
+                    'is-held-date': isDateHeld(day.date).isHeld && isDateHeld(day.date).isAttendanceHeld,
                     'is-past': getTimingVariant(day.date) === 'past',
                     'is-future': getTimingVariant(day.date) === 'future'
                   }"
@@ -453,6 +457,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Person, AttendanceStatusType } from '../types';
 import { usePersonnelStore, getWeekWorkdays, getMonthWorkdays, WorkdayInfo } from '../stores/personnel';
+import { isDateHeld } from '../services/workLogHistoryService';
 import AttendanceBadge from '../components/ui/AttendanceBadge.vue';
 import AttendanceGraphCard from '../components/ui/AttendanceGraphCard.vue';
 import LeaveScheduleModal from '../components/modals/LeaveScheduleModal.vue';
@@ -467,7 +472,7 @@ const props = withDefaults(
   }>(),
   {
     searchQuery: '',
-    breadcrumbTitle: 'Staff Registry'
+    breadcrumbTitle: 'Personnel'
   }
 );
 
@@ -480,7 +485,7 @@ defineEmits<{
 const personnelStore = usePersonnelStore();
 
 // Dynamic Header title matching Breadcrumbs
-const pageTitle = computed(() => props.breadcrumbTitle || 'Staff Registry');
+const pageTitle = computed(() => props.breadcrumbTitle || 'Personnel');
 
 // UI States
 const isLeaveModalOpen = ref(false);
@@ -524,6 +529,14 @@ const currentMonthWorkdays = computed<WorkdayInfo[]>(() => {
   return getMonthWorkdays(selectedHistoryYear.value, selectedHistoryMonth.value);
 });
 
+const getDayHeaderTitle = (day: WorkdayInfo): string => {
+  const hold = isDateHeld(day.date);
+  if (hold.isHeld && hold.isAttendanceHeld) {
+    return `${day.formattedDay} · [Official Hold / Holiday: ${hold.reason}]`;
+  }
+  return day.formattedDay;
+};
+
 const handleMonthYearChange = async () => {
   await personnelStore.fetchAttendanceHistory({
     month: selectedHistoryMonth.value,
@@ -536,6 +549,10 @@ const handleMonthYearChange = async () => {
 const handleDirectCycle = async (p: Person, date: string) => {
   const timing = getTimingVariant(date);
   if (timing !== 'current') {
+    return;
+  }
+  const hold = isDateHeld(date);
+  if (hold.isHeld && hold.isAttendanceHeld) {
     return;
   }
   const code = p.code || p.id || p.name;
@@ -564,7 +581,11 @@ const getDayBoxTooltip = (p: Person, day: WorkdayInfo): string => {
   const status = personnelStore.getPersonAttendance(code, day.date);
   const timing = getTimingVariant(day.date);
   const onLeave = isPersonOnLeaveForDate(p, day.date);
+  const hold = isDateHeld(day.date);
 
+  if (hold.isHeld && hold.isAttendanceHeld) {
+    return `${p.name} - ${day.formattedDay}: Official Holiday / Date Hold (${hold.reason}) — Attendance Suspended`;
+  }
   if (timing === 'future') {
     return `${p.name} - ${day.formattedDay}: Upcoming (Date not arrived yet — locked)`;
   }
@@ -581,9 +602,12 @@ const getHistoryBoxTooltip = (p: Person, day: WorkdayInfo): string => {
   const code = p.code || p.id || p.name;
   const status = personnelStore.getPersonAttendance(code, day.date);
   const timing = getTimingVariant(day.date);
+  const hold = isDateHeld(day.date);
 
   let statusText = formatStatusLabel(status);
-  if (timing === 'future') {
+  if (status === 'holiday' || (hold.isHeld && hold.isAttendanceHeld)) {
+    statusText = `Official Holiday / Date Hold (${hold.reason || 'Attendance Suspended'})`;
+  } else if (timing === 'future') {
     statusText = 'Not yet arrived (Gray)';
   } else if (timing === 'past') {
     statusText = `${statusText} (Past record)`;
@@ -625,6 +649,7 @@ const attendanceRate = computed(() => {
 const getAttendanceStatus = (p: Person): AttendanceStatusType => {
   if (p.isOnLeaveToday) return 'on_leave';
   const s = (p.attendanceStatus || 'present').toString().toLowerCase();
+  if (s === 'holiday' || s.includes('hold')) return 'holiday';
   if (s === 'present') return 'present';
   if (s.includes('leave') || s === 'on_leave') return 'on_leave';
   if (s === 'half_am' || (s.includes('half') && s.includes('am'))) return 'half_am';
@@ -635,6 +660,7 @@ const getAttendanceStatus = (p: Person): AttendanceStatusType => {
 
 const formatStatusLabel = (status: AttendanceStatusType) => {
   switch (status) {
+    case 'holiday': return 'On Hold / Holiday';
     case 'present': return 'Present';
     case 'absent': return 'Absent';
     case 'half_am': return 'Half-Day (AM)';
@@ -646,6 +672,7 @@ const formatStatusLabel = (status: AttendanceStatusType) => {
 
 const getShiftDetail = (status: AttendanceStatusType) => {
   switch (status) {
+    case 'holiday': return 'Official Holiday / Date Hold';
     case 'present': return 'Full Day Present';
     case 'absent': return 'Full Day Absent';
     case 'half_am': return 'AM Absent · PM Present';

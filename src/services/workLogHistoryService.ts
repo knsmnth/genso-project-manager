@@ -71,13 +71,14 @@ export const getHeldDates = (): Record<string, DateHoldRecord> => {
 /**
  * Check if a date is currently marked on Hold
  */
-export const isDateHeld = (date: string): { isHeld: boolean; reason: string; record?: DateHoldRecord } => {
+export const isDateHeld = (date: string): { isHeld: boolean; reason: string; isAttendanceHeld: boolean; record?: DateHoldRecord } => {
   const held = getHeldDates();
   const record = held[date];
   if (record && record.isHeld) {
-    return { isHeld: true, reason: record.reason || 'General Hold', record };
+    const isAttendanceHeld = record.holdAttendance !== false;
+    return { isHeld: true, reason: record.reason || 'General Hold', isAttendanceHeld, record };
   }
-  return { isHeld: false, reason: '', record };
+  return { isHeld: false, reason: '', isAttendanceHeld: false, record };
 };
 
 /**

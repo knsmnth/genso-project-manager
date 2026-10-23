@@ -8,9 +8,9 @@
     :title="labelTooltip"
     @click="handleClick"
   >
-    <!-- 0. FUTURE / NOT YET ARRIVED (Turn it gray for the meantime) -->
+    <!-- 0. FUTURE / NOT YET ARRIVED (Turn it gray unless it is an official holiday/hold) -->
     <div
-      v-if="timingVariant === 'future'"
+      v-if="timingVariant === 'future' && normalizedStatus !== 'holiday'"
       class="attend-box attend-future"
     >
       <span class="future-dash">—</span>
@@ -74,6 +74,18 @@
       </svg>
     </div>
 
+    <!-- 6. HOLIDAY / DATE HOLD (Soft Amber Rounded Square with Pause Indicator) -->
+    <div
+      v-else-if="normalizedStatus === 'holiday'"
+      :class="['attend-box', 'attend-holiday', { 'is-past': timingVariant === 'past' }]"
+    >
+      <svg viewBox="0 0 24 24" class="attend-icon" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="10" y1="15" x2="10" y2="9" />
+        <line x1="14" y1="15" x2="14" y2="9" />
+      </svg>
+    </div>
+
     <!-- Optional Label Tag -->
     <span v-if="showLabel" class="attend-label-text">
       {{ labelText }}
@@ -109,6 +121,7 @@ const emit = defineEmits<{
 const normalizedStatus = computed<AttendanceStatusType>(() => {
   if (!props.status) return 'present';
   const s = props.status.toLowerCase().trim();
+  if (s === 'holiday' || s.includes('hold') || s.includes('holiday')) return 'holiday';
   if (s === 'present' || s.startsWith('present')) return 'present';
   if (s.includes('leave') || s === 'on_leave') return 'on_leave';
   if (s.includes('half') && s.includes('am')) return 'half_am';
@@ -119,8 +132,10 @@ const normalizedStatus = computed<AttendanceStatusType>(() => {
 });
 
 const labelText = computed(() => {
-  if (props.timingVariant === 'future') return 'Pending (Upcoming)';
+  if (props.timingVariant === 'future' && normalizedStatus.value !== 'holiday') return 'Pending (Upcoming)';
   switch (normalizedStatus.value) {
+    case 'holiday':
+      return 'On Hold / Holiday';
     case 'present':
       return 'Present';
     case 'absent':
@@ -137,11 +152,13 @@ const labelText = computed(() => {
 });
 
 const labelTooltip = computed(() => {
-  if (props.timingVariant === 'future') {
+  if (props.timingVariant === 'future' && normalizedStatus.value !== 'holiday') {
     return 'Not yet arrived (Pending / Upcoming)';
   }
   const suffix = props.timingVariant === 'past' ? ' (Past Record)' : '';
   switch (normalizedStatus.value) {
+    case 'holiday':
+      return `Date Hold / Holiday (Attendance Suspended)${suffix}`;
     case 'present':
       return `Present (Full Day)${suffix}`;
     case 'absent':
@@ -293,7 +310,27 @@ const handleClick = () => {
   padding: 2.5px;
 }
 
-/* 6. Future Day - Gray for the meantime */
+/* 6. Holiday / Date Hold - Soft Amber Fill with Pause Icon */
+.attend-holiday {
+  background-color: #FEF3C7;
+  border-color: #D97706;
+  color: #B45309;
+  padding: 3px;
+}
+
+.attend-holiday .attend-icon {
+  stroke: #B45309;
+}
+
+.size-xs .attend-holiday {
+  padding: 1.5px;
+}
+
+.size-sm .attend-holiday {
+  padding: 2.5px;
+}
+
+/* 7. Future Day - Gray for the meantime */
 .attend-future {
   background-color: #E2E8F0;
   border-color: #94A3B8;

@@ -29,7 +29,6 @@
             <line x1="16" y1="17" x2="8" y2="17" stroke-linecap="round" />
           </svg>
           <span>All Orders</span>
-          <span class="module-tab-count">{{ (workOrders || []).length }}</span>
         </button>
 
         <button
@@ -144,14 +143,13 @@
             type="button"
             :class="['btn', selectedDateHold.isHeld ? 'btn-warning-sm' : 'btn-outline-sm', 'wlh-btn-action']"
             @click="openHoldModal"
-            :title="selectedDateHold.isHeld ? `On Hold: ${selectedDateHold.reason}` : 'Set Hold for holiday or memo'"
+            :title="selectedDateHold.isHeld ? `On Hold: ${selectedDateHold.reason}` : 'General Hold (holiday, memo, or suspension)'"
           >
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10" />
               <line x1="10" y1="15" x2="10" y2="9" />
               <line x1="14" y1="15" x2="14" y2="9" />
             </svg>
-            <span>{{ selectedDateHold.isHeld ? 'On Hold' : 'General Hold' }}</span>
           </button>
 
           <!-- Export PDF Accomplishment Report -->
@@ -560,6 +558,7 @@
                         type="date"
                         v-model="task.startDate"
                         class="wlh-edit-date-input"
+                        :class="{ 'is-date-empty': !task.startDate }"
                       />
                     </div>
                     <div class="wlh-date-pill">
@@ -568,6 +567,7 @@
                         type="date"
                         v-model="task.completionDate"
                         class="wlh-edit-date-input"
+                        :class="{ 'is-date-empty': !task.completionDate }"
                       />
                     </div>
                   </div>
@@ -852,6 +852,7 @@
       :target-date="selectedDate"
       :initial-reason="selectedDateHold.reason"
       :initial-is-held="selectedDateHold.isHeld"
+      :initial-hold-attendance="selectedDateHold.record?.holdAttendance"
       @close="isHoldModalOpen = false"
       @save="handleSaveDateHold"
     />
@@ -917,10 +918,11 @@ const selectedDateHold = computed(() => {
 const handleSaveDateHold = async (record: DateHoldRecord) => {
   await saveDateHold(record);
   holdDatesVersion.value++;
+  const attendNote = record.isHeld && record.holdAttendance !== false ? ' · Attendance also on hold' : '';
   emit(
     'toast',
     record.isHeld
-      ? `✓ Date hold recorded for ${record.date} (${record.reason})`
+      ? `✓ Date hold recorded for ${record.date} (${record.reason})${attendNote}`
       : `✓ Date hold removed for ${record.date}`,
     'success'
   );
