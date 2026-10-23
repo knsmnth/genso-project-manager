@@ -493,7 +493,7 @@
           <div>
             <h3>Remarks and Notes</h3>
             <span class="dwl-dh-sub-row-title" style="font-size: 11.5px; color: #6C7A71; font-weight: 500; display: block; margin-top: 2px;">
-              {{ selectedRow.requestingOffice || selectedRow.scope || 'Task Scope' }}
+              {{ selectedRow.requestingOffice || selectedRow.groupSubTitle || selectedRow.description || 'Task Scope' }}
             </span>
           </div>
         </div>
