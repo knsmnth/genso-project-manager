@@ -4,24 +4,9 @@
     <div class="view-header-row">
       <div>
         <h1 class="view-main-title">Work Order Management</h1>
-        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap">
-          <p class="view-main-subtitle" style="margin: 0">
-            Review and track all active maintenance tasks across facilities.
-          </p>
-          <span style="width: 4px; height: 4px; border-radius: 50%; background-color: var(--color-text-placeholder)"></span>
-          <span
-            style="
-              font-size: 12px;
-              font-weight: 700;
-              color: var(--color-primary);
-              background-color: var(--color-primary-light);
-              padding: 2px 8px;
-              border-radius: 4px;
-            "
-          >
-            {{ activeFocusText }}
-          </span>
-        </div>
+        <p class="view-main-subtitle">
+          Review and track all active maintenance tasks across facilities.
+        </p>
       </div>
     </div>
 
@@ -41,7 +26,6 @@
             <line x1="16" y1="17" x2="8" y2="17" stroke-linecap="round" />
           </svg>
           <span>All Orders</span>
-          <span class="module-tab-count">{{ workOrders.length }}</span>
         </button>
 
         <button
@@ -79,10 +63,31 @@
         </button>
       </div>
 
-      <!-- Right: Data Utilities (Sort, Export CSV, Advanced Filters) -->
+      <!-- Right: Data Utilities (Search, Export CSV, Advanced Filters) -->
       <div class="module-utility-actions">
+        <!-- Search Bar -->
+        <div class="module-search-box">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            v-model="localSearch"
+            placeholder="Search work orders..."
+            class="module-search-input"
+            aria-label="Search work orders"
+          />
+          <button
+            v-if="localSearch"
+            type="button"
+            @click="localSearch = ''"
+            class="module-search-clear"
+            title="Clear search"
+          >×</button>
+        </div>
 
-        <button class="btn btn-outline-sm" id="btn-export-csv" @click="handleExportCsv">
+        <button class="btn btn-outline-sm" id="btn-export-csv" @click="handleExportCsv" title="Export CSV">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
           </svg>
@@ -338,8 +343,12 @@
             <span>Sort by:</span>
           </label>
           <select id="wo-sort-select" v-model="sortBy" class="wo-sort-select">
-            <option value="alpha-asc">Alphabetical (A - Z)</option>
-            <option value="alpha-desc">Alphabetical (Z - A)</option>
+            <option value="alpha-asc">Work Title (A - Z)</option>
+            <option value="alpha-desc">Work Title (Z - A)</option>
+            <option value="worktype-asc">Work Type (A - Z)</option>
+            <option value="worktype-desc">Work Type (Z - A)</option>
+            <option value="itemtype-asc">Item Type (A - Z)</option>
+            <option value="itemtype-desc">Item Type (Z - A)</option>
             <option value="date-desc">Date Inputted (Newest first)</option>
             <option value="date-asc">Date Inputted (Oldest first)</option>
           </select>
@@ -368,8 +377,38 @@
                     </span>
                   </div>
                 </th>
-                <th style="width: 14%; min-width: 110px">WORK TYPE</th>
-                <th style="width: 15%; min-width: 120px">ITEM TYPE</th>
+                <th
+                  style="width: 14%; min-width: 110px; cursor: pointer; user-select: none;"
+                  class="sortable-th"
+                  :class="{ active: sortBy === 'worktype-asc' || sortBy === 'worktype-desc' }"
+                  @click="toggleSort('worktype')"
+                  title="Sort Alphabetically by Work Type (Click to toggle A-Z / Z-A)"
+                >
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span>WORK TYPE</span>
+                    <span class="sort-indicator">
+                      <template v-if="sortBy === 'worktype-asc'">▲</template>
+                      <template v-else-if="sortBy === 'worktype-desc'">▼</template>
+                      <template v-else>↕</template>
+                    </span>
+                  </div>
+                </th>
+                <th
+                  style="width: 15%; min-width: 120px; cursor: pointer; user-select: none;"
+                  class="sortable-th"
+                  :class="{ active: sortBy === 'itemtype-asc' || sortBy === 'itemtype-desc' }"
+                  @click="toggleSort('itemtype')"
+                  title="Sort Alphabetically by First Item Type (Click to toggle A-Z / Z-A)"
+                >
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span>ITEM TYPE</span>
+                    <span class="sort-indicator">
+                      <template v-if="sortBy === 'itemtype-asc'">▲</template>
+                      <template v-else-if="sortBy === 'itemtype-desc'">▼</template>
+                      <template v-else>↕</template>
+                    </span>
+                  </div>
+                </th>
                 <th style="width: 14%; min-width: 130px">STATUS</th>
                 <th style="width: 11%; min-width: 100px">ACTIVE</th>
                 <th style="width: 11%; min-width: 100px; text-align: center">INSPECTION</th>
@@ -384,17 +423,32 @@
               </tr>
               <tr
                 v-else
-                v-for="o in filtered"
+                v-for="o in paginatedOrders"
                 :key="o.code"
-                :class="['table-row-item', { 'row-inactive': o.isActive === false }]"
+                :class="[
+                  'table-row-item',
+                  {
+                    'row-inactive': o.isActive === false,
+                    'row-completed-today': isOrderCompletedToday(o)
+                  }
+                ]"
                 @click="$emit('selectOrder', o.code)"
                 style="cursor: pointer"
               >
                 <td>
                   <div style="display: flex; flex-direction: column; gap: 4px">
-                    <span class="cell-primary" style="font-size: 14px; font-weight: 600; color: var(--color-navy-header, #0f172a)">
-                      {{ o.workTitle || o.scope || 'Untitled Work Order' }}
-                    </span>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+                      <span class="cell-primary" style="font-size: 14px; font-weight: 600; color: var(--color-navy-header, #0f172a)">
+                        {{ o.workTitle || o.scope || 'Untitled Work Order' }}
+                      </span>
+                      <span v-if="isOrderCompletedToday(o)" class="badge-completed-today-notice" title="Completed today: will automatically be archived tomorrow">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span>Archives Tomorrow</span>
+                      </span>
+                    </div>
                     <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--color-text-muted); flex-wrap: wrap">
                       <span style="font-family: monospace; font-weight: 700; color: var(--color-primary); white-space: nowrap">{{ o.code }}</span>
                       <template v-if="o.assetName && o.assetName !== '-'">
@@ -510,9 +564,15 @@
           </div>
           <div
             v-else
-            v-for="o in filtered"
+            v-for="o in paginatedOrders"
             :key="'mob-' + o.code"
-            :class="['wo-mobile-card', { 'card-inactive': o.isActive === false }]"
+            :class="[
+              'wo-mobile-card',
+              {
+                'card-inactive': o.isActive === false,
+                'row-completed-today': isOrderCompletedToday(o)
+              }
+            ]"
             @click="$emit('selectOrder', o.code)"
           >
             <!-- Card Header: Code & Worktype on left, Status dropdown pill on right -->
@@ -534,8 +594,15 @@
             </div>
 
             <!-- Card Body: Work Title -->
-            <div class="wo-mc-title">
-              {{ o.workTitle || o.scope || 'Untitled Work Order' }}
+            <div class="wo-mc-title" style="display: flex; flex-direction: column; gap: 4px">
+              <span>{{ o.workTitle || o.scope || 'Untitled Work Order' }}</span>
+              <span v-if="isOrderCompletedToday(o)" class="badge-completed-today-notice" style="align-self: flex-start" title="Completed today: will automatically be archived tomorrow">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span>Archives Tomorrow</span>
+              </span>
             </div>
 
             <!-- Card Meta: Location & Item Types -->
@@ -632,15 +699,41 @@
 
       <!-- Footer -->
       <div class="table-footer">
-        <span class="table-counts">Showing 1 to {{ filtered.length }} of {{ filtered.length }} work orders</span>
-        <div class="pagination-controls">
-          <button class="pag-btn" disabled>&lt;</button>
-          <button class="pag-btn active">1</button>
-          <button class="pag-btn">2</button>
-          <button class="pag-btn">3</button>
-          <span class="pag-dots">...</span>
-          <button class="pag-btn">25</button>
-          <button class="pag-btn">&gt;</button>
+        <span class="table-counts">
+          <template v-if="filtered.length === 0">Showing 0 of 0 work orders</template>
+          <template v-else>
+            Showing {{ (currentPage - 1) * PAGE_SIZE + 1 }} to {{ Math.min(currentPage * PAGE_SIZE, filtered.length) }} of {{ filtered.length }} work orders
+          </template>
+        </span>
+        <div v-if="totalPages > 1 || filtered.length > 0" class="pagination-controls">
+          <button
+            type="button"
+            class="pag-btn"
+            :disabled="currentPage === 1"
+            @click="prevPage"
+            title="Previous page"
+            aria-label="Previous page"
+          >&lt;</button>
+
+          <template v-for="(p, idx) in displayedPages" :key="idx">
+            <span v-if="p === '...'" class="pag-dots">...</span>
+            <button
+              v-else
+              type="button"
+              class="pag-btn"
+              :class="{ active: p === currentPage }"
+              @click="goToPage(p)"
+            >{{ p }}</button>
+          </template>
+
+          <button
+            type="button"
+            class="pag-btn"
+            :disabled="currentPage === totalPages"
+            @click="nextPage"
+            title="Next page"
+            aria-label="Next page"
+          >&gt;</button>
         </div>
       </div>
     </div>
@@ -916,10 +1009,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { WorkOrder, MasterCatalogsState, InspectionItem, InspectionPhoto } from '../types';
 import { getItemTypeColor } from '../utils/catalogsData';
 import { compressImageFile } from '../utils/imageCompressor';
+import { isOrderCompletedToday, isOrderExpiredCompleted } from '../services/workOrderStatusService';
 
 const props = defineProps<{
   workOrders: WorkOrder[];
@@ -947,14 +1041,18 @@ const spaceFilter = ref('all');
 const workgroupFilter = ref('all');
 const activeFilter = ref<'all' | 'Active' | 'Inactive'>('all');
 const localSearch = ref('');
-type WorkOrderSort = 'alpha-asc' | 'alpha-desc' | 'date-desc' | 'date-asc' | 'code-asc' | 'code-desc';
+type WorkOrderSort = 'alpha-asc' | 'alpha-desc' | 'worktype-asc' | 'worktype-desc' | 'itemtype-asc' | 'itemtype-desc' | 'date-desc' | 'date-asc' | 'code-asc' | 'code-desc';
 const sortBy = ref<WorkOrderSort>('date-desc');
 
-const toggleSort = (field: 'alpha' | 'code') => {
+const toggleSort = (field: 'alpha' | 'code' | 'worktype' | 'itemtype') => {
   if (field === 'alpha') {
     sortBy.value = sortBy.value === 'alpha-asc' ? 'alpha-desc' : 'alpha-asc';
   } else if (field === 'code') {
     sortBy.value = sortBy.value === 'code-asc' ? 'code-desc' : 'code-asc';
+  } else if (field === 'worktype') {
+    sortBy.value = sortBy.value === 'worktype-asc' ? 'worktype-desc' : 'worktype-asc';
+  } else if (field === 'itemtype') {
+    sortBy.value = sortBy.value === 'itemtype-asc' ? 'itemtype-desc' : 'itemtype-asc';
   }
 };
 const openDropdownCode = ref<string | null>(null);
@@ -1011,6 +1109,7 @@ const resetFilters = () => {
   spaceFilter.value = 'all';
   workgroupFilter.value = 'all';
   activeFilter.value = 'all';
+  currentPage.value = 1;
 };
 onMounted(() => {
   window.addEventListener('keydown', handleLightboxKeyDown);
@@ -1079,9 +1178,15 @@ const filtered = computed(() => {
     const matchesFacility = facilityFilter.value === 'all' || o.assetName === facilityFilter.value;
     const matchesSpace = spaceFilter.value === 'all' || o.space === spaceFilter.value;
     const matchesWorkgroup = workgroupFilter.value === 'all' || o.workgroup === workgroupFilter.value;
-    const matchesActive =
-      activeFilter.value === 'all' ||
-      (activeFilter.value === 'Active' ? o.isActive !== false : o.isActive === false);
+    let matchesActive = true;
+    if (activeFilter.value === 'Active') {
+      matchesActive = o.isActive !== false && !isOrderExpiredCompleted(o);
+    } else if (activeFilter.value === 'Inactive') {
+      matchesActive = o.isActive === false || isOrderExpiredCompleted(o);
+    } else {
+      // Default view: Show active orders & orders completed today; exclude expired completed orders from previous days
+      matchesActive = !isOrderExpiredCompleted(o);
+    }
 
     let matchesDate = true;
     const orderStartDate = o.startDate || '';
@@ -1137,6 +1242,13 @@ const filtered = computed(() => {
   });
 
   const getTitle = (order: WorkOrder) => (order.workTitle || order.scope || order.assetName || '').trim().toLowerCase();
+  const getWorkType = (order: WorkOrder) => (order.worktype || (order.tasks && order.tasks[0]?.type) || 'General').trim().toLowerCase();
+  const getFirstItemType = (order: WorkOrder) => {
+    if (order.itemTypes && order.itemTypes.length > 0 && order.itemTypes[0]) {
+      return order.itemTypes[0].trim().toLowerCase();
+    }
+    return '';
+  };
   const getDateVal = (order: WorkOrder) => {
     const raw = order.dateReceived || order.startDate;
     if (!raw) return 0;
@@ -1157,12 +1269,124 @@ const filtered = computed(() => {
     if (sortBy.value === 'alpha-desc') {
       return getTitle(b).localeCompare(getTitle(a));
     }
+    if (sortBy.value === 'worktype-asc') {
+      return getWorkType(a).localeCompare(getWorkType(b));
+    }
+    if (sortBy.value === 'worktype-desc') {
+      return getWorkType(b).localeCompare(getWorkType(a));
+    }
+    if (sortBy.value === 'itemtype-asc') {
+      const itemA = getFirstItemType(a);
+      const itemB = getFirstItemType(b);
+      if (!itemA && !itemB) return 0;
+      if (!itemA) return 1;
+      if (!itemB) return -1;
+      return itemA.localeCompare(itemB);
+    }
+    if (sortBy.value === 'itemtype-desc') {
+      const itemA = getFirstItemType(a);
+      const itemB = getFirstItemType(b);
+      if (!itemA && !itemB) return 0;
+      if (!itemA) return 1;
+      if (!itemB) return -1;
+      return itemB.localeCompare(itemA);
+    }
     if (sortBy.value === 'date-asc') {
       return getDateVal(a) - getDateVal(b);
     }
     // Default: 'date-desc' (newest inputted first)
     return getDateVal(b) - getDateVal(a);
   });
+});
+
+// ==========================================
+// Pagination State (Max 10 rows per page)
+// ==========================================
+const PAGE_SIZE = 10;
+const currentPage = ref(1);
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / PAGE_SIZE)));
+
+const paginatedOrders = computed(() => {
+  const start = (currentPage.value - 1) * PAGE_SIZE;
+  return filtered.value.slice(start, start + PAGE_SIZE);
+});
+
+const displayedPages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  const pages: (number | string)[] = [];
+  if (current <= 4) {
+    for (let i = 1; i <= 5; i++) pages.push(i);
+    pages.push('...');
+    pages.push(total);
+  } else if (current >= total - 3) {
+    pages.push(1);
+    pages.push('...');
+    for (let i = total - 4; i <= total; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    pages.push('...');
+    pages.push(current - 1);
+    pages.push(current);
+    pages.push(current + 1);
+    pages.push('...');
+    pages.push(total);
+  }
+  return pages;
+});
+
+const goToPage = (page: number | string) => {
+  if (typeof page === 'number' && page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+};
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
+
+// Reset to page 1 whenever filters or search query change
+watch(
+  [
+    localSearch,
+    () => props.searchQuery,
+    facilityFilter,
+    spaceFilter,
+    workgroupFilter,
+    activeFilter,
+    dateFilterType,
+    specificDate,
+    rangeStartDate,
+    rangeEndDate,
+    selectedMonth,
+    selectedYear,
+    sortBy
+  ],
+  () => {
+    currentPage.value = 1;
+  }
+);
+
+// Bounds check if filtered list shrinks
+watch([filtered, totalPages], () => {
+  if (currentPage.value > totalPages.value) {
+    currentPage.value = totalPages.value;
+  }
+  if (currentPage.value < 1) {
+    currentPage.value = 1;
+  }
 });
 
 const currentDate = computed(() =>
@@ -1172,15 +1396,6 @@ const currentDate = computed(() =>
     year: 'numeric'
   })
 );
-
-const activeFocusText = computed(() => {
-  const onGoing = props.workOrders.filter(
-    (o) => o.status.toLowerCase() === 'on-going' || o.status.toLowerCase() === 'ongoing' || o.status.toLowerCase() === 'in progress'
-  );
-  return onGoing.length > 0
-    ? `Focus: ${onGoing[0].code} - ${onGoing[0].workTitle || onGoing[0].assetName} (${onGoing.length} on-going)`
-    : 'No active projects on-going';
-});
 
 const handleExportCsv = () => {
   alert('Export CSV completed.');

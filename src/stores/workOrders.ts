@@ -190,11 +190,29 @@ export const useWorkOrdersStore = defineStore('workOrders', () => {
     } catch {}
 
     // Evaluate automatic status for all normalized orders
+    const todayStr = formatLocalDate(new Date());
     normalized.forEach((order) => {
       const autoSt = evaluateOrderStatus(order);
       order.status = autoSt;
-      if (autoSt === 'Completed' && order.isActive === undefined) {
-        order.isActive = false;
+      if (autoSt === 'Completed') {
+        if (!order.completedDate) {
+          order.completedDate = todayStr;
+        }
+        // Rollover: If completed today, keep it active today.
+        // If completed prior to today, mark inactive so it rolls over out of active view.
+        if (order.completedDate === todayStr) {
+          order.isActive = true;
+        } else if (order.completedDate < todayStr) {
+          order.isActive = false;
+        }
+      } else {
+        // Not completed: if dates were cleared, reset completedDate and restore active
+        if (order.completedDate) {
+          order.completedDate = undefined;
+        }
+        if (order.isActive === false) {
+          order.isActive = true;
+        }
       }
     });
 
@@ -203,14 +221,23 @@ export const useWorkOrdersStore = defineStore('workOrders', () => {
   };
 
   const saveOrder = async (data: WorkOrder, isEditing: boolean = false) => {
+    const todayStr = formatLocalDate(new Date());
     const autoStatus = evaluateOrderStatus(data);
     data.status = autoStatus;
+
     if (autoStatus === 'Completed') {
-      if (!data.completedDate) data.completedDate = formatLocalDate(new Date());
-      if (data.isActive !== false) {
-        await archiveCompletedOrderSnapshot(data);
+      if (!data.completedDate) data.completedDate = todayStr;
+      // Keep active for today
+      if (data.completedDate === todayStr) {
+        data.isActive = true;
+      } else if (data.completedDate < todayStr) {
         data.isActive = false;
       }
+      await archiveCompletedOrderSnapshot(data);
+    } else {
+      // Reverted from Completed: clear completedDate and restore active
+      data.completedDate = undefined;
+      data.isActive = true;
     }
 
     let updated: WorkOrder[] = [];
@@ -230,6 +257,7 @@ export const useWorkOrdersStore = defineStore('workOrders', () => {
     const target = workOrders.value.find((o) => o.code === code);
     if (!target) return { status: 'Not Scheduled', becameCompleted: false };
 
+    const todayStr = formatLocalDate(new Date());
     const newStatus = evaluateOrderStatus(target, currentLogs);
     let changed = false;
     let becameCompleted = false;
@@ -241,14 +269,28 @@ export const useWorkOrdersStore = defineStore('workOrders', () => {
 
     if (newStatus === 'Completed') {
       if (!target.completedDate) {
-        target.completedDate = formatLocalDate(new Date());
+        target.completedDate = todayStr;
         changed = true;
       }
-      if (target.isActive !== false) {
-        await archiveCompletedOrderSnapshot(target, currentLogs);
+      // Keep active for today
+      if (target.completedDate === todayStr && target.isActive === false) {
+        target.isActive = true;
+        changed = true;
+      } else if (target.completedDate < todayStr && target.isActive !== false) {
         target.isActive = false;
         changed = true;
-        becameCompleted = true;
+      }
+      await archiveCompletedOrderSnapshot(target, currentLogs);
+      becameCompleted = true;
+    } else {
+      // Reverted from Completed (e.g. date edited or cleared)
+      if (target.completedDate) {
+        target.completedDate = undefined;
+        changed = true;
+      }
+      if (target.isActive === false) {
+        target.isActive = true;
+        changed = true;
       }
     }
 
@@ -262,6 +304,7 @@ export const useWorkOrdersStore = defineStore('workOrders', () => {
   };
 
   const evaluateAllOrders = async (currentLogs?: DailyWorkLogEntry[]) => {
+    const todayStr = formatLocalDate(new Date());
     let anyChanged = false;
     for (const order of workOrders.value) {
       const autoSt = evaluateOrderStatus(order, currentLogs);
@@ -271,12 +314,28 @@ export const useWorkOrdersStore = defineStore('workOrders', () => {
       }
       if (autoSt === 'Completed') {
         if (!order.completedDate) {
-          order.completedDate = formatLocalDate(new Date());
+          order.completedDate = todayStr;
           anyChanged = true;
         }
-        if (order.isActive !== false) {
-          await archiveCompletedOrderSnapshot(order, currentLogs);
-          order.isActive = false;
+        if (order.completedDate === todayStr) {
+          if (order.isActive === false) {
+            order.isActive = true;
+            anyChanged = true;
+          }
+        } else if (order.completedDate < todayStr) {
+          if (order.isActive !== false) {
+            order.isActive = false;
+            anyChanged = true;
+          }
+        }
+        await archiveCompletedOrderSnapshot(order, currentLogs);
+      } else {
+        if (order.completedDate) {
+          order.completedDate = undefined;
+          anyChanged = true;
+        }
+        if (order.isActive === false) {
+          order.isActive = true;
           anyChanged = true;
         }
       }

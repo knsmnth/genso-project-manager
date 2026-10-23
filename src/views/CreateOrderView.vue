@@ -1669,8 +1669,14 @@ const handleSubmit = () => {
 
   const autoStatus = evaluateOrderStatus(payload);
   payload.status = autoStatus;
-  if (autoStatus === 'Completed' && payload.isActive === undefined) {
-    payload.isActive = false;
+  if (autoStatus === 'Completed') {
+    if (!payload.completedDate) {
+      payload.completedDate = getTodayString();
+    }
+    payload.isActive = true;
+  } else {
+    payload.completedDate = undefined;
+    payload.isActive = true;
   }
 
   emit('saveOrder', payload);
