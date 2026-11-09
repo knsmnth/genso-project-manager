@@ -1,12 +1,14 @@
 <template>
   <div :class="['app-container', {
-    'sidebar-pinned-open': sidebarMode === 'pinned-open',
-    'sidebar-pinned-collapsed': sidebarMode === 'pinned-collapsed',
-    'auto-collapse-mode': sidebarMode === 'auto',
-    'sidebar-collapsed': sidebarMode !== 'pinned-open'
+    'sidebar-pinned-open': isDesktop && sidebarMode === 'pinned-open',
+    'sidebar-pinned-collapsed': isDesktop && sidebarMode === 'pinned-collapsed',
+    'auto-collapse-mode': isDesktop && sidebarMode === 'auto',
+    'sidebar-collapsed': isDesktop && sidebarMode !== 'pinned-open',
+    'is-mobile-screen': !isDesktop
   }]">
-    <!-- Sidebar Navigation -->
+    <!-- Sidebar Navigation (Desktop only) -->
     <Sidebar
+      v-if="isDesktop"
       :active-view="activeView"
       :sidebar-open="sidebarOpen"
       :is-collapsed="sidebarMode !== 'pinned-open'"
@@ -342,7 +344,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import Sidebar from './components/layout/Sidebar.vue';
 import Header from './components/layout/Header.vue';
@@ -368,6 +370,15 @@ const uiStore = useUIStore();
 const workOrdersStore = useWorkOrdersStore();
 const personnelStore = usePersonnelStore();
 const catalogsStore = useCatalogsStore();
+
+// Track desktop viewport for rendering desktop sidebar vs mobile navigation
+const isDesktop = ref(typeof window !== 'undefined' ? window.innerWidth > 1200 : true);
+
+const handleResize = () => {
+  if (typeof window !== 'undefined') {
+    isDesktop.value = window.innerWidth > 1200;
+  }
+};
 
 const {
   activeView,
@@ -451,10 +462,17 @@ onMounted(async () => {
     personnelStore.checkDailyReset();
   });
 
+  window.addEventListener('resize', handleResize);
+  handleResize();
+
   // Check periodically (every 60s) for day rollover
   setInterval(() => {
     personnelStore.checkDailyReset();
   }, 60000);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
 });
 
 const handleUpdateOrderStatus = async (code: string, newStatus: string) => {

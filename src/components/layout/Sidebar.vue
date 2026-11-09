@@ -399,7 +399,7 @@ const navigate = (view: string) => {
     return;
   }
 
-  if (window.innerWidth <= 1024) {
+  if (window.innerWidth <= 1200) {
     emit('sidebarClose');
     emit('sidebar-close');
   }
@@ -437,7 +437,7 @@ const handleInstallClick = async () => {
 };
 
 const toggleCollapse = () => {
-  if (window.innerWidth <= 1024) {
+  if (window.innerWidth <= 1200) {
     emit('sidebarClose');
     emit('sidebar-close');
     uiStore.sidebarOpen = false;
@@ -446,3 +446,21 @@ const toggleCollapse = () => {
   }
 };
 </script>
+
+<style scoped>
+@media (max-width: 1200px) {
+  .sidebar,
+  #sidebar {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transform: translateX(-9999px) !important;
+    position: absolute !important;
+    left: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    box-shadow: none !important;
+  }
+}
+</style>
