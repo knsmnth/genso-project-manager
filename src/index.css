@@ -2591,24 +2591,61 @@ body {
 
 /* Media Queries for Responsiveness */
 
-@media (max-width: 1024px) {
-  .sidebar {
-    transform: translateX(-100%);
+@media (max-width: 1200px) {
+  .sidebar,
+  aside.sidebar,
+  #sidebar,
+  aside#sidebar,
+  .sidebar.collapsed,
+  .sidebar-collapsed .sidebar,
+  .app-container.sidebar-pinned-open .sidebar,
+  .app-container.sidebar-pinned-collapsed .sidebar,
+  .app-container.auto-collapse-mode .sidebar,
+  .app-container.is-mobile-screen .sidebar {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
+    transform: translateX(-9999px) !important;
+    position: absolute !important;
+    left: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
   }
 
-  .sidebar.open {
-    transform: translateX(0);
-    box-shadow: var(--shadow-lg);
+  .sidebar.open,
+  .sidebar.collapsed.open,
+  .sidebar-collapsed .sidebar.open,
+  .app-container.sidebar-pinned-open .sidebar.open,
+  .app-container.sidebar-pinned-collapsed .sidebar.open,
+  .app-container.auto-collapse-mode .sidebar.open {
+    display: flex !important;
+    transform: translateX(0) !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    box-shadow: var(--shadow-lg), 0 16px 40px rgba(0, 0, 0, 0.45) !important;
   }
 
   .global-header {
-    left: 0;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
   }
 
   .main-content {
-    margin-left: 0;
+    margin-left: 0 !important;
     padding-top: calc(var(--header-height) + 16px);
-    width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .main-content-inner {
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .hamburger-btn {
@@ -2616,11 +2653,11 @@ body {
   }
 
   .mobile-bottom-nav {
-    display: flex;
+    display: flex !important;
   }
 
   .app-container {
-    padding-bottom: 64px;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
     /* Space for bottom navigation */
   }
 
@@ -2632,6 +2669,21 @@ body {
 }
 
 @media (max-width: 768px) {
+  .global-header {
+    padding: 0 14px !important;
+  }
+
+  .header-left {
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .header-right {
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
   .main-content {
     padding-left: 16px;
     padding-right: 16px;
@@ -2725,31 +2777,34 @@ body {
 
 /* Sidebar Minimization & Pin/Auto-Collapse System handled in src/styles/sidebar.css */
 
-/* 1. PINNED OPEN MODE: Stays permanently 260px wide */
-.app-container.sidebar-pinned-open {
-  --sidebar-width: 260px !important;
-}
+@media (min-width: 1201px) {
 
-.app-container.sidebar-pinned-open .sidebar {
-  width: 260px !important;
-  padding: 24px 16px !important;
-}
+  /* 1. PINNED OPEN MODE: Stays permanently 260px wide */
+  .app-container.sidebar-pinned-open {
+    --sidebar-width: 260px !important;
+  }
 
-.app-container.sidebar-pinned-open .nav-flyout-popover {
-  display: none !important;
-}
+  .app-container.sidebar-pinned-open .sidebar {
+    width: 260px !important;
+    padding: 24px 16px !important;
+  }
 
-/* 2. PINNED COLLAPSED MODE: Stays permanently 70px collapsed (does not expand whole sidebar on hover) */
-.app-container.sidebar-pinned-collapsed {
-  --sidebar-width: 70px !important;
-}
+  .app-container.sidebar-pinned-open .nav-flyout-popover {
+    display: none !important;
+  }
 
-.app-container.sidebar-pinned-collapsed .sidebar {
-  width: 70px !important;
+  /* 2. PINNED COLLAPSED MODE: Stays permanently 70px collapsed (does not expand whole sidebar on hover) */
+  .app-container.sidebar-pinned-collapsed {
+    --sidebar-width: 70px !important;
+  }
+
+  .app-container.sidebar-pinned-collapsed .sidebar {
+    width: 70px !important;
+  }
 }
 
 /* 3. AUTO-COLLAPSE (UNPINNED) MODE: Sits at 70px, expands smoothly on desktop hover */
-@media (min-width: 1025px) {
+@media (min-width: 1201px) {
   .app-container.auto-collapse-mode .sidebar:hover {
     width: 260px !important;
     padding: 24px 16px !important;
@@ -2848,33 +2903,121 @@ body {
   justify-content: center !important;
 }
 
-.sidebar-collapsed .global-header {
-  left: 70px !important;
+@media (min-width: 1201px) {
+  .sidebar-collapsed .global-header {
+    left: 70px !important;
+  }
+
+  .sidebar-collapsed .main-content {
+    margin-left: 70px !important;
+    width: calc(100% - 70px) !important;
+  }
 }
 
-.sidebar-collapsed .main-content {
-  margin-left: 70px !important;
-  width: calc(100% - 70px) !important;
-}
+@media (max-width: 1200px) {
 
-@media (max-width: 1024px) {
+  :root,
+  .app-container,
+  .app-container.sidebar-pinned-open,
+  .app-container.sidebar-pinned-collapsed,
+  .app-container.auto-collapse-mode,
   .sidebar-collapsed {
     --sidebar-width: 0px !important;
   }
 
-  .sidebar-collapsed .sidebar {
-    width: var(--sidebar-width) !important;
-    transform: translateX(-100%) !important;
+  .sidebar,
+  aside.sidebar,
+  #sidebar,
+  aside#sidebar,
+  .sidebar.collapsed,
+  .sidebar-collapsed .sidebar,
+  .app-container.sidebar-pinned-open .sidebar,
+  .app-container.sidebar-pinned-collapsed .sidebar,
+  .app-container.auto-collapse-mode .sidebar,
+  .app-container.is-mobile-screen .sidebar {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
+    transform: translateX(-9999px) !important;
+    position: absolute !important;
+    left: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
   }
 
-  .sidebar-collapsed .global-header {
+  .sidebar.open,
+  .sidebar.collapsed.open,
+  .sidebar-collapsed .sidebar.open,
+  .app-container.sidebar-pinned-open .sidebar.open,
+  .app-container.sidebar-pinned-collapsed .sidebar.open,
+  .app-container.auto-collapse-mode .sidebar.open {
+    display: flex !important;
+    transform: translateX(0) !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    box-shadow: var(--shadow-lg), 0 16px 40px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  .sidebar-collapsed .global-header,
+  .app-container.sidebar-pinned-open .global-header,
+  .app-container.sidebar-pinned-collapsed .global-header,
+  .app-container.auto-collapse-mode .global-header,
+  .global-header {
     left: 0 !important;
-  }
-
-  .sidebar-collapsed .main-content {
-    margin-left: 0 !important;
+    right: 0 !important;
     width: 100% !important;
   }
+
+  .sidebar-collapsed .main-content,
+  .app-container.sidebar-pinned-open .main-content,
+  .app-container.sidebar-pinned-collapsed .main-content,
+  .app-container.auto-collapse-mode .main-content,
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .main-content-inner {
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Explicit mobile screen class applied by App.vue */
+.app-container.is-mobile-screen .sidebar,
+.app-container.is-mobile-screen aside.sidebar,
+.app-container.is-mobile-screen #sidebar {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+.app-container.is-mobile-screen .main-content {
+  margin-left: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.app-container.is-mobile-screen .main-content-inner {
+  margin: 0 auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.app-container.is-mobile-screen .global-header {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
 }
 
 /* Globally slightly smaller elements */
@@ -3685,4 +3828,3 @@ h3 {
   border-color: #BA1A1A;
   transform: scale(1.1);
 }
-

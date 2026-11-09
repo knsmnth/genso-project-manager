@@ -1201,3 +1201,38 @@
     color: #64748B;
   }
 }
+
+@media (max-width: 480px) {
+  .dash-hero-header {
+    gap: 12px;
+  }
+
+  .dash-hero-actions {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .bento-tile-body,
+  .bento-tile-body-compact {
+    padding: 16px;
+  }
+
+  .bento-compact-num {
+    font-size: 26px;
+  }
+
+  .radial-figure-container {
+    width: 72px;
+    height: 72px;
+  }
+
+  .radial-ring-wrap {
+    width: 72px;
+    height: 72px;
+  }
+
+  .radial-ring-svg {
+    width: 72px;
+    height: 72px;
+  }
+}
