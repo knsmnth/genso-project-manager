@@ -144,6 +144,8 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
   align-items: center;
   padding: 0;
   width: auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .breadcrumbs-list {
@@ -154,6 +156,7 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
   padding: 0;
   margin: 0;
   gap: 4px;
+  min-width: 0;
 }
 
 .breadcrumb-item {
@@ -163,6 +166,8 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
   font-family: 'Inter', sans-serif;
   font-size: 12px;
   font-weight: 500;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .breadcrumb-link {
@@ -180,6 +185,7 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
   cursor: pointer;
   transition: all 0.15s ease;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .breadcrumb-link:hover {
@@ -197,6 +203,10 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
   background-color: rgba(0, 108, 73, 0.08);
   font-weight: 600;
   font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
 }
 
 .breadcrumb-home-icon {
@@ -209,5 +219,27 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
   align-items: center;
   color: #9CA3AF;
   user-select: none;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .breadcrumb-link,
+  .breadcrumb-current {
+    padding: 3px 6px;
+    font-size: 11.5px;
+    max-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .breadcrumb-link,
+  .breadcrumb-current {
+    padding: 2px 5px;
+    font-size: 11px;
+    max-width: 90px;
+  }
+  .breadcrumb-item {
+    gap: 3px;
+  }
 }
 </style>

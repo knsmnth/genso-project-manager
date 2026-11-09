@@ -73,6 +73,7 @@ onUnmounted(() => {
 <style scoped>
 .sync-btn {
   transition: transform 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
 }
 .sync-btn:hover {
   color: #10b981;
@@ -86,6 +87,16 @@ onUnmounted(() => {
   }
   to {
     transform: rotate(360deg);
+  }
+}
+@media (max-width: 640px) {
+  .sync-btn {
+    width: 30px;
+    height: 30px;
+  }
+  .sync-btn svg {
+    width: 15px;
+    height: 15px;
   }
 }
 </style>
